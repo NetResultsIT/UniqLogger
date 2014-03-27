@@ -1,0 +1,113 @@
+/********************************************************************************
+ *   Copyright (C) 2010-2014 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):																	*
+ *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ ********************************************************************************/
+
+#include "RemoteWriter.h"
+
+#include <QTime>
+
+RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort)
+: LogWriter()
+{
+    m_serverAddress = aServerAddress;
+    m_serverPort = aServerPort;
+
+    m_reconnectionTimeout = 5000;
+
+    connect (&m_reconnectionTimer,SIGNAL(timeout()),this,SLOT(connectToServer()));
+    connect (&m_Socket,SIGNAL(disconnected()),this,SLOT(onDisconnectionFromServer()));
+    connect (&m_Socket,SIGNAL(connected()),this,SLOT(onConnectionToServer()));
+}
+ 
+/*!
+  \brief In the class dtor we want to flush whatever we might have got that is not written
+  */
+RemoteWriter::~RemoteWriter()
+{
+    //on exit, write all we've got
+    this->flush();
+}
+
+/*!
+  \brief writes the messages in the queue on the socket
+  */
+void
+RemoteWriter::writeToDevice()
+{
+    QString s;
+    mutex.lock();
+    if (!m_logIsPaused && m_Socket.state()==QAbstractSocket::ConnectedState)
+    {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            s = m_logMessageList.takeFirst().message();
+            m_Socket.write(s.toLatin1()+"\r\n");
+        }
+    }
+    mutex.unlock();
+}
+ 
+/*!
+  \brief connects the logwriter to the specified server
+  \return a negative code if the connection fails, 0 otherwise
+  This call is blocking (for this thread) and waits 10 secs to see if the connection can be established or not
+  */
+int
+RemoteWriter::connectToServer()
+{
+    m_Socket.connectToHost(m_serverAddress,m_serverPort);
+    bool b = m_Socket.waitForConnected(10000);
+    if (b)
+        return 0;
+
+    LogMessage msg("Remote Logger",UNQL::LOG_WARNING,"Connection fail to server "+m_serverAddress+":"+QString::number(m_serverPort),QDateTime::currentDateTime().toString("hh:mm:ss"));
+    appendMessage(msg);
+
+    return -1;
+}
+
+/*!
+ \brief this slot is invoked whenever the RemoteWriter connects to the logging server
+ Upon connection it stops the reconnection timer
+ */
+void
+RemoteWriter::onConnectionToServer()
+{
+#ifdef ULOGDBG
+    qDebug() << "Connected to server";
+#endif
+    LogMessage msg("Remote Logger",UNQL::LOG_INFO,"Connected to server "+m_serverAddress+":"+QString::number(m_serverPort),QDateTime::currentDateTime().toString("hh:mm:ss"));
+    appendMessage(msg);
+    m_reconnectionTimer.stop();
+}
+
+/*!
+ \brief this slot is invoked whenever the RemoteWriter loses connection to the logging server
+ It starts a timer that will keep trying to reconnect to the server
+ */
+void
+RemoteWriter::onDisconnectionFromServer()
+{
+#ifdef ULOGDBG
+    qDebug() << "Disconnected from server";
+#endif
+    LogMessage msg("Remote Logger",UNQL::LOG_WARNING,"Disconnected from server "+m_serverAddress+":"+QString::number(m_serverPort),QDateTime::currentDateTime().toString("hh:mm:ss"));
+    appendMessage(msg);
+    m_reconnectionTimer.start(m_reconnectionTimeout);
+}
+ 
+void
+RemoteWriter::run()
+{
+    m_reconnectionTimer.start(m_reconnectionTimeout);
+    LogWriter::run();
+}
+
+void
+RemoteWriter::setWriterConfig(const WriterConfig &wconf)
+{
+    LogWriter::setWriterConfig(wconf);
+    m_reconnectionTimeout = wconf.reconnectionSecs * 1000;
+}
