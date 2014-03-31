@@ -62,18 +62,18 @@ win32-msvc2013{
 }
 
 MDCMD = mkdir
-DSTDIR = last_build
+DSTDIR = ../lib/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 TARGET = $$join(TARGET,,"bin/")
 
 CONFIG(debug, debug|release) {
     message("Debug build")
-    FINALDIR = $$join(FINALDIR,,"../lib/debug/",)
+    FINALDIR = $$join(FINALDIR,,"../lib/debug/","/")
 }
 
 CONFIG(release, debug|release) {
     message("Release build")
-    FINALDIR = $$join(FINALDIR,,"../lib/release/",)
+    FINALDIR = $$join(FINALDIR,,"../lib/release/","/")
 }
 
 win32 {
@@ -91,24 +91,24 @@ message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
 
     FINALDIR = $$replace(FINALDIR,"/","\\")
     TARGET = $$replace(TARGET,"/","\\")
+    DSTDIR = $$replace(DSTDIR,"/","\\")
 
     message($$FINALDIR $$TARGET)
 
-    QMAKE_POST_LINK="..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)"
+    WINEXT = dll lib pdb
+
+    QMAKE_POST_LINK="cmd ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)"
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,d)
-        DLL = $$join(TARGET,,,$$MYVER)
-        message("********** Final debug target is: $$TARGET")
-        QMAKE_POST_LINK+="copy debug\\$$join(DLL,,,.dll) $$FINALDIR $$escape_expand(\n\t)"
-        QMAKE_POST_LINK+="copy debug\\$$join(DLL,,,.lib) $$FINALDIR $$escape_expand(\n\t)"
-        #QMAKE_POST_LINK+="copy .\\bin\\$$join(TARGET,,,.lib) $$FINALDIR /y$$escape_expand(\n\t)"
+        DLL = $$join(TARGET,,debug\\,$$MYVER)
     }
 
     CONFIG(release, debug|release) {
         message("******* Final release target is: $$TARGET")
-        DLL = $$join(TARGET,,,$$MYVER)
-        QMAKE_POST_LINK+="copy release\\$$join(DLL,,,.*) $$FINALDIR /y $$escape_expand(\n\t)"
+        DLL = $$join(TARGET,,release\\,$$MYVER)
     }
+    for(ext, WINEXT):QMAKE_POST_LINK+="copy $$join(DLL,,,.$${ext}) $$FINALDIR /y$$escape_expand(\\n\\t)"
+    for(ext, WINEXT):QMAKE_POST_LINK+="copy $$join(DLL,,,.$${ext}) $$DSTDIR /y$$escape_expand(\\n\\t)"
 }
 
 unix {
@@ -127,24 +127,24 @@ unix {
 unix:!macx {
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_d)
-        DLL = $$join(TARGET,,,.so*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\n\t)"
+        DLL = $$join(TARGET,,debug/,.so*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     }
 
     CONFIG(release, debug|release) {
-        DLL = $$join(TARGET,,,.so*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\n\t)"
+        DLL = $$join(TARGET,,release/,.so*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     }
 }
 
 macx {
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
-        DLL = $$join(TARGET,,,.dylib*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\n\t)"
+        DLL = $$join(TARGET,,debug/,.dylib*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     }
     CONFIG(release, debug|release) {
-        DLL = $$join(TARGET,,,.dylib*)
+        DLL = $$join(TARGET,,release/,.dylib*)
         QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR"
     }
 }
