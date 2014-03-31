@@ -44,6 +44,7 @@ COMPILER = g++
 win32-msvc2008{
     message("Using VC++ 2008")
     COMPILER=VC2008
+	WINCMD=cmd
 }
 
 win32-msvc2010{
@@ -95,12 +96,13 @@ message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
 
     message($$FINALDIR $$TARGET)
 
-    WINEXT = dll lib pdb
+    WINEXT = dll lib exp
 
-    QMAKE_POST_LINK="cmd ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)"
+    QMAKE_POST_LINK="$$WINCMD ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)"
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,d)
         DLL = $$join(TARGET,,debug\\,$$MYVER)
+		WINEXT += pdb
     }
 
     CONFIG(release, debug|release) {
