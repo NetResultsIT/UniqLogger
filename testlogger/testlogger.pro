@@ -19,12 +19,36 @@ SOURCES += main.cpp testlogger.cpp
 
 
 LIBNAME = UniqLogger
+#Set our default compiler (Linux & Mac)
+COMPILER = g++
+
+win32-msvc2008{
+    message("Using VC++ 2008")
+    COMPILER=VC2008
+}
+
+win32-msvc2010{
+    message("Using VC++ 2010")
+    COMPILER=VC2010
+}
+
+win32-msvc2012{
+    message("Using VC++ 2012")
+    COMPILER=VC2012
+}
+
+win32-msvc2013{
+    message("Using VC++ 2013")
+    COMPILER=VC2013
+}
+
+ULIBDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 
 CONFIG(release, debug|release) {
-    QMAKE_LIBDIR += $$UNIQLOGGERPATH/release/qt-$$QT_VERSION
+    QMAKE_LIBDIR += $$UNIQLOGGERPATH/release/$$ULIBDIR
 }
 CONFIG(debug, debug|release) {
-    QMAKE_LIBDIR += $$UNIQLOGGERPATH/debug/qt-$$QT_VERSION
+    QMAKE_LIBDIR += $$UNIQLOGGERPATH/debug/$$ULIBDIR
 }
 
 win32 {
@@ -34,7 +58,7 @@ win32 {
 
     CONFIG += flat
     CONFIG(debug, debug|release) {
-        QMAKE_POST_LINK="copy ..\\lib\\debug\\qt-$$QT_VERSION\\UniqLoggerd.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
+        QMAKE_POST_LINK="copy ..\\lib\\debug\\$$COMPILER_qt-$$QT_VERSION\\UniqLoggerd.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
         LIBS += UniqLoggerd.lib
     } else {
         LIBS += UniqLogger.lib

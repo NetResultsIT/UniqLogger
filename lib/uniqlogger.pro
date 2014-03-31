@@ -65,7 +65,7 @@ win32-msvc2013{
 MDCMD = mkdir
 DSTDIR = ../lib/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
-TARGET = $$join(TARGET,,"bin/")
+DLLPATH = bin/
 
 CONFIG(debug, debug|release) {
     message("Debug build")
@@ -90,6 +90,7 @@ message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     LIBS += ws2_32.lib \
             Psapi.lib
 
+    TARGET = $$join(TARGET,,$$DLLPATH)
     FINALDIR = $$replace(FINALDIR,"/","\\")
     TARGET = $$replace(TARGET,"/","\\")
     DSTDIR = $$replace(DSTDIR,"/","\\")
@@ -114,28 +115,31 @@ message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
 }
 
 unix {
-    OBJECTS_DIR = build
-    MOC_DIR = build
-    #VERSION = $$ULOG_VERSION
-    TARGET = $$join(TARGET,,lib,)
     CONFIG(debug, debug|release) {
         QMAKE_CFLAGS += -g
         QMAKE_CXXFLAGS += -g
         QMAKE_LFLAGS += -g
+        OBJECTS_DIR = debug/build
+        MOC_DIR = debug/build
     }
-    QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\n\t)"
+    CONFIG(release, debug|release) {
+        OBJECTS_DIR = release/build
+        MOC_DIR = release/build
+    }
 }
 
 unix:!macx {
     CONFIG(debug, debug|release) {
-        TARGET = $$join(TARGET,,,_d)
-        DLL = $$join(TARGET,,debug/,.so*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\\n\\t)"
+        DLL = $$join(TARGET,,lib,_d.so*)
+        DLLPATH=$$join(DLLPATH,,debug/,)
+        TARGET = $$join(TARGET,,$$DLLPATH,_d)
+        DLL=$$join(DLL,,$$DLLPATH,)
     }
-
     CONFIG(release, debug|release) {
-        DLL = $$join(TARGET,,release/,.so*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\\n\\t)"
+        DLL = $$join(TARGET,,lib,.so*)
+        DLLPATH=$$join(DLLPATH,,release/,)
+        TARGET = $$join(TARGET,,$$DLLPATH,)
+        DLL=$$join(DLL,,$$DLLPATH,)
     }
 }
 
@@ -143,12 +147,16 @@ macx {
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
         DLL = $$join(TARGET,,debug/,.dylib*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     }
     CONFIG(release, debug|release) {
         DLL = $$join(TARGET,,release/,.dylib*)
-        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR"
     }
+}
+
+unix {
+    QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\n\t)"
+    QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
+    QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
 }
 
 HEADERS += \
