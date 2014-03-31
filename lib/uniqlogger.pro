@@ -1,9 +1,11 @@
-
+##############################
+#  UniqLogger COnfiguration  #
+##############################
 
 VERSION = 0.2.0
 
 # Uncomment if you plan to use VS as your IDE
-# IDE = VS
+ IDE = VS
 
 # If you want to enable network logging uncomment the following line
 DEFINES += ULOG_NETLOGGING
@@ -33,24 +35,24 @@ contains ( DEFINES, ULOGDBG ) {
 
 #this should work with Qt5, on Qt4 we do it manually
 #MYVER = $$split($$VERSION, .)
-#MYVER = 0
+MYVER = 0
 #message("$$QT_VERSION $$VERSION $$QMAKE_CXX $$QMAKESPEC")
 
 #Set our default compiler (Linux & Mac)
 COMPILER = g++
 
 win32-msvc2008{
-    message("USing VC++ 2008")
+    message("Using VC++ 2008")
     COMPILER=VC2008
 }
 
 win32-msvc2010{
-    message("USing VC++ 2010")
+    message("Using VC++ 2010")
     COMPILER=VC2010
 }
 
 win32-msvc2012{
-    message("USing VC++ 2012")
+    message("Using VC++ 2012")
     COMPILER=VC2012
 }
 
@@ -60,33 +62,52 @@ win32-msvc2013{
 }
 
 MDCMD = mkdir
-DSTDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
+DSTDIR = last_build
+FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
+TARGET = $$join(TARGET,,"bin/")
+
+CONFIG(debug, debug|release) {
+    message("Debug build")
+    FINALDIR = $$join(FINALDIR,,"../lib/debug/",)
+}
+
+CONFIG(release, debug|release) {
+    message("Release build")
+    FINALDIR = $$join(FINALDIR,,"../lib/release/",)
+}
 
 win32 {
-message("NOW USING COMPILER: $$COMPILER $$DSTDIR")
+message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
+
     contains(IDE,VS) {
       TEMPLATE = vclib
     }
-    DEFINES += _CRT_SECURE_NO_DEPRECATE ULOG_LIB_EXPORTS
 
-    MDCMD = md
+    DEFINES += _CRT_SECURE_NO_DEPRECATE ULOG_LIB_EXPORTS
 
     LIBS += ws2_32.lib \
             Psapi.lib
 
-    CONFIG(debug, debug|release) {
-        TARGET = $$TARGETd
-        DLL = $$join(TARGET,,,$$MYVER)
+    FINALDIR = $$replace(FINALDIR,"/","\\")
+    TARGET = $$replace(TARGET,"/","\\")
 
-        QMAKE_POST_LINK+="..\\lib\\scripts\\mkDeployDir.bat ..\\lib\\debug\\$$DSTDIR\\ $$escape_expand(\n\t)"
-        QMAKE_POST_LINK+="copy .\\debug\\bin\\$$join(DLL,,,.dll) ..\\lib\\debug\\$$DSTDIR\\ /y$$escape_expand(\n\t)"
-        QMAKE_POST_LINK+="copy .\\debug\\bin\\$$join(DLL,,,.lib) ..\\lib\\debug\\$$DSTDIR\\ /y$$escape_expand(\n\t)"
+    message($$FINALDIR $$TARGET)
+
+    QMAKE_POST_LINK="..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)"
+    CONFIG(debug, debug|release) {
+        TARGET = $$join(TARGET,,,d)
+        DLL = $$join(TARGET,,,$$MYVER)
+        message("********** Final debug target is: $$TARGET")
+        QMAKE_POST_LINK+="copy debug\\$$join(DLL,,,.dll) $$FINALDIR $$escape_expand(\n\t)"
+        QMAKE_POST_LINK+="copy debug\\$$join(DLL,,,.lib) $$FINALDIR $$escape_expand(\n\t)"
+        #QMAKE_POST_LINK+="copy .\\bin\\$$join(TARGET,,,.lib) $$FINALDIR /y$$escape_expand(\n\t)"
     }
 
     CONFIG(release, debug|release) {
-        QMAKE_POST_LINK="..\\lib\\scripts\\mkDeployDir.bat ..\\lib\\release\\$$DSTDIR\\ $$escape_expand(\n\t)"
-        QMAKE_POST_LINK+="copy .\\release\\bin\\UniqLogger.* ..\\lib\\release\\$$DSTDIR\\ /y"
+        message("******* Final release target is: $$TARGET")
+        DLL = $$join(TARGET,,,$$MYVER)
+        QMAKE_POST_LINK+="copy release\\$$join(DLL,,,.*) $$FINALDIR /y $$escape_expand(\n\t)"
     }
 }
 
@@ -94,29 +115,37 @@ unix {
     OBJECTS_DIR = build
     MOC_DIR = build
     #VERSION = $$ULOG_VERSION
+    TARGET = $$join(TARGET,,lib,)
     CONFIG(debug, debug|release) {
         QMAKE_CFLAGS += -g
         QMAKE_CXXFLAGS += -g
         QMAKE_LFLAGS += -g
     }
+    QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\n\t)"
 }
 
 unix:!macx {
     CONFIG(debug, debug|release) {
-        TARGET = bin/UniqLogger_d
-        QMAKE_POST_LINK="mkdir -p ../lib/debug/DSTDIR/ $$escape_expand(\n\t)"
-        QMAKE_POST_LINK+="cp -aP ./bin/libUniqLogger_d.so* ../lib/debug/DSTDIR/ $$escape_expand(\n\t)"
+        TARGET = $$join(TARGET,,,_d)
+        DLL = $$join(TARGET,,,.so*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\n\t)"
     }
 
     CONFIG(release, debug|release) {
-        QMAKE_POST_LINK="mkdir -p ../lib/release/qt-$$QT_VERSION/ $$escape_expand(\n\t)"
-        QMAKE_POST_LINK+="cp -aP ./bin/libUniqLogger.so* ../lib/release/DSTDIR/"
+        DLL = $$join(TARGET,,,.so*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\n\t)"
     }
 }
 
 macx {
     CONFIG(debug, debug|release) {
-        TARGET = bin/UniqLogger_debug
+        TARGET = $$join(TARGET,,,_debug)
+        DLL = $$join(TARGET,,,.dylib*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR $$escape_expand(\n\t)"
+    }
+    CONFIG(release, debug|release) {
+        DLL = $$join(TARGET,,,.dylib*)
+        QMAKE_POST_LINK+="cp -aP ./bin/$$DLL $$FINALDIR"
     }
 }
 
