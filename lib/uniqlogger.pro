@@ -22,7 +22,8 @@ QT -= gui
 
 TARGET = UniqLogger
 
-CONFIG += warn_on dll
+CONFIG += warn_on dll 
+CONFIG += debug_and_release
 CONFIG -= flat
 
 DEFINES -= UNICODE
@@ -154,9 +155,10 @@ macx {
 }
 
 unix {
-    QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\n\t)"
+    QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
+
 }
 
 HEADERS += \
@@ -201,3 +203,8 @@ contains ( DEFINES, 'ULOG_DBLOGGING' ) {
 else {
     message("[*] Db Logging: DISABLED")
 }
+
+QMAKE_CLEAN += -r
+QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
+QMAKE_DISTCLEAN += $$QMAKE_CLEAN
+
