@@ -16,10 +16,10 @@ mkdir ${TARGET}
 rm -rf uniqlogger*.tar.gz
 
 # copy binary
-cp -av bin/* ${TARGET}
+cp -av last_build/* ${TARGET}
 
 # rm svn directory
-find ${TAREGT} -iname .svn | xargs rm -rf 
+find ${TARGET} -iname .svn | xargs rm -rf 
 # create tag archive
 PNAME="uniqlogger_$(uname -i)-r${REV}.tar.gz"
 tar czf ${PNAME} ${TARGET}
