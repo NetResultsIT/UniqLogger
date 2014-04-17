@@ -154,7 +154,12 @@ macx {
 	DLL=$$join(DLL,,$$DLLPATH,)
     }
     CONFIG(release, debug|release) {
-        DLL = $$join(TARGET,,release/,.dylib*)
+        #DLL = $$join(TARGET,,release/,.dylib*)
+	TARGET = $$join(TARGET,,,)
+        DLL = $$join(TARGET,,lib,.*dylib)
+	DLLPATH=$$join(DLLPATH,,release/,)
+	TARGET = $$join(TARGET,,$$DLLPATH,)
+	DLL=$$join(DLL,,$$DLLPATH,)
     }
     message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
