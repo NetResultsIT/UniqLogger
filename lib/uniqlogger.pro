@@ -142,16 +142,21 @@ unix:!macx {
         TARGET = $$join(TARGET,,$$DLLPATH,)
         DLL=$$join(DLL,,$$DLLPATH,)
     }
+    message ("unix!macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
 macx {
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
-        DLL = $$join(TARGET,,debug/,.dylib*)
+        DLL = $$join(TARGET,,lib,.*dylib)
+	DLLPATH=$$join(DLLPATH,,debug/,)
+	TARGET = $$join(TARGET,,$$DLLPATH,)
+	DLL=$$join(DLL,,$$DLLPATH,)
     }
     CONFIG(release, debug|release) {
         DLL = $$join(TARGET,,release/,.dylib*)
     }
+    message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
 unix {
