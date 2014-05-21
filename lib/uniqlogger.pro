@@ -5,7 +5,7 @@
 VERSION = 0.2.0
 
 # Uncomment if you plan to use VS as your IDE
- IDE = VS
+##IDE = VS
 
 # If you want to enable network logging uncomment the following line
 DEFINES += ULOG_NETLOGGING
@@ -81,8 +81,8 @@ CONFIG(release, debug|release) {
 win32 {
 message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
-
-    contains(IDE,VS) {
+	
+	contains(IDE,VS) {
       TEMPLATE = vclib
     }
 
