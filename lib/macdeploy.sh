@@ -1,5 +1,8 @@
 #!/bin/bash
 
+ULVER=0.2.0
+
+# Do not modify below here
 set -e
 
 QT_SYSTEM_PATH="/usr/local/Trolltech/Qt-4.8.1/lib"
