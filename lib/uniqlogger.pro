@@ -6,18 +6,6 @@ VERSION = 0.2.0
 
 include (config.pri)
 
-# Uncomment if you plan to use VS as your IDE
-##IDE = VS
-
-# If you want to enable network logging uncomment the following line
-#DEFINES += ULOG_NETLOGGING
-
-# If you want to enable db logging uncomment the following line
-#DEFINES += ULOG_DBLOGGING
-
-# If you want to enable debug statements in the UniqLogger library uncomment the following line
-#DEFINES += ULOGDBG
-
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 QT -= gui
@@ -40,6 +28,11 @@ contains ( DEFINES, ULOGDBG ) {
 #MYVER = $$split($$VERSION, .)
 MYVER = 0
 #message("$$QT_VERSION $$VERSION $$QMAKE_CXX $$QMAKESPEC")
+
+message ("QT_VERSION $$QT_VERSION")
+message ("VERSION $$VERSION")
+message ("QMAKE_CXX $$QMAKE_CXX")
+message ("QMAKESPEC $$QMAKESPEC")
 
 #Set our default compiler (Linux & Mac)
 COMPILER = g++
@@ -65,6 +58,8 @@ win32-msvc2013{
     COMPILER=VC2013
 }
 
+message("COMPIER $$COMPILER")
+
 MDCMD = mkdir
 DSTDIR = ../lib/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
@@ -80,8 +75,10 @@ CONFIG(release, debug|release) {
     FINALDIR = $$join(FINALDIR,,"../lib/release/","/")
 }
 
+message ("FINALDIR $$FINALDIR")
+
 win32 {
-message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
+    message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
 	
 	contains(IDE,VS) {
@@ -98,7 +95,10 @@ message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     TARGET = $$replace(TARGET,"/","\\")
     DSTDIR = $$replace(DSTDIR,"/","\\")
 
-    message($$FINALDIR $$TARGET)
+    message("DLLPATH $$DLLPATH")
+    message("TARGET $$TARGET")
+    message("FINALDIR $$FINALDIR")
+    message("DSTDIR $$DSTDIR")
 
     WINEXT = dll lib exp
 
@@ -108,11 +108,16 @@ message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
         DLL = $$join(TARGET,,debug\\,$$MYVER)
 		WINEXT += pdb
     }
-
     CONFIG(release, debug|release) {
         message("******* Final release target is: $$TARGET")
         DLL = $$join(TARGET,,release\\,$$MYVER)
     }
+
+    message("DLLPATH $$DLLPATH")
+    message("TARGET $$TARGET")
+    message("FINALDIR $$FINALDIR")
+    message("DSTDIR $$DSTDIR")
+
     for(ext, WINEXT):QMAKE_POST_LINK+="copy $$join(DLL,,,.$${ext}) $$FINALDIR /y$$escape_expand(\\n\\t)"
     for(ext, WINEXT):QMAKE_POST_LINK+="copy $$join(DLL,,,.$${ext}) $$DSTDIR /y$$escape_expand(\\n\\t)"
 }
@@ -219,4 +224,7 @@ else {
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN
+
+OTHER_FILES += \
+    buildbot-win7.pri
 
