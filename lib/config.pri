@@ -3,7 +3,7 @@
 # Buildbot Win7 
 
 # Uncomment if you plan to use VS as your IDE
-#IDE = VS
+IDE = VS
 
 # If you want to enable network logging uncomment the following line
 DEFINES += ULOG_NETLOGGING

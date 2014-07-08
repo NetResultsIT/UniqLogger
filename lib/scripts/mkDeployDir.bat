@@ -3,6 +3,6 @@
 SETLOCAL=ENABLEDELAYEDEXPANSION
 
 if not exist %1 mkdir %1
-if exist %1 del /q %1*.* 
+if exist %1 del /q %1\*.* 
 
 echo %ERRORLEVEL%
