@@ -22,6 +22,7 @@ FileWriter::FileWriter()
     m_logfileBaseName="logfile.txt";
 }
 
+
 /*!
   \brief In the class dtor we want to flush whatever we might have got that is not written
   */
@@ -35,6 +36,7 @@ FileWriter::~FileWriter()
 #endif
 }
 
+
 /*!
   \brief sets the maximum size (in Megabytes) allowed for a single log file
   \param filesize the max allowed file size
@@ -43,6 +45,7 @@ void
 FileWriter::setLogfileMaxSize(int filesize)
 {   m_maxFileSizeMB=filesize;	}
  
+
 /*!
   \brief sets the number of files to be used in log rotation
   \param maxfilenum is the number of files the logger should use before doing a rotation
@@ -51,12 +54,13 @@ void
 FileWriter::setLogfileRotationRange(int maxfilenum)
 {   m_rotationMaxFileNumber=maxfilenum;	}
  
+
 /*!
   \brief calculate the last log file used.
   \return the name of the last log file used or an empty string if an error occurs
   */
 QString
-FileWriter::calculateOldLogFiles()
+FileWriter::calculateOldLogFileName()
 {
     QString tmp="";
 
@@ -68,6 +72,7 @@ FileWriter::calculateOldLogFiles()
     return tmp;
 }
  
+
 /*!
   \brief calculates the log file that is going to be used for the logging
   \param num the number of the current file name
@@ -77,45 +82,48 @@ FileWriter::calculateCurrentFileName(int num)
 {
     QString fullfilename = QDir::fromNativeSeparators(m_logfileBaseName);
     QString filename = fullfilename.split("/").takeLast();
-    QString filepath = fullfilename.left(fullfilename.lastIndexOf("/"));
+    QString filepath;
+    if (fullfilename.lastIndexOf("/") >= 0)
+        filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
     int filenum;
 
 
-    if (num==0) {
+    if (num == 0) {
         if (m_fileRotationPolicy == StrictRotation)
             return fullfilename;
 
-        filenum=m_RotationCurFileNumber;
+        filenum = m_RotationCurFileNumber;
     }
     else {
-        filenum=num;
+        filenum = num;
     }
 
     //find how many dots are there
     QStringList sl = filename.split(".");
 
-    if (sl.count()==1) //no dots
+    if (sl.count() == 1) //no dots
     {
             filename.append("-");
-            filename+=QString::number(filenum);
+            filename += QString::number(filenum);
     }
-    else if (sl.count()==2) //one dot
+    else if (sl.count() == 2) //one dot
     {
-            filename=sl[0];
+            filename = sl[0];
             filename.append("-");
-            filename+=QString::number(filenum);
-            filename+=".";
-            filename+=sl[1];
+            filename += QString::number(filenum);
+            filename += ".";
+            filename += sl[1];
     }
     else //more than one dot
     {
-            sl[0]+=QString::number(filenum);
+            sl[0] += QString::number(filenum);
             filename = sl.join(".");
     }
 
-    return filepath+"/"+filename;
+    return filepath + filename;
 }
  
+
 /*!
   \brief this method changes the logfile that is used for the log file
   \param _filename the new file to be used
@@ -158,6 +166,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     }
 }
  
+
 /*!
   \brief sets the base name that will be used for the log files
   \param aFilename the basename of the log files
@@ -172,6 +181,7 @@ FileWriter::setOutputFile(const QString& aFilename)
     changeOutputFile(fname);
 }
  
+
 /*!
   \brief writes the messages in the queue on the current log file
   */
@@ -207,12 +217,13 @@ FileWriter::writeToDevice()
        mutex.unlock();
        m_logFile.flush();
 
-       rotateFiles();
+       rotateFilesIfNeeded();
    }
 }
 
+
 void
-FileWriter::rotateFiles()
+FileWriter::rotateFilesIfNeeded()
 {
     //check if we need to change file
     if ( (m_maxFileSizeMB > 0) && ( (m_logFile.size() / 1000000.0) > m_maxFileSizeMB) )
@@ -221,19 +232,23 @@ FileWriter::rotateFiles()
             m_RotationCurFileNumber++;
             changeOutputFile(calculateCurrentFileName());
             //check to see if we need to delete some files
-            QString oldfile = calculateOldLogFiles();
+            QString oldfile = calculateOldLogFileName();
             if (!oldfile.isEmpty())
                     QFile::remove(oldfile);
         }
         else {
             m_logFile.flush();
             m_logFile.close();
+
+            //remove the last file (if exists)
             QString lastfile = calculateCurrentFileName(m_rotationMaxFileNumber-1);
             if (QFile::exists(lastfile))
                 QFile::remove(lastfile);
             else {
                 qDebug() << lastfile << " does not exists, cannot delete";
             }
+
+            //now move the other files starting from the one b4 last
             for (int i=m_rotationMaxFileNumber-2; i>=0; i--) {
                 QString olderfile = calculateCurrentFileName(i);
                 QString newerfile = calculateCurrentFileName(i+1);
@@ -244,11 +259,13 @@ FileWriter::rotateFiles()
                     qDebug() << olderfile << " does not exists cannot rename into " << newerfile;
                 }
             }
+
             changeOutputFile(calculateCurrentFileName());
         }
     }
 }
  
+
 void
 FileWriter::setWriterConfig(const WriterConfig &wconf)
 {

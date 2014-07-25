@@ -26,10 +26,10 @@ private:
     FileRotationPolicyType m_fileRotationPolicy;
 
 	QString calculateCurrentFileName(int num=0);
-	QString calculateOldLogFiles();
+	QString calculateOldLogFileName();
 	void changeOutputFile(const QString&);
 	void writeToDevice();
-    void rotateFiles();
+    void rotateFilesIfNeeded();
 
 public:
     explicit FileWriter();
