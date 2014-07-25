@@ -51,6 +51,8 @@ public:
 	~testlogger();
     void testThreadedNetLogger(const QString &ip, int port);
 
+    void test_strangeString(UniqLogger *ul);
+    void test_dummylog(UniqLogger *ul);
 private:
 	Ui::testloggerClass ui;
 
