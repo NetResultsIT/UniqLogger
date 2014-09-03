@@ -110,6 +110,10 @@ win32 {
     }
     CONFIG(release, debug|release) {
         message("******* Final release target is: $$TARGET")
+		QMAKE_CXXFLAGS_RELEASE += /Zi 
+		QMAKE_LFLAGS_RELEASE += /DEBUG
+		QMAKE_LFLAGS_RELEASE += /OPT:REF
+		QMAKE_LFLAGS_RELEASE += /OPT:ICF
         DLL = $$join(TARGET,,release\\,$$MYVER)
     }
 
