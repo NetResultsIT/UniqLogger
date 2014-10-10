@@ -122,8 +122,8 @@ win32 {
     message("FINALDIR $$FINALDIR")
     message("DSTDIR $$DSTDIR")
 
-    for(ext, WINEXT):QMAKE_POST_LINK+="copy $$join(DLL,,,.$${ext}) $$FINALDIR /y$$escape_expand(\\n\\t)"
-    for(ext, WINEXT):QMAKE_POST_LINK+="copy $$join(DLL,,,.$${ext}) $$DSTDIR /y$$escape_expand(\\n\\t)"
+    for(ext, WINEXT):QMAKE_POST_LINK+="xcopy $$join(DLL,,,.$${ext}) $$FINALDIR /y$$escape_expand(\\n\\t)"
+    for(ext, WINEXT):QMAKE_POST_LINK+="xcopy $$join(DLL,,,.$${ext}) $$DSTDIR /y$$escape_expand(\\n\\t)"
 }
 
 unix {
