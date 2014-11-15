@@ -58,21 +58,20 @@ win32-msvc2013{
     COMPILER=VC2013
 }
 
-message("COMPIER $$COMPILER")
-
+message("COMPILER $$COMPILER")
 MDCMD = mkdir
-DSTDIR = ../lib/last_build/
+DSTDIR = $$PWD/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 DLLPATH = bin/
 
 CONFIG(debug, debug|release) {
     message("Debug build")
-    FINALDIR = $$join(FINALDIR,,"../lib/debug/","/")
+    FINALDIR = $$join(FINALDIR,,"$$PWD/debug/","/")
 }
 
 CONFIG(release, debug|release) {
     message("Release build")
-    FINALDIR = $$join(FINALDIR,,"../lib/release/","/")
+    FINALDIR = $$join(FINALDIR,,"$$PWD/release/","/")
 }
 
 message ("FINALDIR $$FINALDIR")
@@ -106,7 +105,7 @@ win32 {
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,d)
         DLL = $$join(TARGET,,debug\\,$$MYVER)
-		WINEXT += pdb
+        WINEXT += pdb
     }
     CONFIG(release, debug|release) {
         message("******* Final release target is: $$TARGET")
@@ -179,7 +178,6 @@ unix {
     QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
-
 }
 
 HEADERS += \
