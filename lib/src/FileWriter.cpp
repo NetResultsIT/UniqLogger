@@ -144,7 +144,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     }
 
     m_logFile.setFileName(aFilename);
-    m_logFile.open(QIODevice::WriteOnly);
+    m_logFile.open( QIODevice::WriteOnly | QIODevice::Append );
     if (!m_logFile.isOpen()) //we were already logging to a file
     {
         mutex.lock();
