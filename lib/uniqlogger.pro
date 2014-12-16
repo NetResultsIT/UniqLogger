@@ -2,8 +2,9 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.2.1
+VERSION = 0.2.2
 
+# --- Please check that the config file reflects your desired build options
 include (config.pri)
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
@@ -20,19 +21,51 @@ DEFINES -= UNICODE
 
 TEMPLATE = lib
 
-contains ( DEFINES, ULOGDBG ) {
-    message ( "[*] Library debug mode ENABLED" )
-}
 
 #this should work with Qt5, on Qt4 we do it manually
 #MYVER = $$split($$VERSION, .)
 MYVER = 0
 #message("$$QT_VERSION $$VERSION $$QMAKE_CXX $$QMAKESPEC")
 
+message ("UniqLogger Version: $$VERSION")
 message ("QT_VERSION $$QT_VERSION")
-message ("VERSION $$VERSION")
-message ("QMAKE_CXX $$QMAKE_CXX")
-message ("QMAKESPEC $$QMAKESPEC")
+# --- Printing messages on building options
+contains ( IDE, 'VS' ) {
+    message("A Visual studio project file will be generated")
+}
+else {
+    message("Makefile(s) will be generated")
+}
+
+contains ( DEFINES, ULOGDBG ) {
+    message ( "WARNING - The library will be built in DEBUG mode!!!" )
+}
+
+contains ( DEFINES, 'ULOG_NETLOGGING' ) {
+    message("[*] Network Logging: ENABLED")
+    QT += network
+    HEADERS +=  src/RemoteWriter.h
+
+    SOURCES += 	src/RemoteWriter.cpp
+}
+else {
+    message("[*] Network Logging: DISABLED")
+}
+
+contains ( DEFINES, 'ULOG_DBLOGGING' ) {
+    message("[*] Db Logging:      ENABLED")
+    QT += sql
+
+    HEADERS +=  src/DbWriter.h \
+                src/DbHandler.h
+
+    SOURCES += 	src/DbWriter.cpp \
+                src/DbHandler.cpp
+}
+else {
+    message("[*] Db Logging: DISABLED")
+}
+# --------
 
 #Set our default compiler (Linux & Mac)
 COMPILER = g++
@@ -40,7 +73,6 @@ COMPILER = g++
 win32-msvc2008{
     message("Using VC++ 2008")
     COMPILER=VC2008
-	WINCMD=cmd
 }
 
 win32-msvc2010{
@@ -58,8 +90,8 @@ win32-msvc2013{
     COMPILER=VC2013
 }
 
-message("COMPILER $$COMPILER")
-MDCMD = mkdir
+message("COMPILER: $$COMPILER")
+
 DSTDIR = $$PWD/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 DLLPATH = bin/
@@ -74,10 +106,12 @@ CONFIG(release, debug|release) {
     FINALDIR = $$join(FINALDIR,,"$$PWD/release/","/")
 }
 
-message ("FINALDIR $$FINALDIR")
+message ("Library will be built in $$FINALDIR")
+message ("Library will be copied also in $$DSTDIR")
+message ("Actual library will be in $$FINALDIR$$DLLPATH")
 
 win32 {
-    message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
+    #message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
 	
 	contains(IDE,VS) {
@@ -94,14 +128,17 @@ win32 {
     TARGET = $$replace(TARGET,"/","\\")
     DSTDIR = $$replace(DSTDIR,"/","\\")
 
-    message("DLLPATH $$DLLPATH")
-    message("TARGET $$TARGET")
-    message("FINALDIR $$FINALDIR")
-    message("DSTDIR $$DSTDIR")
 
     WINEXT = dll lib exp
 
-    QMAKE_POST_LINK="$$WINCMD ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)"
+    #This is an hack to deal with non existing deploy dir on windows with Qt4, when we deprecate 4 we can delete it
+    greaterThan(QT_MAJOR_VERSION, 4){
+        QMAKE_POST_LINK="$$QMAKE_MKDIR_CMD \"$$FINALDIR\" $$escape_expand(\\n\\t)"
+    } else {
+        QMAKE_POST_LINK="$$QMAKE_CHK_DIR_EXISTS \"$$FINALDIR\" $$QMAKE_MKDIR \"$$FINALDIR\" $$escape_expand(\\n\\t)"
+    }
+
+    #QMAKE_POST_LINK="$$WINCMD ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)exit$$escape_expand(\\n\\t)"
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,d)
         DLL = $$join(TARGET,,debug\\,$$MYVER)
@@ -115,14 +152,8 @@ win32 {
 		QMAKE_LFLAGS_RELEASE += /OPT:ICF
         DLL = $$join(TARGET,,release\\,$$MYVER)
     }
-
-    message("DLLPATH $$DLLPATH")
-    message("TARGET $$TARGET")
-    message("FINALDIR $$FINALDIR")
-    message("DSTDIR $$DSTDIR")
-
-    for(ext, WINEXT):QMAKE_POST_LINK+="xcopy $$join(DLL,,,.$${ext}) $$FINALDIR /y$$escape_expand(\\n\\t)"
-    for(ext, WINEXT):QMAKE_POST_LINK+="xcopy $$join(DLL,,,.$${ext}) $$DSTDIR /y$$escape_expand(\\n\\t)"
+    for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$FINALDIR\" $$escape_expand(\\n\\t)"
+    for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$DSTDIR\" $$escape_expand(\\n\\t)"
 }
 
 unix {
@@ -152,7 +183,7 @@ unix:!macx {
         TARGET = $$join(TARGET,,$$DLLPATH,)
         DLL=$$join(DLL,,$$DLLPATH,)
     }
-    message ("unix!macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
+    #message ("unix!macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
 macx {
@@ -171,7 +202,7 @@ macx {
 	TARGET = $$join(TARGET,,$$DLLPATH,)
 	DLL=$$join(DLL,,$$DLLPATH,)
     }
-    message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
+    #message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
 unix {
@@ -179,6 +210,11 @@ unix {
     QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
 }
+
+
+message ("Library name: $$TARGET$$MYVER")
+
+# ----- Library sources ------
 
 HEADERS += \
            src/Logger.h \
@@ -198,35 +234,11 @@ SOURCES += \
            src/LogMessage.cpp \
            src/DummyWriter.cpp
 
-contains ( DEFINES, 'ULOG_NETLOGGING' ) {
-    message("[*] Network Logging: ENABLED")
-    QT += network
-    HEADERS +=  src/RemoteWriter.h
 
-    SOURCES += 	src/RemoteWriter.cpp
-}
-else {
-    message("[*] Network Logging: DISABLED")
-}
 
-contains ( DEFINES, 'ULOG_DBLOGGING' ) {
-    message("[*] Db Logging:      ENABLED")
-    QT += sql
-
-    HEADERS +=  src/DbWriter.h \
-                src/DbHandler.h
-
-    SOURCES += 	src/DbWriter.cpp \
-                src/DbHandler.cpp
-}
-else {
-    message("[*] Db Logging: DISABLED")
-}
 
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN
 
-OTHER_FILES += \
-    buildbot-win7.pri
-
+message(" ==== End of QMake build process ==== ")
