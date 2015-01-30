@@ -132,8 +132,8 @@ win32 {
     WINEXT = dll lib exp
 
     #This is an hack to deal with non existing deploy dir on windows with Qt4, when we deprecate 4 we can delete it
-    greaterThan(QT_MAJOR_VERSION, 4){
-        QMAKE_POST_LINK="$$QMAKE_MKDIR_CMD \"$$FINALDIR\" $$escape_expand(\\n\\t)"
+    greaterThan(QT_MAJOR_VERSION, 6){
+        QMAKE_POST_LINK="$$QMAKE_MKDIR_CMD \"$$FINALDIR\" $$escape_expand(\\n\\t)" # Does not work as expected with Visual Studio 2010
     } else {
         QMAKE_POST_LINK="$$QMAKE_CHK_DIR_EXISTS \"$$FINALDIR\" $$QMAKE_MKDIR \"$$FINALDIR\" $$escape_expand(\\n\\t)"
     }
