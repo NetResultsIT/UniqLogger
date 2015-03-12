@@ -3,11 +3,11 @@
 #include <QDebug>
 #include <QTimer>
 
-#define TEST_FILE_ROTATION 0
+#define TEST_FILE_ROTATION 1
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
-#define TEST_NET 1
-#define TEST_NET_MULTISRC 1
+#define TEST_NET 0
+#define TEST_NET_MULTISRC 0
 #define TEST_DB 0
 #define TEST_MONITOR 0
 
@@ -24,7 +24,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
     loggerD  = NULL; //This will be db logger
 
     QTimer *timer = new QTimer();
-
+    int millis = 2000;
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
 
@@ -38,9 +38,10 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
 
 #if(TEST_FILE_ROTATION)
+    millis = 30;
     WriterConfig wc2;
-    wc2.maxFileNum = 2;  //we're going to use 2 files
-    wc2.maxFileSize = 1; //up to 500KB max
+    wc2.maxFileNum = 3;  //we're going to use 3 files
+    wc2.maxFileSize = 1; //up to 1MB each
 
     loggerF = ul->createFileLogger("test", "log.txt", wc2);
     loggerF->setModuleName("FILE");
@@ -82,7 +83,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
 #endif
 
     //Start timed logging
-    timer->start(2000);
+    timer->start(millis);
 }
 
 
@@ -116,8 +117,8 @@ testlogger_cli::timedLog()
     i++;
 
 #if(TEST_FILE_ROTATION)
-    qDebug() << "written " << i * 100 << "KB to file...";
-    loggerF->log(UNQL::LOG_INFO, ( QString("file text ") + QString::number(i) + QString().fill('a', 100000) ).toLatin1().constData() );
+    qDebug() << "written " << i * 2 << "KB to file...";
+    loggerF->log(UNQL::LOG_INFO, ( QString("file text ") + QString::number(i) + QString().fill('a', 2000) ).toLatin1().constData() );
 #endif
 
 
@@ -138,12 +139,12 @@ testlogger_cli::timedLog()
     if (i == 10) {
         UniqLogger *ul = UniqLogger::instance();
         const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1", 1674);
-        qDebug() << "adding writer returned: " << ul->addWriterToLogger(loggerN1, nlw);
+        qDebug() << "adding writer returned: " << ul->addWriterToLogger(loggerN2, nlw);
     }
     if (i == 15) {
         UniqLogger *ul = UniqLogger::instance();
         const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1", 1674);
-        qDebug() << "removing writer returned: " << ul->removeWriterFromLogger(loggerN1, nlw);
+        qDebug() << "removing writer returned: " << ul->removeWriterFromLogger(loggerN2, nlw);
     }
 #endif
 
