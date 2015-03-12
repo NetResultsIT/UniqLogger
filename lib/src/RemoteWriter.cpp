@@ -16,11 +16,17 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort)
 
     m_reconnectionTimeout = 5000;
 
-
-//    m_reconnectionTimer = new QTimer(this);
+    m_Socket = new QTcpSocket(this);
+    m_reconnectionTimer = new QTimer(this);
 //    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
     //connect (&m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
     //connect (&m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
+
+
+
+    qDebug() << "this" << this << "this parent" << this->parent() << "this thread" << this->thread();
+    qDebug() << m_reconnectionTimer << "timer thread" << m_reconnectionTimer->thread() << "current thread" << QThread::currentThread();
+    qDebug() << m_Socket << "qsock thread" << m_Socket->thread() << "current thread" << QThread::currentThread();
 }
  
 /*!
@@ -38,6 +44,7 @@ RemoteWriter::~RemoteWriter()
 void
 RemoteWriter::writeToDevice()
 {
+    qDebug() << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
     QString s;
     mutex.lock();
     if (!m_logIsPaused && m_Socket->state() == QAbstractSocket::ConnectedState)
@@ -59,6 +66,7 @@ RemoteWriter::writeToDevice()
 int
 RemoteWriter::connectToServer()
 {
+    qDebug() << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
     m_Socket->connectToHost(m_serverAddress, m_serverPort);
     bool b = m_Socket->waitForConnected(10000);
     if (b)
@@ -108,11 +116,18 @@ RemoteWriter::onDisconnectionFromServer()
 void
 RemoteWriter::run()
 {
+    qDebug() << Q_FUNC_INFO;
+//    m_reconnectionTimer = new QTimer(this->thread());
+//    m_Socket = new QTcpSocket(this->thread());
+    //m_reconnectionTimer = new QTimer();
+    //m_Socket = new QTcpSocket();
 
-    m_reconnectionTimer = new QTimer(this->parent());
+    qDebug() << "this" << this << "this parent" << this->parent() << "this thread" << this->thread();
+    qDebug() << m_reconnectionTimer << "timer thread" << m_reconnectionTimer->thread() << "current thread" << QThread::currentThread();
+    qDebug() << m_Socket << "qsock thread" << m_Socket->thread() << "current thread" << QThread::currentThread();
+
     connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
 
-    m_Socket = new QTcpSocket(this->parent());
     connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
