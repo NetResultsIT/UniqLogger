@@ -13,21 +13,22 @@
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
 {
-    loggerF = NULL; //This will be a file logger
-    loggerN2 = NULL; //This will be red console
-    loggerN1 = NULL;
-    loggerCr = NULL;
-    loggerCy = NULL;
-    loggerCg = NULL;
-    loggerD = NULL;
+    loggerF  = NULL; //This will be a file logger
+    loggerN1 = NULL; //This will be a net logger to localhost:1674
+    loggerN2 = NULL; //This will be a net logger to localhost:1675
+    loggerCr = NULL; //This will be red console
+    loggerCy = NULL; //This will be yellow console
+    loggerCg = NULL; //This will be green console
+    loggerCm = NULL; //This will be magenta console
+    loggerD  = NULL; //This will be db logger
 
     QTimer *timer = new QTimer();
 
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
     WriterConfig wc2;
-    wc2.maxFileNum = 3;
-    wc2.maxFileSize = 2;
+    wc2.maxFileNum = 2;  //we're going to use 2 files
+    wc2.maxFileSize = 1; //up to 1MB max
 
     UniqLogger *ul = UniqLogger::instance();
 
@@ -37,33 +38,48 @@ testlogger_cli::testlogger_cli(QObject *parent)
     ul->setTimeStampFormat("hh.mm.ss.zzz");
 #endif
 
+
+#if(TEST_FILE_ROTATION)
     loggerF = ul->createFileLogger("test", "log.txt", wc2);
+    loggerF->setModuleName("FILE");
+#endif
+
+
+#if(TEST_CONSOLE_COLOR)
     loggerCr = ul->createConsoleLogger("CONSOLE", red);
     loggerCy = ul->createConsoleLogger("CONSOLE", yellow);
     loggerCg = ul->createConsoleLogger("CONSOLE", green);
+
+    loggerCr->setModuleName("REDCONSOLE");
+    loggerCy->setModuleName("YELLOWCONSOLE");
+    loggerCg->setModuleName("GREENCONSOLE");
+#endif
+
 
 #if(TEST_NET)
     WriterConfig wconf;
     wconf.maxMessageNum = 10;
 
     qDebug() << "writing to network...";
-    loggerN1 = ul->createNetworkLogger("net test",  "127.0.0.1", 1674, wconf);
-    loggerN2 = ul->createNetworkLogger("net test2", "127.0.0.1", 1675);
-    const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1",1674);
+    qDebug() << "current Thread" << QThread::currentThread();
+    loggerN1 = ul->createNetworkLogger("netlog to localhost:1674",  "127.0.0.1", 1674, wconf);
+    //loggerN2 = ul->createNetworkLogger("netlog to localhost:1675", "127.0.0.1", 1675);
+    //const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1",1674);
     //ul->addWriterToLogger(logger,nlw);
 
     //testThreadedNetLogger("127.0.0.1", 1674);
 #endif
+
 
 #if(TEST_DB)
     loggerD = ul->createDbLogger("DbLogger","log.db");
 #endif
 
 
-    loggerF->setModuleName("FILE");
-    loggerCr->setModuleName("REDCONSOLE");
-    loggerCy->setModuleName("YELLOWCONSOLE");
-    loggerCg->setModuleName("GREENCONSOLE");
+
+#if(TEST_MONITOR)
+    loggerCm = ul->createConsoleLogger("MagentaC", magenta);
+#endif
 
     //Start timed logging
     timer->start(2000);
@@ -112,7 +128,7 @@ testlogger_cli::timedLog()
 
 
 #if(TEST_NET)
-    loggerN2->log(UNQL::LOG_CRITICAL, (QString("net critical")+QString::number(i)).toLatin1().constData());
+    //loggerN2->log(UNQL::LOG_CRITICAL, ( QString("net critical") + QString::number(i) ).toLatin1().constData());
     *loggerN1 << UNQL::LOG_INFO << (QString("net info ")+QString::number(i++)) << UNQL::EOM;
 #endif
 
@@ -125,24 +141,25 @@ testlogger_cli::timedLog()
 
 
 #if(TEST_MONITOR)
+    qDebug() << "Testing monitoring - iteration" << i;
     double dd = qrand();
 
     QString key = "groupKey";
-    loggerCr->setModuleName("Red Monitor");
-    loggerCr->monitor(dd, key, "test variable dd");
-    loggerCr->monitor(i, key, "iteration number");
+    loggerCm->setModuleName("MagentaMonitor");
+    loggerCm->monitor(dd, key, "test variable dd");
+    loggerCm->monitor(i, key, "iteration number");
     i++;
 
     //after 5 iteration start monitoring
     if (i==5) {
-        loggerCr->setModuleName("Red Monitor active");
+        loggerCm->setModuleName("MagentaMonitor active");
         UniqLogger *ul = UniqLogger::instance();
         ul->monitorVar(key, true);
     }
 
     //now at 10th iteration stop monitoring
     if (i==15) {
-        loggerCr->setModuleName("Red Monitor");
+        loggerCm->setModuleName("MagentaMonitor");
         UniqLogger *ul = UniqLogger::instance();
         ul->monitorVar(key, false);
     }

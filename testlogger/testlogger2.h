@@ -44,7 +44,7 @@ class testlogger_cli : public QObject
 {
     Q_OBJECT
     Logger  *loggerF, *loggerN2, *loggerN1, *loggerD;
-    Logger  *loggerCy, *loggerCg, *loggerCr;
+    Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm;
 
 public:
     testlogger_cli(QObject *parent = 0);

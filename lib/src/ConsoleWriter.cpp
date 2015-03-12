@@ -58,8 +58,8 @@ ConsoleWriter::writeToDevice()
             //windows console does not support color codes
 #ifndef WIN32
             if (m_color != NONE) {
-                colorcode = "\033[22;" + QString::number((int)gray) + "m";
-                std::cerr << colorcode.toLatin1().constData();// << std::endl;
+                colorcode = "\033[0m";
+                std::cerr << colorcode.toLatin1().constData();
             }
 #endif            
             ConsoleWriter::m_consoleMux.unlock();
