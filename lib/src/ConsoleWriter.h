@@ -21,7 +21,7 @@ enum ConsoleColorType {
                         black       =   30,
                         red         =   31,
                         green       =   32,
-                        brown       =   33,
+                        yellow       =   33,
                         blue        =   34,
                         magenta     =   35,
                         cyan        =   36,
@@ -43,6 +43,7 @@ class ConsoleWriter: public LogWriter
 	Q_OBJECT
 
     ConsoleColorType m_color;
+    static QMutex m_consoleMux;
 
 protected slots:
     void writeToDevice();

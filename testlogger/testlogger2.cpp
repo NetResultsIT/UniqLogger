@@ -8,7 +8,7 @@
 #define TEST_DB 0
 #define TEST_CONSOLE_COLOR 1
 #define TEST_MONITOR 0
-#define TEST_FORMATTING 0
+#define TEST_FORMATTING 1
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
@@ -39,12 +39,13 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
     loggerF = ul->createFileLogger("test", "log.txt", wc2);
     loggerCr = ul->createConsoleLogger("CONSOLE", red);
-    loggerCy = ul->createConsoleLogger("CONSOLE", brown);
+    loggerCy = ul->createConsoleLogger("CONSOLE", yellow);
     loggerCg = ul->createConsoleLogger("CONSOLE", green);
 
 #if(TEST_NET)
     WriterConfig wconf;
     wconf.maxMessageNum = 10;
+
     loggerN2 = ul->createNetworkLogger("net test2", "127.0.0.1",1675);
     loggerN1 = ul->createNetworkLogger("net test", "127.0.0.1",1674, wconf);
     const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1",1674);
@@ -60,7 +61,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
     loggerF->setModuleName("FILE");
     loggerCr->setModuleName("REDCONSOLE");
-    loggerCy->setModuleName("BROWNCONSOLE");
+    loggerCy->setModuleName("YELLOWCONSOLE");
     loggerCg->setModuleName("GREENCONSOLE");
 
     //Start timed logging
@@ -102,10 +103,10 @@ testlogger_cli::timedLog()
 
 
 #if(TEST_CONSOLE_COLOR)
-    loggerCr->log(UNQL::LOG_CRITICAL, ( QString("console text - ") + QString::number(i) ).toLatin1().constData());
-    *loggerCy << UNQL::LOG_WARNING << QString("console text 1st part - ") + QString::number(i);
-    *loggerCy << QString("console text 2nd part - ") + QString::number(i) << UNQL::EOM;
-    *loggerCg << UNQL::LOG_INFO << ( QString("console text - ") + QString::number(i++) ).toLatin1().constData() << UNQL::EOM;
+    loggerCr->log(UNQL::LOG_CRITICAL, ( QString("red console text - ") + QString::number(i) ).toLatin1().constData());
+    *loggerCy << UNQL::LOG_WARNING << QString("yellow console text 1st part - ");
+    *loggerCy << QString("yellow console text 2nd part - ") + QString::number(i) << UNQL::EOM;
+    *loggerCg << UNQL::LOG_INFO << ( QString("green console text - ") + QString::number(i++) ).toLatin1().constData() << UNQL::EOM;
 #endif
 
 

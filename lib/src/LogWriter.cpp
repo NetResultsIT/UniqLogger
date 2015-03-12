@@ -40,7 +40,9 @@ LogWriter::LogWriter()
     m_maxMessages       = -1;
     m_writeIdleMark     = false;
     LogMessage lm("UniqLogger", UNQL::LOG_INFO, "a Logger Started", QDateTime::currentDateTime().toString("hh:mm:ss"));
+    mutex.lock();
     m_logMessageList.append(lm);
+    mutex.unlock();
 }
  
 

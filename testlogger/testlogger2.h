@@ -1,7 +1,7 @@
 #ifndef _CLI_TESTLOGGER_H_
 #define _CLI_TESTLOGGER_H_
 
-#include <QOBJECT>
+#include <QObject>
 
 #include "UniqLogger.h"
 
