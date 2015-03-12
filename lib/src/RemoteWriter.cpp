@@ -16,9 +16,11 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort)
 
     m_reconnectionTimeout = 5000;
 
-    connect (&m_reconnectionTimer,SIGNAL(timeout()),this,SLOT(connectToServer()));
-    connect (&m_Socket,SIGNAL(disconnected()),this,SLOT(onDisconnectionFromServer()));
-    connect (&m_Socket,SIGNAL(connected()),this,SLOT(onConnectionToServer()));
+
+//    m_reconnectionTimer = new QTimer(this);
+//    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
+    //connect (&m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
+    //connect (&m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 }
  
 /*!
@@ -38,12 +40,12 @@ RemoteWriter::writeToDevice()
 {
     QString s;
     mutex.lock();
-    if (!m_logIsPaused && m_Socket.state()==QAbstractSocket::ConnectedState)
+    if (!m_logIsPaused && m_Socket->state() == QAbstractSocket::ConnectedState)
     {
         int msgcount = m_logMessageList.count();
         for (int i=0; i<msgcount; i++) {
             s = m_logMessageList.takeFirst().message();
-            m_Socket.write(s.toLatin1()+"\r\n");
+            m_Socket->write(s.toLatin1()+"\r\n");
         }
     }
     mutex.unlock();
@@ -57,12 +59,13 @@ RemoteWriter::writeToDevice()
 int
 RemoteWriter::connectToServer()
 {
-    m_Socket.connectToHost(m_serverAddress,m_serverPort);
-    bool b = m_Socket.waitForConnected(10000);
+    m_Socket->connectToHost(m_serverAddress, m_serverPort);
+    bool b = m_Socket->waitForConnected(10000);
     if (b)
         return 0;
 
-    LogMessage msg("Remote Logger",UNQL::LOG_WARNING,"Connection fail to server "+m_serverAddress+":"+QString::number(m_serverPort),QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage msg("Remote Logger", UNQL::LOG_WARNING, "Connection fail to server "+m_serverAddress+":"+QString::number(m_serverPort),
+                   QDateTime::currentDateTime().toString("hh:mm:ss"));
     appendMessage(msg);
 
     return -1;
@@ -78,9 +81,10 @@ RemoteWriter::onConnectionToServer()
 #ifdef ULOGDBG
     qDebug() << "Connected to server";
 #endif
-    LogMessage msg("Remote Logger",UNQL::LOG_INFO,"Connected to server "+m_serverAddress+":"+QString::number(m_serverPort),QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage msg("Remote Logger", UNQL::LOG_INFO, "Connected to server "+m_serverAddress+":"+QString::number(m_serverPort),
+                   QDateTime::currentDateTime().toString("hh:mm:ss"));
     appendMessage(msg);
-    m_reconnectionTimer.stop();
+    m_reconnectionTimer->stop();
 }
 
 /*!
@@ -93,15 +97,26 @@ RemoteWriter::onDisconnectionFromServer()
 #ifdef ULOGDBG
     qDebug() << "Disconnected from server";
 #endif
-    LogMessage msg("Remote Logger",UNQL::LOG_WARNING,"Disconnected from server "+m_serverAddress+":"+QString::number(m_serverPort),QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage msg("Remote Logger", UNQL::LOG_WARNING, "Disconnected from server "+m_serverAddress+":"+QString::number(m_serverPort),
+                   QDateTime::currentDateTime().toString("hh:mm:ss"));
     appendMessage(msg);
-    m_reconnectionTimer.start(m_reconnectionTimeout);
+    m_reconnectionTimer->start(m_reconnectionTimeout);
 }
  
+
+//FIXME - protect from multiple calls
 void
 RemoteWriter::run()
 {
-    m_reconnectionTimer.start(m_reconnectionTimeout);
+
+    m_reconnectionTimer = new QTimer(this->parent());
+    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
+
+    m_Socket = new QTcpSocket(this->parent());
+    connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
+    connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
+
+    m_reconnectionTimer->start(m_reconnectionTimeout);
     LogWriter::run();
 }
 

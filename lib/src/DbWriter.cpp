@@ -20,6 +20,7 @@ DbWriter::DbWriter(const QString &dbFileName)
     this->setOutputFile(dbFileName); //this will create the DbHandler Object
 }
 
+
 /*!
   \brief In the class dtor we want to flush whatever we might have got that is not written
   */
@@ -41,6 +42,7 @@ void
 DbWriter::setLogfileMaxSize(int filesize)
 {   m_maxFileSizeMB=filesize;	}
  
+
 /*!
   \brief sets the base name that will be used for the log files
   \param _filename the basename of the log files
@@ -58,7 +60,8 @@ DbWriter::setOutputFile(QString _filename)
     }
     m_dbh = new DbHandler(_filename);
 }
- 
+
+
 /*!
   \brief writes the messages in the queue on the current log file
   */
@@ -82,7 +85,7 @@ DbWriter::writeToDevice()
            QString lev = QString::number(level);
 			
 		   if (!s.isEmpty()) //do not write an empty entry on db
-			m_dbh->logEvent(ln,ts,lev,s);
+            m_dbh->logEvent(ln, ts, lev, s);
        }
        mutex.unlock();
 

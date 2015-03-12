@@ -251,7 +251,7 @@ UniqLogger::createNetworkLogger(const QString & _logname, const QString &_ha, in
   \return a reference to the logger class created
   */
 Logger*
-UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName)
+UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName, const WriterConfig &wc)
 {
 	Logger *l = createLogger(_logname);
 	LogWriter const &rlog = getDbWriter(aDbFileName);
@@ -338,13 +338,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
 #endif
     registerWriter(fw);
     fw->setOutputFile(_filename);
-    //fw->start();
 
-    /*
-    QThread *ft = new QThread();
-    ft->start();
-    fw->moveToThread(ft);
-    */
     m_pTPool->runObject(fw);
     fw->run();
 
@@ -359,37 +353,38 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
   \param _filename the filename where this logger will write messages by default
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
-const LogWriter&
+LogWriter&
 UniqLogger::getDbWriter(const QString &_filename)
 {
 
-    DbWriter *fw;
+    DbWriter *dw;
     LogWriter *lw;
 
 	muxDeviceCounter.lock();
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
-        fw = dynamic_cast<DbWriter*>(lw);
-        if (fw && fw->getBaseName() == _filename) {
+        dw = dynamic_cast<DbWriter*>(lw);
+        if (dw && dw->getBaseName() == _filename) {
 #ifdef ULOGDBG
             qDebug() << "Existing DbWriter found! ------------------->><<-------" << fw;
 #endif
 			muxDeviceCounter.unlock();
-			return *fw;
+            return *dw;
         }
-        fw = 0;
+        dw = 0;
     }
     muxDeviceCounter.unlock();
-    fw = new DbWriter(_filename);
+    dw = new DbWriter(_filename);
 #ifdef ULOGDBG
     qDebug() << "Dbwriter for file "<< _filename <<" not found, creating one " << fw;
 #endif
-    registerWriter(fw);
-    //fw->setOutputFile(_filename);
-    fw->start();
+    registerWriter(dw);
 
-	return *fw;
+    m_pTPool->runObject(dw);
+    dw->run();
+
+    return *dw;
 }
 #endif
 
@@ -426,7 +421,8 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
     if (rw)
     {
         registerWriter(rw);
-        //rw->start();
+        m_pTPool->runObject(rw);
+        rw->run();
     }
     return *rw;
 }

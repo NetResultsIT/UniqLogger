@@ -4,11 +4,11 @@
 #include <QTimer>
 
 #define TEST_FILE_ROTATION 0
-#define TEST_NET 0
+#define TEST_CONSOLE_COLOR 0
+#define TEST_FORMATTING 0
+#define TEST_NET 1
 #define TEST_DB 0
-#define TEST_CONSOLE_COLOR 1
 #define TEST_MONITOR 0
-#define TEST_FORMATTING 1
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
@@ -32,8 +32,8 @@ testlogger_cli::testlogger_cli(QObject *parent)
     UniqLogger *ul = UniqLogger::instance();
 
 #if(TEST_FORMATTING)
-    ul->setEncasingChars('(',')');
-    ul->setSpacingChar('.');
+    ul->setEncasingChars( '(' , ')' );
+    ul->setSpacingChar( '.' );
     ul->setTimeStampFormat("hh.mm.ss.zzz");
 #endif
 
@@ -46,8 +46,9 @@ testlogger_cli::testlogger_cli(QObject *parent)
     WriterConfig wconf;
     wconf.maxMessageNum = 10;
 
-    loggerN2 = ul->createNetworkLogger("net test2", "127.0.0.1",1675);
-    loggerN1 = ul->createNetworkLogger("net test", "127.0.0.1",1674, wconf);
+    qDebug() << "writing to network...";
+    loggerN1 = ul->createNetworkLogger("net test",  "127.0.0.1", 1674, wconf);
+    loggerN2 = ul->createNetworkLogger("net test2", "127.0.0.1", 1675);
     const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1",1674);
     //ul->addWriterToLogger(logger,nlw);
 
@@ -112,13 +113,13 @@ testlogger_cli::timedLog()
 
 #if(TEST_NET)
     loggerN2->log(UNQL::LOG_CRITICAL, (QString("net critical")+QString::number(i)).toLatin1().constData());
-    loggerN1 << UNQL::LOG_INFO << (QString("net info ")+QString::number(i++)) << UNQL::EOM;
+    *loggerN1 << UNQL::LOG_INFO << (QString("net info ")+QString::number(i++)) << UNQL::EOM;
 #endif
 
 
 #if(TEST_DB)
-        loggerD->log(UNQL::LOG_INFO, "Testing db log" + QString::number(i));
-        *loggerD << UNQL::LOG_CRITICAL << "This is a critical db error!" << QString::number(i++) << UNQL::EOM;
+        loggerD->log( UNQL::LOG_INFO, QString("Testing db log" + QString::number(i)).toLatin1().constData() );
+        *loggerD <<   UNQL::LOG_CRITICAL << "This is a critical db error!" << QString::number(i++) << UNQL::EOM;
         qDebug() << "Writing to db...";
 #endif
 
