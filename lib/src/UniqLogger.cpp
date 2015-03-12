@@ -522,9 +522,7 @@ UniqLogger::monitorVar(const QString &var, bool status)
 		m_VarMonitorMap[var]=status;
     }
     else {
-    #ifdef ULOGDBG
-        qDebug() << "The var is not monitored " << var;
-	#endif
+        ULDBG << "The var is not monitored " << var;
 	}
 	muxMonitorVarMap.unlock();
 }

@@ -47,13 +47,14 @@ class LogWriter: public QObject
 {
 	Q_OBJECT
 
-	QTimer *m_logTimer;
+    //QTimer *m_logTimer;
 	QString m_lastMessage;
     volatile bool m_stillClosing;
     int m_maxMessages;
     bool m_writeIdleMark;
 
 protected:
+    QTimer *m_logTimer;
     QList<LogMessage> m_logMessageList;
 	int m_sleepingMilliSecs;
 	bool m_logIsPaused;
@@ -62,6 +63,7 @@ protected:
 protected slots:
     virtual void writeToDevice()=0;
     void priv_writeToDevice();
+    void priv_startLogTimer(); // <-- BEWARE this method is called with invokeMethod do NOT change its name
 
 public:
 	LogWriter();

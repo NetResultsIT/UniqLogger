@@ -35,14 +35,12 @@ WriterConfig::WriterConfig()
 LogWriter::LogWriter()
 {
     m_logIsPaused       = false;
-    m_stillClosing      = false;
     m_sleepingMilliSecs = 5000;
     m_maxMessages       = -1;
     m_writeIdleMark     = false;
     LogMessage lm("UniqLogger", UNQL::LOG_INFO, "a Logger Started", QDateTime::currentDateTime().toString("hh:mm:ss"));
-    mutex.lock();
     m_logMessageList.append(lm);
-    mutex.unlock();
+    m_logTimer = new QTimer(this);
 }
  
 
@@ -52,16 +50,7 @@ LogWriter::LogWriter()
   */
 LogWriter::~LogWriter()
 {
-    /*
-    //we need to stop the thread
-    this->quit();
-    while (this->isRunning() || m_stillClosing) {
-#ifdef ULOGDBG
-    qDebug() << "waiting for derived logwriter class thread to stop: " << this;
-#endif
-        msleep(100);
-    }
-    */
+
 }
 
 
@@ -100,6 +89,13 @@ LogWriter::priv_writeToDevice()
 }
 
 
+void
+LogWriter::priv_startLogTimer()
+{
+    ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
+    m_logTimer->start();
+}
+
 
 /*!
  * \brief LogWriter::setWriterConfig will set a new set of confiuration parameter on the specified LogWriter
@@ -121,15 +117,13 @@ LogWriter::setWriterConfig(const WriterConfig &wconf)
 void
 LogWriter::run()
 {
-    m_stillClosing = true;
-    m_logTimer = new QTimer(this->parent());
     m_logTimer->setInterval(m_sleepingMilliSecs);
     connect(m_logTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
-    m_logTimer->start();
-    //exec();
-    //m_logTimer->stop();
-    //m_logTimer->deleteLater();
-    //m_stillClosing=false;
+
+    ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();
+
+    //We need to start the timer from the thread this object has been moved not from the one calling this method
+    QMetaObject::invokeMethod(this, "priv_startLogTimer");
 }
  
 
@@ -165,9 +159,7 @@ LogWriter::appendMessage(const LogMessage &s)
     mutex.lock();
         if (!m_logIsPaused) {
             if (m_logMessageList.count() >= m_maxMessages && m_maxMessages>0) {
-#ifdef ULOGDBG
-                qDebug() << "Message List was full, discarding previous messages..." << this;
-#endif
+                ULDBG << "Message List was full, discarding previous messages..." << this;
                 m_logMessageList.removeFirst();
             }
             m_logMessageList.append(s);
@@ -184,6 +176,6 @@ LogWriter::appendMessage(const LogMessage &s)
 void
 LogWriter::pauseLogging(bool status)
 {
-    m_logIsPaused=status;
+    m_logIsPaused = status;
 }
  
