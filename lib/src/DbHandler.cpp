@@ -193,16 +193,7 @@ DbHandler::createLoggerDb(QString qeventdbname)
 	return 0;
 }
 
-/*!
-  \brief this method stores on db the data about entering, leaving, hanging up a call that passed through a queue
-  \param uid this is the uniqueid that asterisk associates to a call leg
-  \param tstamp this is the timestamp of when the event is processed
-  \param event the string describing the event type, it can be: enter, leave, hangup
-  \param caller the string representing the caller of a call that is in a queue
-  \param queue the asterisk queue that generated the event
-  \note the timestamp is not millisecond-accurate since there is the delay of ami-event polling from the kctis (~150 msec)
-  \warning this method works only when dealing with the qevents.db database on kalliope
-  */
+
 void
 DbHandler::logEvent(const QString &module, const QString &tstamp, const QString &level, const QString &message)
 {

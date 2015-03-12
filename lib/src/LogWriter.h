@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2008-2009 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2008-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -14,7 +14,6 @@
 #include <QDebug>
 
 #include "LogMessage.h"
-
 
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS
@@ -44,7 +43,7 @@ public:
     int reconnectionSecs;   /// The number of seconds a RemoteWriter will wait before trying to reconnect to its server
 };
 
-class LogWriter: public QThread
+class LogWriter: public QObject
 {
 	Q_OBJECT
 

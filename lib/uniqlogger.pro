@@ -223,6 +223,7 @@ HEADERS += \
            src/ConsoleWriter.h \
            src/UniqLogger.h \
            src/LogMessage.h \
+           src/tpool/nrthreadpool.h \
            src/DummyWriter.h
 
 SOURCES += \
@@ -232,9 +233,10 @@ SOURCES += \
            src/ConsoleWriter.cpp \
            src/UniqLogger.cpp \
            src/LogMessage.cpp \
+           src/tpool/nrthreadpool.cpp \
            src/DummyWriter.cpp
 
-
+INCLUDEPATH += src/tpool
 
 
 QMAKE_CLEAN += -r

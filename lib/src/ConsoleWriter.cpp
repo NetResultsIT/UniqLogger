@@ -56,7 +56,7 @@ ConsoleWriter::writeToDevice()
 #ifndef WIN32
             if (m_color!=NONE) {
                 colorcode = "\033[22;" + QString::number((int)gray) + "m";
-                std::cerr << colorcode.toLatin1().constData();
+                std::cerr << colorcode.toLatin1().constData() << std::endl;
             }
 #endif
         }

@@ -162,6 +162,10 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
     if (status) {
         LogMessage lm(m_moduleName, UNQL::LOG_MONITOR, desc + ": " + d.toString(),
                       QDateTime::currentDateTime().toString(m_timeStampFormat));
+
+        QPair<QChar,QChar> encasingPair(m_startEncasingChar, m_endEncasingChar);
+        LogMessageFormatting lmf(m_spacingString, encasingPair);
+        lm.setFormatting(lmf);
         dispatchMessage(lm);
     }
     else {

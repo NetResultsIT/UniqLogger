@@ -16,8 +16,11 @@ class FileWriter;
 class LogWriter;
 class DummyWriter;
 
+class NRThreadPool;
+
 #include "Logger.h"
 #include "ConsoleWriter.h"
+
 
 /*!
   \mainpage
@@ -81,6 +84,7 @@ protected slots:
         void writerFinished(const QList<LogWriter*> aList);
 
 private:
+        NRThreadPool *m_pTPool;
         LogWriterUsageMapType m_DevicesMap;
         ConsoleWriter  *m_ConsoleLogger;
         VarMonitoringMap m_VarMonitorMap;

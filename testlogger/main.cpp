@@ -1,5 +1,6 @@
 #include <QApplication>
 #include "testlogger.h"
+#include "testlogger2.h"
 
 #ifdef WIN32
 #define sleep(x) Sleep(1000*x)
@@ -62,8 +63,16 @@ int main(int argc, char *argv[])
     test_logger_leak();
 #endif
 
+#if (0)
 	testlogger w;
-	w.show();
+    w.show();
+#endif
+
+#if (1)
+    testlogger_cli w;
+#endif
+
+
 	return a.exec();
 }
 

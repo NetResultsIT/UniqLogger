@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2014 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -43,11 +43,14 @@ LogWriter::LogWriter()
     m_logMessageList.append(lm);
 }
  
+
+
 /*!
   \brief In the class dtor we need to wait that underlying thread has finished to avoid crashes
   */
 LogWriter::~LogWriter()
 {
+    /*
     //we need to stop the thread
     this->quit();
     while (this->isRunning() || m_stillClosing) {
@@ -56,7 +59,10 @@ LogWriter::~LogWriter()
 #endif
         msleep(100);
     }
+    */
 }
+
+
 
 /*!
   \brief this method forces the logwriter to write the messages it has stored on the underlying device before its timer
@@ -68,6 +74,8 @@ LogWriter::flush()
     this->writeToDevice();
 }
 
+
+
 /*!
  * \brief LogWriter::priv_writeToDevice this method is called from the internal timer in order to check if we have to add the
  * MARK string to the writer to show it's still alive and kicking. It will call the pure virtual writeToDevice() function.
@@ -75,6 +83,9 @@ LogWriter::flush()
 void
 LogWriter::priv_writeToDevice()
 {
+#ifdef ULOGDBG
+    qDebug() << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
+#endif
     if (m_writeIdleMark) {
         LogMessage lm("UniqLogger", UNQL::LOG_INFO, " -- MARK -- ", QDateTime::currentDateTime().toString("hh:mm:ss"));
         mutex.lock();
@@ -85,6 +96,8 @@ LogWriter::priv_writeToDevice()
 
     writeToDevice();
 }
+
+
 
 /*!
  * \brief LogWriter::setWriterConfig will set a new set of confiuration parameter on the specified LogWriter
@@ -98,28 +111,34 @@ LogWriter::setWriterConfig(const WriterConfig &wconf)
     m_maxMessages       = wconf.maxMessageNum;
 }
 
+
+
 /*!
   \brief this method creates a timer and enters the thread event loop
   */
 void
 LogWriter::run()
 {
-    m_stillClosing=true;
+    m_stillClosing = true;
     m_logTimer = new QTimer(this->parent());
     m_logTimer->setInterval(m_sleepingMilliSecs);
     connect(m_logTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
     m_logTimer->start();
-    exec();
-    m_logTimer->stop();
-    m_logTimer->deleteLater();
-    m_stillClosing=false;
+    //exec();
+    //m_logTimer->stop();
+    //m_logTimer->deleteLater();
+    //m_stillClosing=false;
 }
  
+
+
 void
 LogWriter::setMaximumAllowedMessages(int i_maxmsg)
 {
     m_maxMessages = i_maxmsg;
 }
+
+
 
 /*!
   \brief sets the milliseconds that will occur between each write on the device
@@ -132,6 +151,8 @@ LogWriter::setSleepingMilliSecs(int msec)
     m_logTimer->setInterval(msec);
 } 
  
+
+
 /*!
   \brief adds a message to the internal list for later writing
   \param s the message to be logged
@@ -152,6 +173,8 @@ LogWriter::appendMessage(const LogMessage &s)
     mutex.unlock();
 }
  
+
+
 /*!
   \brief pause the logging of this LogWriter
   \param status the new pause status for this writer

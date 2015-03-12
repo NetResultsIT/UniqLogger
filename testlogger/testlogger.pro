@@ -13,9 +13,9 @@ QMAKE_LIBDIR += $$UNIQLOGGERPATH/bin
 
 
 # Input
-HEADERS += testlogger.h
+HEADERS += testlogger.h testlogger2.h
 FORMS += testlogger.ui
-SOURCES += main.cpp testlogger.cpp
+SOURCES += main.cpp testlogger.cpp testlogger2.cpp
 
 
 LIBNAME = UniqLogger

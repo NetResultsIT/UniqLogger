@@ -21,7 +21,7 @@ testlogger::testlogger(QWidget *parent)
     m_dummyLoggerPtr = 0;
 
     QTimer *timer = new QTimer();
-    timer->start(1);
+    timer->start(1000);
 
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
@@ -55,7 +55,7 @@ testlogger::testlogger(QWidget *parent)
     m_dummyLoggerPtr = ul->createDummyLogger("DUMMY_LOGGER_TEST");
     *m_dummyLoggerPtr << UNQL::LOG_CRITICAL << "this is a dummy logger test" << UNQL::EOM;
 
-    test_strangeString(ul);
+    //test_strangeString(ul);
 
     /* SET LOGGER NAMES */
 	if (!logger2) {
@@ -74,7 +74,7 @@ testlogger::testlogger(QWidget *parent)
 	logger3->setModuleName("REDCONSOLE");
 
 
-    test_dummylog(ul);
+    //test_dummylog(ul);
 }
 
 testlogger::~testlogger()
@@ -108,6 +108,7 @@ testlogger::testThreadedNetLogger(const QString &ip, int port)
 void
 testlogger::timedLog()
 {
+    qDebug() << Q_FUNC_INFO;
     static int i=0;
     logger->log(UNQL::LOG_INFO, (QString("file text ") + QString::number(i) + QString().fill('a',1000)).toLatin1().constData() );
     logger3->log(UNQL::LOG_INFO, (QString("console text ")+QString::number(i)).toLatin1().constData());
