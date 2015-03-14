@@ -93,12 +93,12 @@ void
 LogWriter::priv_startLogTimer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
-    m_logTimer->start();
+    m_logTimer->start(m_sleepingMilliSecs);
 }
 
 
 /*!
- * \brief LogWriter::setWriterConfig will set a new set of confiuration parameter on the specified LogWriter
+ * \brief LogWriter::setWriterConfig will set a new set of configuration parameters on the specified LogWriter
  * \param wconf the configuration params we're going to set
  */
 void
@@ -118,6 +118,7 @@ void
 LogWriter::run()
 {
     m_logTimer->setInterval(m_sleepingMilliSecs);
+    //qDebug() << this << "setting timer interval to "<< m_sleepingMilliSecs;
     connect(m_logTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
 
     ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();

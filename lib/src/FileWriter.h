@@ -41,7 +41,7 @@ public:
 	void setLogfileMaxSize(int filesize);
 	void setLogfileRotationRange(int maxfilenum);
 	void stopLogging(bool erasefile=false);
-    QString getBaseName() const {return m_logfileBaseName;}
+    QString getBaseName() const { return m_logfileBaseName; }
 };
 
 #endif

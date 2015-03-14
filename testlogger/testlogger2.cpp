@@ -3,8 +3,8 @@
 #include <QDebug>
 #include <QTimer>
 
-#define TEST_FILE_ROTATION 1
-#define TEST_CONSOLE_COLOR 0
+#define TEST_FILE_ROTATION 0
+#define TEST_CONSOLE_COLOR 1
 #define TEST_FORMATTING 0
 #define TEST_NET 0
 #define TEST_NET_MULTISRC 0
@@ -14,7 +14,8 @@
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
 {
-    loggerF  = NULL; //This will be a file logger
+    loggerF1 = NULL; //This will be a file logger
+    loggerF2 = NULL; //This will be a file logger
     loggerN1 = NULL; //This will be a net logger to localhost:1674
     loggerN2 = NULL; //This will be a net logger to localhost:1675
     loggerCr = NULL; //This will be red console
@@ -28,7 +29,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
 
-    UniqLogger *ul = UniqLogger::instance();
+    UniqLogger *ul = UniqLogger::instance("TESTER", 2);
 
 #if(TEST_FORMATTING)
     ul->setEncasingChars( '(' , ')' );
@@ -38,13 +39,16 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
 
 #if(TEST_FILE_ROTATION)
-    millis = 30;
+    millis = 20;
     WriterConfig wc2;
-    wc2.maxFileNum = 3;  //we're going to use 3 files
-    wc2.maxFileSize = 1; //up to 1MB each
+    wc2.maxFileNum      = 3; //we're going to use 3 files
+    wc2.maxFileSize     = 1; //up to 1MB each
+    wc2.writerFlushSecs = 1; //flush contents to disk every second
 
-    loggerF = ul->createFileLogger("test", "log.txt", wc2);
-    loggerF->setModuleName("FILE");
+    loggerF1 = ul->createFileLogger("test", "log.txt", wc2);
+    loggerF1->setModuleName("FILE1");
+    loggerF2 = ul->createFileLogger("test", "log.txt", wc2);
+    loggerF2->setModuleName("FILE2");
 #endif
 
 
@@ -64,7 +68,6 @@ testlogger_cli::testlogger_cli(QObject *parent)
     wconf.maxMessageNum = 10;
 
     qDebug() << "writing to network...";
-    //qDebug() << Q_FUNC_INFO << "current Thread" << QThread::currentThread();
     loggerN1 = ul->createNetworkLogger("netlog to localhost:1674", "127.0.0.1", 1674, wconf);
     loggerN2 = ul->createNetworkLogger("netlog to localhost:1675", "127.0.0.1", 1675);
 
@@ -118,7 +121,8 @@ testlogger_cli::timedLog()
 
 #if(TEST_FILE_ROTATION)
     qDebug() << "written " << i * 2 << "KB to file...";
-    loggerF->log(UNQL::LOG_INFO, ( QString("file text ") + QString::number(i) + QString().fill('a', 2000) ).toLatin1().constData() );
+    loggerF1->log(UNQL::LOG_INFO, ( QString("file text iteration ") + QString::number(i) + " " +QString().fill('a', 1500) ).toLatin1().constData() );
+    loggerF2->log(UNQL::LOG_INFO, ( QString("file2 text iteration") + QString::number(i) + " " + QString().fill('b', 500) ).toLatin1().constData() );
 #endif
 
 

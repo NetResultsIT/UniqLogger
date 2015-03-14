@@ -31,14 +31,14 @@ extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
 /*!
   \brief this is the class ctor, it is protected since we want just the singleton instance
   */
-UniqLogger::UniqLogger()
+UniqLogger::UniqLogger(int nthreads)
 {
     m_defaultTimeStampFormat="hh:mm:ss";
     m_defaultSpaceChar=' ';
     m_defaultStartEncasingChar='[';
     m_defaultEndEncasingChar=']';
 
-    m_pTPool = new NRThreadPool();
+    m_pTPool = new NRThreadPool(nthreads, this);
 
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,   "FATAL");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL,"CRITICAL");
@@ -69,22 +69,22 @@ UniqLogger::~UniqLogger()
   \brief this returns the singleton instance of the UniqLogger library
   */
 UniqLogger*
-UniqLogger::instance(const QString &ulname)
+UniqLogger::instance(const QString &ulname, int nthreads)
 {
 	UniqLogger *ulptr;
-    static UniqLogger instance;
+    static UniqLogger instance(nthreads);
 
 	UniqLogger::gmuxUniqLoggerInstance.lock();
 	if (gUniqLoggerInstanceMap.contains(ulname))
 		ulptr=gUniqLoggerInstanceMap[ulname];
 	else {
-		if(gUniqLoggerInstanceMap.count()==0) {
+        if(gUniqLoggerInstanceMap.count() == 0) {
 			ulptr = &instance;
 		}
 		else {
-			ulptr = new UniqLogger;
+            ulptr = new UniqLogger(nthreads);
 		}
-		gUniqLoggerInstanceMap.insert(ulname,ulptr);
+        gUniqLoggerInstanceMap.insert(ulname, ulptr);
 	}
 	UniqLogger::gmuxUniqLoggerInstance.unlock();
 

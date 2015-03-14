@@ -78,7 +78,7 @@ class ULOG_LIB_API UniqLogger : public QObject
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
 
 protected:
-        UniqLogger();
+        UniqLogger(int nthreads);
         ~UniqLogger();
 
 protected slots:
@@ -94,7 +94,7 @@ private:
         void unregisterWriter(LogWriter*);
 
 public:
-        static UniqLogger* instance ( const QString &ulname="Default UniQLogger"		 );
+        static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
 
         Logger* createLogger        ( const QString &logName                                                                      );
         Logger* createConsoleLogger ( const QString &logName, ConsoleColorType c,           const WriterConfig &wc=WriterConfig() );

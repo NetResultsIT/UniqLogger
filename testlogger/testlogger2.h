@@ -5,6 +5,7 @@
 
 #include "UniqLogger.h"
 
+
 class TestThreadObject2 : public QObject
 {
     Q_OBJECT
@@ -43,7 +44,7 @@ public slots:
 class testlogger_cli : public QObject
 {
     Q_OBJECT
-    Logger  *loggerF, *loggerN2, *loggerN1, *loggerD;
+    Logger  *loggerF1, *loggerF2, *loggerN2, *loggerN1, *loggerD;
     Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm;
 
 public:

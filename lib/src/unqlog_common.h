@@ -1,7 +1,7 @@
 #ifndef _UNQL_GLOBAL_
 #define _UNQL_GLOBAL_
 
-#ifdef ULOGDBG
+#ifdef ENABLE_ULOG_DBG
     #define ULDBG qDebug()
 #else
     #define ULDBG if (true) {} else qDebug()
