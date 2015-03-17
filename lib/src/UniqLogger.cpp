@@ -60,7 +60,7 @@ UniqLogger::UniqLogger(int nthreads)
 
 UniqLogger::~UniqLogger()
 {
-
+    ULDBG << Q_FUNC_INFO;
 }
 
 
@@ -138,6 +138,7 @@ UniqLogger::unregisterWriter(LogWriter *lw)
     muxDeviceCounter.unlock();
 }
  
+
 /*!
   \brief this slot is called from Loggers' dtors in order to allow proper management of shared writers
   \param aList a list of pointers to LogWriter objects
@@ -154,6 +155,7 @@ UniqLogger::writerFinished(const QList<LogWriter*> aList)
          this->unregisterWriter(lw);
      }
 }
+
 
 /*!
   \brief returns a generic Logger

@@ -50,7 +50,7 @@ LogWriter::LogWriter()
   */
 LogWriter::~LogWriter()
 {
-
+    ULDBG << Q_FUNC_INFO;
 }
 
 
