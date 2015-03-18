@@ -51,9 +51,9 @@ UniqLogger::UniqLogger(int nthreads)
     m_ConsoleLogger = new ConsoleWriter();
     registerWriter(m_ConsoleLogger);
     //m_ConsoleLogger->start();
-#ifdef ULOGDBG
-    qDebug() << "Being here with app: " << QCoreApplication::instance();
-#endif
+
+    ULDBG << "Being here with app: " << QCoreApplication::instance();
+
 }
  
 
@@ -118,18 +118,18 @@ UniqLogger::registerWriter(LogWriter *lw)
 void
 UniqLogger::unregisterWriter(LogWriter *lw)
 {
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "lw: " << lw;
-#endif
+    ULDBG << Q_FUNC_INFO << "lw: " << lw;
+
     muxDeviceCounter.lock();
     if (m_DevicesMap.contains(lw)) {
         int refcount = m_DevicesMap[lw];
-        if (refcount==1) {
+        if (refcount == 1) {
             m_DevicesMap.remove(lw);
             delete lw;
         }
         else {
             m_DevicesMap[lw] = refcount-1;
+            Q_ASSERT(refcount >= 0);
         }
     }
     else {
@@ -146,11 +146,9 @@ UniqLogger::unregisterWriter(LogWriter *lw)
 void
 UniqLogger::writerFinished(const QList<LogWriter*> aList)
 {
+    ULDBG << Q_FUNC_INFO << "received a call to delete writers from finished logger " << sender();
+    ULDBG << "about to delete writers: " << aList;
 
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "received a call to delete writers from finished logger " << sender();
-    qDebug() << "about to delete writers: " << aList;
-#endif
      foreach(LogWriter *lw, aList) {
          this->unregisterWriter(lw);
      }
@@ -325,9 +323,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
         lw = it.key();
         fw = dynamic_cast<FileWriter*>(lw);
         if (fw && fw->getBaseName() == _filename) {
-#ifdef ULOGDBG
-            qDebug() << "Existing Filewriter found! ------------------->><<-------" << fw;
-#endif
+            ULDBG << "Existing Filewriter found! ------------------->><<-------" << fw;
 			muxDeviceCounter.unlock();
 			return *fw;
         }
@@ -335,9 +331,9 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
     }
     muxDeviceCounter.unlock();
     fw = new FileWriter();
-#ifdef ULOGDBG
-    qDebug() << "Filewriter for file "<< _filename <<" not found, creating one " << fw;
-#endif
+
+    ULDBG << "Filewriter for file "<< _filename <<" not found, creating one " << fw;
+
     registerWriter(fw);
     fw->setOutputFile(_filename);
 
@@ -368,9 +364,8 @@ UniqLogger::getDbWriter(const QString &_filename)
         lw = it.key();
         dw = dynamic_cast<DbWriter*>(lw);
         if (dw && dw->getBaseName() == _filename) {
-#ifdef ULOGDBG
-            qDebug() << "Existing DbWriter found! ------------------->><<-------" << fw;
-#endif
+            ULDBG << "Existing DbWriter found! ------------------->><<-------" << dw;
+
 			muxDeviceCounter.unlock();
             return *dw;
         }
@@ -378,9 +373,9 @@ UniqLogger::getDbWriter(const QString &_filename)
     }
     muxDeviceCounter.unlock();
     dw = new DbWriter(_filename);
-#ifdef ULOGDBG
-    qDebug() << "Dbwriter for file "<< _filename <<" not found, creating one " << fw;
-#endif
+
+    ULDBG << "Dbwriter for file "<< _filename <<" not found, creating one " << dw;
+
     registerWriter(dw);
 
     m_pTPool->runObject(dw);
@@ -410,9 +405,9 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
         lw = it.key();
         rw = dynamic_cast<RemoteWriter*>(lw);
         if (rw && rw->getHost() == _ha && rw->getPort() == _port) {
-#ifdef ULOGDBG
-			qDebug() << "Existing Networkwriter found! ------------------->><<-------";
-#endif
+
+            ULDBG << "Existing Networkwriter found! ------------------->><<-------";
+
 			muxDeviceCounter.unlock();
 			return *rw;
         }
@@ -504,8 +499,11 @@ int
 UniqLogger::addWriterToLogger(const Logger* _l, const LogWriter &writer)
 {
 	int res = 0;
-    this->registerWriter(const_cast<LogWriter*>(&writer));
-	res = _l->addLogDevice(const_cast<LogWriter*>(&writer));
+    res = _l->addLogDevice(const_cast<LogWriter*>(&writer));
+    if (res == 0) {
+        this->registerWriter(const_cast<LogWriter*>(&writer));
+    }
+
 	return res;
 }
 
