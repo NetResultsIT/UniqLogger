@@ -36,6 +36,8 @@ Logger::~Logger()
     m_logDeviceList.clear();
 }
 
+
+
 /*!
   \brief sets the verbosity level of this logger
   \param v the value that must be reached before the actual logging take place
@@ -43,7 +45,9 @@ Logger::~Logger()
 void
 Logger::setVerbosityLevel(const int &v)
 { m_logVerbosityAcceptableLevel=v; }
- 
+
+
+
 /*!
   \brief sets the verbosity default level of this logger
   \param v the value that must be reached before the actual logging take place
@@ -51,7 +55,9 @@ Logger::setVerbosityLevel(const int &v)
   */
 void
 Logger::setVerbosityDefaultLevel(const int &v)
-{ m_logVerbosityDefaultLevel=v; }
+{ m_logVerbosityDefaultLevel = v; }
+
+
 
 /*!
   \brief change the timestamp format for this logger
@@ -60,8 +66,10 @@ Logger::setVerbosityDefaultLevel(const int &v)
   */
 void
 Logger::setTimeStampFormat(const QString &s)
-{ m_timeStampFormat=s; }
+{ m_timeStampFormat = s; }
  
+
+
 /*!
   \brief change the starting end ending characters that are used for this logger
   \param startChar is the starting character that encases the module names and priority levels, the default is '['
@@ -70,9 +78,11 @@ Logger::setTimeStampFormat(const QString &s)
 void
 Logger::setEncasingChars(const QChar &startChar, const QChar &endChar)
 { 
-    m_startEncasingChar=startChar;
-    m_endEncasingChar=endChar;
+    m_startEncasingChar = startChar;
+    m_endEncasingChar = endChar;
 }
+
+
 
 /*!
   \brief change the spacing character that is used for this logger
@@ -80,7 +90,9 @@ Logger::setEncasingChars(const QChar &startChar, const QChar &endChar)
   */
 void
 Logger::setSpacingString(const QString &spStr)
-{ m_spacingString=spStr; }
+{ m_spacingString = spStr; }
+
+
 
 /*!
   \brief sets the name for this logger, as it will appear in the log messages
@@ -89,7 +101,9 @@ Logger::setSpacingString(const QString &spStr)
 void
 Logger::setModuleName(const QString &s)
 { m_moduleName = s; }
- 
+
+
+
 /*!
   \brief adds a new logwriter to this logger
   \param el the pointer to a new LogWriter
@@ -106,6 +120,7 @@ Logger::addLogDevice(LogWriter *el) const
     return 0;
 }
 
+
 int
 Logger::removeLogDevice(LogWriter *el) const
 {
@@ -116,6 +131,7 @@ Logger::removeLogDevice(LogWriter *el) const
     return 0;
 }
  
+
 void
 Logger::dispatchMessage(const LogMessage &m)
 {
@@ -126,16 +142,20 @@ Logger::dispatchMessage(const LogMessage &m)
         m_logDeviceList.at(i)->appendMessage(m);
     }
 }
- 
+
+
+
 void
 Logger::flush()
 {
     this->dispatchBufferedMessages();
     for (int i=0; i<m_logDeviceList.count(); i++)
     {
-            m_logDeviceList.at(i)->flush();
+        m_logDeviceList.at(i)->flush();
     }
 }
+
+
 
 void
 Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
@@ -156,7 +176,7 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 #ifdef ULOGDBG
         qDebug() << key << " is not in the map... adding it";
 #endif
-		m_varMonitorMap->insert(key,false);
+        m_varMonitorMap->insert(key, false);
     }
 
     if (status) {
@@ -176,6 +196,8 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 	muxMonitorVar->unlock();
 }
 
+
+
 void
 Logger::priv_log(int priority, const QString &msg)
 {
@@ -188,6 +210,8 @@ Logger::priv_log(int priority, const QString &msg)
     lm.setFormatting(lmf);
     dispatchMessage(lm);
 }
+
+
 
 UNQL::LogMessagePriorityType
 Logger::selectCorrectLogLevel(int chosenPriority) const
@@ -210,6 +234,8 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
     return loglevel;
 }
 
+
+
 /*!
   \brief this is the main method called to log a message on this logger module
   \param priority is the priority level (and string) that will be logged along with the message
@@ -219,7 +245,7 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
 void
 Logger::log(int priority, const char* mess, ...)
 {
-    if (priority<=m_logVerbosityAcceptableLevel)
+    if (priority <= m_logVerbosityAcceptableLevel)
     {
         va_list args;
         va_start(args,mess);
@@ -236,6 +262,8 @@ Logger::log(int priority, const char* mess, ...)
         va_end(args);
     }
 }
+
+
 
 /*!
   \brief this is an overloaded method to allow logging with the default priority level
@@ -259,12 +287,17 @@ Logger::log(const char* mess, ...)
 	this->log(m_logVerbosityDefaultLevel,buffer2);
 }
  
+
+
 void
 Logger::dispatchBufferedMessages()
 {
 	QString s;
     muxMessages.lock();
-    if (m_logVerbosityCurrentLevel <= m_logVerbosityAcceptableLevel && m_bufferedStreamMessages.count()>0) {
+    if ( m_logVerbosityCurrentLevel != UNQL::LOG_OFF
+         && m_logVerbosityCurrentLevel <= m_logVerbosityAcceptableLevel
+         && m_bufferedStreamMessages.count() > 0 )
+    {
         s = m_bufferedStreamMessages.join(m_spacingString);
         this->priv_log(m_logVerbosityCurrentLevel, s);
     }
@@ -272,16 +305,20 @@ Logger::dispatchBufferedMessages()
     muxMessages.unlock();
 }
 
+
+
 Logger&
 Logger::operator<< ( const UNQL::LogMessagePriorityType& lmt )
 {
-    if(lmt!=m_logVerbosityCurrentLevel) {
+    if(lmt != m_logVerbosityCurrentLevel) {
         dispatchBufferedMessages();
     }
 
     m_logVerbosityCurrentLevel = lmt;
 	return *this;
 }
+
+
 
 Logger&
 Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
@@ -302,6 +339,8 @@ Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
 	return *this;
 }
 
+
+
 Logger&
 Logger::operator<< ( const QVariant& v )
 {
@@ -310,6 +349,8 @@ Logger::operator<< ( const QVariant& v )
     muxMessages.unlock();
 	return *this;
 }
+
+
 
 Logger&
 Logger::operator<< ( const QStringList& sl )

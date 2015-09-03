@@ -508,18 +508,31 @@ UniqLogger::addWriterToLogger(const Logger* _l, const LogWriter &writer)
 }
 
 
+/*!
+  \brief adds a new monitored variable
+  \param var is the key that identifies a monitored variable
+  \param status the initial monitor status of the variable (default is false)
+  */
+void
+UniqLogger::addMonitorVar(const QString &var, bool status)
+{
+    muxMonitorVarMap.lock();
+        m_VarMonitorMap[var] = status;
+    muxMonitorVarMap.unlock();
+}
+
 
 /*!
   \brief changes the monitor status of a monitored variable
-  \param var is the key that identified a monitored variable
+  \param var is the key that identifies a monitored variable
   \param status the new monitor status of the variable
   */
 void
-UniqLogger::monitorVar(const QString &var, bool status)
+UniqLogger::changeMonitorVarStatus(const QString &var, bool status)
 {
 	muxMonitorVarMap.lock();
 	if (m_VarMonitorMap.contains(var)) {
-		m_VarMonitorMap[var]=status;
+        m_VarMonitorMap[var] = status;
     }
     else {
         ULDBG << "The var is not monitored " << var;
@@ -527,6 +540,19 @@ UniqLogger::monitorVar(const QString &var, bool status)
 	muxMonitorVarMap.unlock();
 }
 
+
+
+/*!
+  \brief deletes a monitored variable
+  \param var is the key that identifies a monitored variable
+  */
+void
+UniqLogger::delMonitorVar(const QString &var)
+{
+    muxMonitorVarMap.lock();
+        m_VarMonitorMap.remove(var);
+    muxMonitorVarMap.unlock();
+}
 
 
 /*!

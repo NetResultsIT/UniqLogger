@@ -43,7 +43,7 @@ class ULOG_LIB_API Logger: public QObject
     QChar m_startEncasingChar, m_endEncasingChar;
 
     mutable QList<LogWriter*> m_logDeviceList;
-	QMap<QString,bool>* m_varMonitorMap;
+    QMap<QString, bool>* m_varMonitorMap;
 	QMutex *muxMonitorVar;
     QMutex muxMessages;
 
@@ -69,14 +69,21 @@ public:
 
     virtual ~Logger();
 
+    //SETTERS
 	void setVerbosityLevel			( const int&		);
 	void setVerbosityDefaultLevel	( const int&		);
 	void setModuleName				( const QString&	);
 	void setTimeStampFormat			( const QString&	);
-
-    void setSpacingString           ( const QString &      );
+    void setSpacingString           ( const QString &   );
     void setEncasingChars           ( const QChar&, const QChar& );
 
+    //GETTERS
+    int getVerbosityLevel() const       { return m_logVerbosityCurrentLevel; }
+    QString getModuleName() const       { return m_moduleName;      }
+    QString getTStampFmtString() const  { return m_timeStampFormat; }
+    QString getSpacingString() const    { return m_spacingString;   }
+
+    //LOGGING
 	void log	( int, const char*, ... );
 	void log	( const char*, ...		);
     void flush();

@@ -4,12 +4,12 @@
 #include <QTimer>
 
 #define TEST_FILE_ROTATION 0
-#define TEST_CONSOLE_COLOR 1
+#define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
 #define TEST_NET 0
 #define TEST_NET_MULTISRC 0
 #define TEST_DB 0
-#define TEST_MONITOR 0
+#define TEST_MONITOR 1
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
@@ -175,14 +175,14 @@ testlogger_cli::timedLog()
     if (i==5) {
         loggerCm->setModuleName("MagentaMonitor active");
         UniqLogger *ul = UniqLogger::instance();
-        ul->monitorVar(key, true);
+        ul->changeMonitorVarStatus(key, true);
     }
 
     //now at 10th iteration stop monitoring
     if (i==15) {
         loggerCm->setModuleName("MagentaMonitor");
         UniqLogger *ul = UniqLogger::instance();
-        ul->monitorVar(key, false);
+        ul->changeMonitorVarStatus(key, false);
     }
 #endif
 

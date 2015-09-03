@@ -127,12 +127,12 @@ testlogger::timedLog()
     i++;
     if (i==5) {
         UniqLogger *ul = UniqLogger::instance();
-        ul->monitorVar("nt",true);
+        ul->changeMonitorVarStatus("nt",true);
     }
 
     if (i==15) {
         UniqLogger *ul = UniqLogger::instance();
-        ul->monitorVar("nt",false);
+        ul->changeMonitorVarStatus("nt",false);
     }
 
     *m_dummyLoggerPtr << UNQL::LOG_CRITICAL << "this is a dummy logger test" << UNQL::EOM;

@@ -111,7 +111,9 @@ public:
         LogWriter& getStdConsoleWriter();
         LogWriter& getDummyWriter     ();
 
-		void monitorVar ( const QString &var, bool status );
+        void addMonitorVar ( const QString &var, bool initialStatus=false );
+        void changeMonitorVarStatus ( const QString &var, bool status );
+        void delMonitorVar ( const QString &var );
 
 		int addWriterToLogger       (const Logger*, const LogWriter&);
 		int removeWriterFromLogger  (const Logger*, const LogWriter&);
