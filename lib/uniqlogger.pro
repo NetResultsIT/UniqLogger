@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.2.2
+VERSION = 0.3.0
 
 # --- Please check that the config file reflects your desired build options
 include (config.pri)
@@ -20,6 +20,11 @@ CONFIG -= flat
 DEFINES -= UNICODE
 
 TEMPLATE = lib
+
+
+#enable debug
+DEFINES += ENABLE_ULOG_DBG
+DEFINES += ENABLE_TPOOL_DBG
 
 
 #this should work with Qt5, on Qt4 we do it manually
@@ -223,6 +228,7 @@ HEADERS += \
            src/ConsoleWriter.h \
            src/UniqLogger.h \
            src/LogMessage.h \
+           src/tpool/nrthreadpool.h \
            src/DummyWriter.h
 
 SOURCES += \
@@ -232,9 +238,10 @@ SOURCES += \
            src/ConsoleWriter.cpp \
            src/UniqLogger.cpp \
            src/LogMessage.cpp \
+           src/tpool/nrthreadpool.cpp \
            src/DummyWriter.cpp
 
-
+INCLUDEPATH += src/tpool
 
 
 QMAKE_CLEAN += -r

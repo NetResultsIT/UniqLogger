@@ -1,6 +1,7 @@
 
 UNIQLOGGERPATH = ../lib
 
+
 ##### DO NOT CHANGE BELOW THIS LINE ######
 
 QT += network
@@ -13,9 +14,9 @@ QMAKE_LIBDIR += $$UNIQLOGGERPATH/bin
 
 
 # Input
-HEADERS += testlogger.h
+HEADERS += testlogger.h testlogger2.h
 FORMS += testlogger.ui
-SOURCES += main.cpp testlogger.cpp
+SOURCES += main.cpp testlogger.cpp testlogger2.cpp
 
 
 LIBNAME = UniqLogger
@@ -59,9 +60,9 @@ win32 {
     CONFIG += flat
     CONFIG(debug, debug|release) {
         QMAKE_POST_LINK="copy ..\\lib\\debug\\$$COMPILER_qt-$$QT_VERSION\\UniqLoggerd.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
-        LIBS += UniqLoggerd.lib
+        LIBS += UniqLoggerd0.lib
     } else {
-        LIBS += UniqLogger.lib
+        LIBS += UniqLogger0.lib
     }
 }
 

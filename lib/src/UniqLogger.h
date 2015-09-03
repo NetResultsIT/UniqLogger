@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2014 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -10,14 +10,18 @@
 #include <QMutex>
 #include <QMap>
 
+
 class RemoteWriter;
 class DbWriter;
 class FileWriter;
 class LogWriter;
 class DummyWriter;
 
+class NRThreadPool;
+
 #include "Logger.h"
 #include "ConsoleWriter.h"
+
 
 /*!
   \mainpage
@@ -74,13 +78,14 @@ class ULOG_LIB_API UniqLogger : public QObject
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
 
 protected:
-        UniqLogger();
+        UniqLogger(int nthreads);
         ~UniqLogger();
 
 protected slots:
         void writerFinished(const QList<LogWriter*> aList);
 
 private:
+        NRThreadPool *m_pTPool;
         LogWriterUsageMapType m_DevicesMap;
         ConsoleWriter  *m_ConsoleLogger;
         VarMonitoringMap m_VarMonitorMap;
@@ -89,7 +94,7 @@ private:
         void unregisterWriter(LogWriter*);
 
 public:
-        static UniqLogger* instance ( const QString &ulname="Default UniQLogger"		 );
+        static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
 
         Logger* createLogger        ( const QString &logName                                                                      );
         Logger* createConsoleLogger ( const QString &logName, ConsoleColorType c,           const WriterConfig &wc=WriterConfig() );
@@ -106,7 +111,9 @@ public:
         LogWriter& getStdConsoleWriter();
         LogWriter& getDummyWriter     ();
 
-		void monitorVar ( const QString &var, bool status );
+        void addMonitorVar ( const QString &var, bool initialStatus=false );
+        void changeMonitorVarStatus ( const QString &var, bool status );
+        void delMonitorVar ( const QString &var );
 
 		int addWriterToLogger       (const Logger*, const LogWriter&);
 		int removeWriterFromLogger  (const Logger*, const LogWriter&);

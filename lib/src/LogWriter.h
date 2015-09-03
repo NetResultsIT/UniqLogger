@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2008-2009 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2008-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -14,7 +14,6 @@
 #include <QDebug>
 
 #include "LogMessage.h"
-
 
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS
@@ -44,17 +43,18 @@ public:
     int reconnectionSecs;   /// The number of seconds a RemoteWriter will wait before trying to reconnect to its server
 };
 
-class LogWriter: public QThread
+class LogWriter: public QObject
 {
 	Q_OBJECT
 
-	QTimer *m_logTimer;
+    //QTimer *m_logTimer;
 	QString m_lastMessage;
     volatile bool m_stillClosing;
     int m_maxMessages;
     bool m_writeIdleMark;
 
 protected:
+    QTimer *m_logTimer;
     QList<LogMessage> m_logMessageList;
 	int m_sleepingMilliSecs;
 	bool m_logIsPaused;
@@ -63,6 +63,7 @@ protected:
 protected slots:
     virtual void writeToDevice()=0;
     void priv_writeToDevice();
+    void priv_startLogTimer(); // <-- BEWARE this method is called with invokeMethod do NOT change its name
 
 public:
 	LogWriter();

@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2012 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -19,6 +19,9 @@
 #include "Logger.h"
 #include "DummyWriter.h"
  
+
+#include "nrthreadpool.h"
+
 //Define (and not simply declare) the static members (see C++ FAQ 10.12)
 QMutex UniqLogger::gmuxUniqLoggerInstance;
 QMap<QString,UniqLogger*> UniqLogger::gUniqLoggerInstanceMap;
@@ -28,60 +31,68 @@ extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
 /*!
   \brief this is the class ctor, it is protected since we want just the singleton instance
   */
-UniqLogger::UniqLogger()
+UniqLogger::UniqLogger(int nthreads)
 {
-    qDebug() << Q_FUNC_INFO;
     m_defaultTimeStampFormat="hh:mm:ss";
     m_defaultSpaceChar=' ';
     m_defaultStartEncasingChar='[';
     m_defaultEndEncasingChar=']';
 
+    m_pTPool = new NRThreadPool(nthreads, this);
 
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,"FATAL");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,   "FATAL");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL,"CRITICAL");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_WARNING,"WARNING");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,"INFO");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,"DEBUG");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL,"FULL DEBUG");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR,"MONITOR");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_WARNING, "WARNING");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,    "INFO");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,     "DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL, "FULL DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR, "MONITOR");
 
     m_ConsoleLogger = new ConsoleWriter();
     registerWriter(m_ConsoleLogger);
-    m_ConsoleLogger->start();
-    qDebug() << "Being here with app: " << QCoreApplication::instance();
-}
- 
-UniqLogger::~UniqLogger()
-{
+    //m_ConsoleLogger->start();
+
+    ULDBG << "Being here with app: " << QCoreApplication::instance();
 
 }
+ 
+
+
+UniqLogger::~UniqLogger()
+{
+    ULDBG << Q_FUNC_INFO;
+}
+
+
 
 /*!
   \brief this returns the singleton instance of the UniqLogger library
   */
 UniqLogger*
-UniqLogger::instance(const QString &ulname)
+UniqLogger::instance(const QString &ulname, int nthreads)
 {
 	UniqLogger *ulptr;
-    static UniqLogger instance;
+    static UniqLogger instance(nthreads);
 
 	UniqLogger::gmuxUniqLoggerInstance.lock();
 	if (gUniqLoggerInstanceMap.contains(ulname))
 		ulptr=gUniqLoggerInstanceMap[ulname];
 	else {
-		if(gUniqLoggerInstanceMap.count()==0) {
+        if(gUniqLoggerInstanceMap.count() == 0) {
 			ulptr = &instance;
 		}
 		else {
-			ulptr = new UniqLogger;
+            ulptr = new UniqLogger(nthreads);
 		}
-		gUniqLoggerInstanceMap.insert(ulname,ulptr);
+        gUniqLoggerInstanceMap.insert(ulname, ulptr);
 	}
 	UniqLogger::gmuxUniqLoggerInstance.unlock();
 
 	return ulptr;
 }
  
+
+
 /*!
   \brief register a logwriter in the internal list
   */
@@ -99,24 +110,26 @@ UniqLogger::registerWriter(LogWriter *lw)
 	muxDeviceCounter.unlock();
 }
 
+
+
 /*!
   \brief unregister a logwriter in the internal list
   */
 void
 UniqLogger::unregisterWriter(LogWriter *lw)
 {
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "lw: " << lw;
-#endif
+    ULDBG << Q_FUNC_INFO << "lw: " << lw;
+
     muxDeviceCounter.lock();
     if (m_DevicesMap.contains(lw)) {
         int refcount = m_DevicesMap[lw];
-        if (refcount==1) {
+        if (refcount == 1) {
             m_DevicesMap.remove(lw);
             delete lw;
         }
         else {
             m_DevicesMap[lw] = refcount-1;
+            Q_ASSERT(refcount >= 0);
         }
     }
     else {
@@ -125,6 +138,7 @@ UniqLogger::unregisterWriter(LogWriter *lw)
     muxDeviceCounter.unlock();
 }
  
+
 /*!
   \brief this slot is called from Loggers' dtors in order to allow proper management of shared writers
   \param aList a list of pointers to LogWriter objects
@@ -132,15 +146,14 @@ UniqLogger::unregisterWriter(LogWriter *lw)
 void
 UniqLogger::writerFinished(const QList<LogWriter*> aList)
 {
+    ULDBG << Q_FUNC_INFO << "received a call to delete writers from finished logger " << sender();
+    ULDBG << "about to delete writers: " << aList;
 
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "received a call to delete writers from finished logger " << sender();
-    qDebug() << "about to delete writers: " << aList;
-#endif
      foreach(LogWriter *lw, aList) {
          this->unregisterWriter(lw);
      }
 }
+
 
 /*!
   \brief returns a generic Logger
@@ -172,6 +185,8 @@ UniqLogger::createLogger(const QString &logname)
 	return l;
 }
 
+
+
 /*!
  * \brief creates a dummy logger: it will drop all the data sent to the logger
  *  you could consider as redirecting logs to /dev/null
@@ -188,6 +203,8 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &i_wc
     return l;
 }
 
+
+
 /*!
   \brief creates a logger and automatically connects a file writer with default values
   \param _logname the module name for this logger
@@ -200,10 +217,12 @@ UniqLogger::createFileLogger(const QString & _logname, const QString &_filename,
 	Logger *l = createLogger(_logname);
     LogWriter &fw = getFileWriter(_filename);
     fw.setWriterConfig(i_wconf);
-	this->addWriterToLogger(l,fw);
+    this->addWriterToLogger(l, fw);
 	return l;
 }
  
+
+
 #ifdef ULOG_NETLOGGING
 /*!
   \brief creates a logger and automatically connects a network writer with default values
@@ -218,7 +237,7 @@ UniqLogger::createNetworkLogger(const QString & _logname, const QString &_ha, in
 	Logger *l = createLogger(_logname);
     LogWriter &rlog = getNetworkWriter(_ha,_port);
     rlog.setWriterConfig(i_wconf);
-	this->addWriterToLogger(l,rlog);
+    this->addWriterToLogger(l, rlog);
     return l;
 }
 #endif 
@@ -232,15 +251,17 @@ UniqLogger::createNetworkLogger(const QString & _logname, const QString &_ha, in
   \return a reference to the logger class created
   */
 Logger*
-UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName)
+UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName, const WriterConfig &wc)
 {
 	Logger *l = createLogger(_logname);
 	LogWriter const &rlog = getDbWriter(aDbFileName);
-	this->addWriterToLogger(l,rlog);
+    this->addWriterToLogger(l, rlog);
     return l;
 }
 #endif
  
+
+
 /*!
   \brief creates a logger and automatically connects a console writer with default values
   \param _logname the module name for this logger
@@ -253,9 +274,11 @@ UniqLogger::createConsoleLogger(const QString &_logname, ConsoleColorType c, con
 	Logger *l = createLogger(_logname);
     LogWriter &clog = getConsoleWriter(c);
     clog.setWriterConfig(wc);
-	this->addWriterToLogger(l,clog);
+    this->addWriterToLogger(l, clog);
     return l;
 }
+
+
 
 /*!
   \brief creates a logger and automatically connects a console writer with default values
@@ -281,6 +304,8 @@ UniqLogger::createConsoleLogger(const QString &_logname, bool useStdConsoleLogge
     return l;
 }
 
+
+
 /*!
   \brief returns a file writer that can be added to other loggers
   \param _filename the filename where this logger will write messages by default
@@ -298,9 +323,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
         lw = it.key();
         fw = dynamic_cast<FileWriter*>(lw);
         if (fw && fw->getBaseName() == _filename) {
-#ifdef ULOGDBG
-            qDebug() << "Existing Filewriter found! ------------------->><<-------" << fw;
-#endif
+            ULDBG << "Existing Filewriter found! ------------------->><<-------" << fw;
 			muxDeviceCounter.unlock();
 			return *fw;
         }
@@ -308,15 +331,19 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
     }
     muxDeviceCounter.unlock();
     fw = new FileWriter();
-#ifdef ULOGDBG
-    qDebug() << "Filewriter for file "<< _filename <<" not found, creating one " << fw;
-#endif
+
+    ULDBG << "Filewriter for file "<< _filename <<" not found, creating one " << fw;
+
     registerWriter(fw);
     fw->setOutputFile(_filename);
-    fw->start();
+
+    m_pTPool->runObject(fw);
+    fw->run();
 
 	return *fw;
 }
+
+
 
 #ifdef ULOG_DBLOGGING
 /*!
@@ -324,39 +351,41 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
   \param _filename the filename where this logger will write messages by default
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
-const LogWriter&
+LogWriter&
 UniqLogger::getDbWriter(const QString &_filename)
 {
 
-    DbWriter *fw;
+    DbWriter *dw;
     LogWriter *lw;
 
 	muxDeviceCounter.lock();
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
-        fw = dynamic_cast<DbWriter*>(lw);
-        if (fw && fw->getBaseName() == _filename) {
-#ifdef ULOGDBG
-            qDebug() << "Existing DbWriter found! ------------------->><<-------" << fw;
-#endif
+        dw = dynamic_cast<DbWriter*>(lw);
+        if (dw && dw->getBaseName() == _filename) {
+            ULDBG << "Existing DbWriter found! ------------------->><<-------" << dw;
+
 			muxDeviceCounter.unlock();
-			return *fw;
+            return *dw;
         }
-        fw = 0;
+        dw = 0;
     }
     muxDeviceCounter.unlock();
-    fw = new DbWriter(_filename);
-#ifdef ULOGDBG
-    qDebug() << "Dbwriter for file "<< _filename <<" not found, creating one " << fw;
-#endif
-    registerWriter(fw);
-    //fw->setOutputFile(_filename);
-    fw->start();
+    dw = new DbWriter(_filename);
 
-	return *fw;
+    ULDBG << "Dbwriter for file "<< _filename <<" not found, creating one " << dw;
+
+    registerWriter(dw);
+
+    m_pTPool->runObject(dw);
+    dw->run();
+
+    return *dw;
 }
 #endif
+
+
 
 #ifdef ULOG_NETLOGGING
 /*!
@@ -376,9 +405,9 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
         lw = it.key();
         rw = dynamic_cast<RemoteWriter*>(lw);
         if (rw && rw->getHost() == _ha && rw->getPort() == _port) {
-#ifdef ULOGDBG
-			qDebug() << "Existing Networkwriter found! ------------------->><<-------";
-#endif
+
+            ULDBG << "Existing Networkwriter found! ------------------->><<-------";
+
 			muxDeviceCounter.unlock();
 			return *rw;
         }
@@ -389,11 +418,14 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
     if (rw)
     {
         registerWriter(rw);
-        rw->start();
+        m_pTPool->runObject(rw);
+        rw->run();
     }
     return *rw;
 }
 #endif
+
+
 
 /*!
   \brief returns the standard console writer
@@ -401,6 +433,7 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
   */
 LogWriter &UniqLogger::getStdConsoleWriter()
 { return *m_ConsoleLogger; }
+
 
 
 /*!
@@ -413,18 +446,29 @@ LogWriter &UniqLogger::getConsoleWriter(ConsoleColorType c)
     ConsoleWriter *cw = new ConsoleWriter();
     registerWriter(cw);
     cw->setConsoleColor(c);
-    cw->start();
+    //cw->start();
+    m_pTPool->runObject(cw);
+    cw->run();
+
 	return *cw;
 }
 
+
+
+/*!
+ * \brief UniqLogger::getDummyWriter
+ * \return
+ */
 LogWriter&
 UniqLogger::getDummyWriter()
 {
     DummyWriter* dw = new DummyWriter();
     registerWriter(dw);
-    dw->start();
+    //dw->start();
     return *dw;
 }
+
+
 
 /*!
   \brief Removes a LogWriter from a Logger it is connected to
@@ -442,6 +486,8 @@ UniqLogger::removeWriterFromLogger(const Logger* _l, const LogWriter& writer)
     return res;
 }
  
+
+
 /*!
   \brief Adds a LogWriter to a Logger
   \param _l the logger to which the writer is going to be connected
@@ -453,30 +499,61 @@ int
 UniqLogger::addWriterToLogger(const Logger* _l, const LogWriter &writer)
 {
 	int res = 0;
-    this->registerWriter(const_cast<LogWriter*>(&writer));
-	res = _l->addLogDevice(const_cast<LogWriter*>(&writer));
+    res = _l->addLogDevice(const_cast<LogWriter*>(&writer));
+    if (res == 0) {
+        this->registerWriter(const_cast<LogWriter*>(&writer));
+    }
+
 	return res;
 }
 
+
+/*!
+  \brief adds a new monitored variable
+  \param var is the key that identifies a monitored variable
+  \param status the initial monitor status of the variable (default is false)
+  */
+void
+UniqLogger::addMonitorVar(const QString &var, bool status)
+{
+    muxMonitorVarMap.lock();
+        m_VarMonitorMap[var] = status;
+    muxMonitorVarMap.unlock();
+}
+
+
 /*!
   \brief changes the monitor status of a monitored variable
-  \param var is the key that identified a monitored variable
+  \param var is the key that identifies a monitored variable
   \param status the new monitor status of the variable
   */
 void
-UniqLogger::monitorVar(const QString &var, bool status)
+UniqLogger::changeMonitorVarStatus(const QString &var, bool status)
 {
 	muxMonitorVarMap.lock();
 	if (m_VarMonitorMap.contains(var)) {
-		m_VarMonitorMap[var]=status;
+        m_VarMonitorMap[var] = status;
     }
     else {
-    #ifdef ULOGDBG
-        qDebug() << "The var is not monitored " << var;
-	#endif
+        ULDBG << "The var is not monitored " << var;
 	}
 	muxMonitorVarMap.unlock();
 }
+
+
+
+/*!
+  \brief deletes a monitored variable
+  \param var is the key that identifies a monitored variable
+  */
+void
+UniqLogger::delMonitorVar(const QString &var)
+{
+    muxMonitorVarMap.lock();
+        m_VarMonitorMap.remove(var);
+    muxMonitorVarMap.unlock();
+}
+
 
 /*!
   \brief this method changes the timestamp format for new Loggers
@@ -490,6 +567,8 @@ UniqLogger::setTimeStampFormat(const QString &aTimeFormat)
     m_defaultTimeStampFormat = aTimeFormat;
 }
  
+
+
 /*!
   \brief this method changes the encasing chars for new Loggers
   \param aStartChar is the starting encasing char. The default is '['
@@ -503,6 +582,8 @@ UniqLogger::setEncasingChars(const QChar &aStartChar, const QChar &aEndChar)
     m_defaultEndEncasingChar = aEndChar;
 }
  
+
+
 /*!
   \brief this method changes the spacing char for new Loggers
   \param aSpaceChar is the new spacing char. The default is ' ';
@@ -514,6 +595,8 @@ UniqLogger::setSpacingChar(const QChar &aSpaceChar)
     m_defaultSpaceChar = aSpaceChar;
 }
  
+
+
 /*!
     \brief this method will change the color the standard console writer will log with
     \param c the color that will be used from now on from the standard console logger

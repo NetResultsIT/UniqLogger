@@ -16,8 +16,8 @@ class RemoteWriter: public LogWriter
 {
 	Q_OBJECT
 
-	QTcpSocket m_Socket;
-    QTimer m_reconnectionTimer;
+    QTcpSocket *m_Socket;
+    QTimer *m_reconnectionTimer;
     QString m_serverAddress;
     int m_serverPort;
     int m_reconnectionTimeout;
@@ -27,7 +27,7 @@ protected slots:
     void onConnectionToServer();
     void onDisconnectionFromServer();
 
-    int connectToServer();
+    int connectToServer(); // <-- BEWARE, this is also called via invokeMethod, do NOT change its name
 
 public:
     explicit RemoteWriter(const QString &aServerAddress, int aServerPort);
@@ -36,9 +36,10 @@ public:
     virtual void run();
     virtual void setWriterConfig(const WriterConfig &wconf);
 
-    const QString getHost() const { return m_serverAddress; }
-    int getPort() const { return m_serverPort; }
+    const QString getHost() const   { return m_serverAddress;   }
+    int getPort() const             { return m_serverPort;      }
 
+    /*
     QString getRemoteHost() const {
 		if (m_Socket.isOpen())
 			return m_Socket.peerAddress().toString();
@@ -50,6 +51,7 @@ public:
 			return m_Socket.peerPort();
 		return -1;
     }
+    */
 };
 
 #endif

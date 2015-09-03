@@ -9,7 +9,7 @@
 DEFINES += ULOG_NETLOGGING
 
 # If you want to enable db logging uncomment the following line
-#DEFINES += ULOG_DBLOGGING
+DEFINES += ULOG_DBLOGGING
 
 # If you want to enable debug statements in the UniqLogger library uncomment the following line
 #DEFINES += ULOGDBG
