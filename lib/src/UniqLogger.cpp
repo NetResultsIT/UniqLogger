@@ -125,7 +125,7 @@ UniqLogger::unregisterWriter(LogWriter *lw)
         int refcount = m_DevicesMap[lw];
         if (refcount == 1) {
             m_DevicesMap.remove(lw);
-            delete lw;
+            lw->deleteLater();
         }
         else {
             m_DevicesMap[lw] = refcount-1;
