@@ -7,9 +7,10 @@
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
 #define TEST_NET 0
-#define TEST_NET_MULTISRC 0
+#define TEST_NET_MULTISRC 1
 #define TEST_DB 0
-#define TEST_MONITOR 1
+#define TEST_MONITOR 0
+#define TEST_THREADSAFETY 1
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
@@ -52,7 +53,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
 #endif
 
 
-#if(TEST_CONSOLE_COLOR)
+#if(TEST_CONSOLE_COLOR || TEST_THREADSAFETY)
     loggerCr = ul->createConsoleLogger("CONSOLE", red);
     loggerCy = ul->createConsoleLogger("CONSOLE", yellow);
     loggerCg = ul->createConsoleLogger("CONSOLE", green);
@@ -85,6 +86,11 @@ testlogger_cli::testlogger_cli(QObject *parent)
     loggerCm = ul->createConsoleLogger("MagentaC", magenta);
 #endif
 
+
+#if(TEST_THREADSAFETY)
+    testThreadedConsoleLogger();
+#endif
+
     //Start timed logging
     timer->start(millis);
 }
@@ -112,6 +118,27 @@ testlogger_cli::testThreadedNetLogger(const QString &ip, int port)
 }
 
 
+
+void
+testlogger_cli::testThreadedConsoleLogger()
+{
+    TestThreadObject2 *tobj1 = new TestThreadObject2(200, UNQL::LOG_INFO, "You should see this...");
+    tobj1->l = loggerCr;
+    TestThreadObject2 *tobj2 = new TestThreadObject2(100, UNQL::LOG_DBG, "But *definitely* NOT this...");
+    tobj2->l = loggerCr;
+
+    QThread *t1, *t2;
+    t1 = new QThread(this);
+    t2 = new QThread(this);
+    tobj1->moveToThread(t1);
+    tobj2->moveToThread(t2);
+
+    t1->start();
+    t2->start();
+}
+
+
+
 void
 testlogger_cli::timedLog()
 {
@@ -137,15 +164,15 @@ testlogger_cli::timedLog()
 #if(TEST_NET)
     qDebug() << "writing to net... iteration" << i;
     loggerN2->log(UNQL::LOG_CRITICAL, ( QString("net critical") + QString::number(i) ).toLatin1().constData());
-    *loggerN1 << UNQL::LOG_INFO << (QString("net info ")+QString::number(i)) << UNQL::EOM;
+    *loggerN1 << UNQL::LOG_INFO << ( QString("net info ") + QString::number(i) ) << UNQL::EOM;
 
 #if(TEST_NET_MULTISRC)
-    if (i == 10) {
+    if (i%3 == 0 && i<40) {
         UniqLogger *ul = UniqLogger::instance();
         const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1", 1674);
         qDebug() << "adding writer returned: " << ul->addWriterToLogger(loggerN2, nlw);
     }
-    if (i == 15) {
+    if (i%13 == 0 && i<40) {
         UniqLogger *ul = UniqLogger::instance();
         const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1", 1674);
         qDebug() << "removing writer returned: " << ul->removeWriterFromLogger(loggerN2, nlw);

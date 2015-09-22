@@ -137,8 +137,8 @@ Logger::dispatchMessage(const LogMessage &m)
 {
 	for (int i=0; i<m_logDeviceList.count(); i++)
     {
-        if (m_logDeviceList.at(i)==0)
-            qDebug() << "NULL WRITER";
+        if (m_logDeviceList.at(i) == 0)
+            qWarning() << "NULL WRITER";
         m_logDeviceList.at(i)->appendMessage(m);
     }
 }
@@ -276,15 +276,16 @@ Logger::log(const char* mess, ...)
 {
 	char buffer2[ERRMSG_SIZE];
 	va_list args;
-	va_start(args,mess);
 
+	va_start(args,mess);
 #if defined(_MSC_VER) && _MSC_VER < 1400
 	_vsnprintf(buffer2,ERRMSG_SIZE,mess,args);
 #else
 	vsnprintf(buffer2,ERRMSG_SIZE,mess,args);
 #endif
 	va_end(args);
-	this->log(m_logVerbosityDefaultLevel,buffer2);
+
+    this->log(m_logVerbosityDefaultLevel, buffer2);
 }
  
 
@@ -382,9 +383,9 @@ Logger::operator<< ( const QMap<int, QList<int> >& amap )
         foreach (int v, amap.value(mk)) {
             liststr.append(QString::number(v));
         }
-        liststr +=")";
+        liststr += ")";
         muxMessages.lock();
-            m_bufferedStreamMessages.append(QString::number(mk)+" -> "+liststr);
+            m_bufferedStreamMessages.append(QString::number(mk) + " -> " + liststr);
         muxMessages.unlock();
     }
     return *this;

@@ -13,16 +13,20 @@ class TestThreadObject2 : public QObject
     QTimer *m_timer;
     int m_counter;
     int m_timeout_msecs;
+    UNQL::LogMessagePriorityType m_logPriority;
+    QString m_msg;
 
 public:
     Logger *l;
 
 public:
-    explicit TestThreadObject2(int msecs, QObject *parent=0)
-        :QObject(parent),
-          m_timeout_msecs(msecs)
+    explicit TestThreadObject2(int msecs, UNQL::LogMessagePriorityType prio=UNQL::LOG_INFO, const QString msg="", QObject *parent=0)
+        : QObject(parent),
+          m_timeout_msecs(msecs),
+          m_logPriority(prio),
+          m_msg(msg)
     {
-        l=NULL;
+        l = NULL;
         m_timer = new QTimer(this);
         m_counter = 0;
         connect(m_timer, SIGNAL(timeout()), this, SLOT(logwthread()));
@@ -35,7 +39,7 @@ public slots:
         s.sprintf("%p", QThread::currentThread());
         s += " -- " + QString::number(m_counter++);
         if (l)
-            *l << UNQL::LOG_INFO << s << Q_FUNC_INFO << UNQL::EOM;
+            *l << m_logPriority << s << m_msg << Q_FUNC_INFO << UNQL::EOM;
         else
             qCritical() << QThread::currentThread() << Q_FUNC_INFO << " -- Cannot log on a NULL logger";
     }
@@ -52,6 +56,7 @@ public:
     ~testlogger_cli() {}
 
     void testThreadedNetLogger(const QString &ip, int port);
+    void testThreadedConsoleLogger();
     //void test_strangeString(UniqLogger *ul);
 
 protected slots:
