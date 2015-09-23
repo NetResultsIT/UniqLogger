@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2014 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -18,18 +18,6 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort)
 
     m_Socket = new QTcpSocket(this);
     m_reconnectionTimer = new QTimer(this);
-//    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
-    //connect (&m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
-    //connect (&m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
-
-
-    /*
-    qDebug() << "this" << this << "this parent" << this->parent() << "this thread" << this->thread();
-    //qDebug() << m_logTimer << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();
-    qDebug() << m_reconnectionTimer << "reconntimer thread" << m_reconnectionTimer->thread() << "current thread" << QThread::currentThread();
-    qDebug() << m_Socket << "qsock thread" << m_Socket->thread() << "current thread" << QThread::currentThread();
-    qDebug() << "\n-------------------------------------------------------------\n";
-    */
 }
  
 /*!
@@ -101,7 +89,6 @@ RemoteWriter::onConnectionToServer()
                    QDateTime::currentDateTime().toString("hh:mm:ss"));
     appendMessage(msg);
     m_reconnectionTimer->stop();
-    //m_logTimer->start();
 }
 
 /*!
@@ -128,24 +115,13 @@ RemoteWriter::run()
 {
     ULDBG << Q_FUNC_INFO;
     LogWriter::run();
-//    m_reconnectionTimer = new QTimer(this->thread());
-//    m_Socket = new QTcpSocket(this->thread());
-    //m_reconnectionTimer = new QTimer();
-    //m_Socket = new QTcpSocket();
-/*
-    qDebug() << "this" << this << "this parent" << this->parent() << "this thread" << this->thread();
-    qDebug() << m_logTimer << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();
-    qDebug() << m_reconnectionTimer << "reconntimer thread" << m_reconnectionTimer->thread() << "current thread" << QThread::currentThread();
-    qDebug() << m_Socket << "qsock thread" << m_Socket->thread() << "current thread" << QThread::currentThread();
-*/
-    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
 
+    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
     connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
-    //m_reconnectionTimer->start(m_reconnectionTimeout);
     QMetaObject::invokeMethod(this, "connectToServer");
-    //LogWriter::run();
+
 }
 
 void

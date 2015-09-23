@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2014 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -17,12 +17,11 @@ Logger::Logger()
 	m_logDeviceList.clear();
 	m_timeStampFormat = "hh:mm:ss";
 	m_moduleName = "Generic Module";
-    m_logVerbosityAcceptableLevel=UNQL::LOG_INFO;
-    m_logVerbosityDefaultLevel=UNQL::LOG_INFO;
-	m_logVerbosityCurrentLevel = m_logVerbosityDefaultLevel;
-    m_spacingString=' ';
-    m_startEncasingChar='[';
-    m_endEncasingChar=']';
+    m_logVerbosityAcceptedLevel = UNQL::LOG_INFO;
+    m_logVerbosityDefaultLevel = UNQL::LOG_INFO;
+    m_spacingString = ' ';
+    m_startEncasingChar = '[';
+    m_endEncasingChar = ']';
 }
 
 Logger::~Logger()
@@ -39,19 +38,33 @@ Logger::~Logger()
 
 
 /*!
+ * \brief Logger::getVerbosityLevel
+ * \return the current logging priority level of this logger (for the calling thread)
+ */
+int
+Logger::getVerbosityLevel() const
+{
+    if (m_bufferedStreamMessages.contains(QThread::currentThread())) {
+        return (int) m_bufferedStreamMessages[QThread::currentThread()].priority();
+    }
+    return UNQL::LOG_OFF;
+}
+
+
+/*!
   \brief sets the verbosity level of this logger
   \param v the value that must be reached before the actual logging take place
   */
 void
 Logger::setVerbosityLevel(const int &v)
-{ m_logVerbosityAcceptableLevel=v; }
+{ m_logVerbosityAcceptedLevel = v; }
 
 
 
 /*!
   \brief sets the verbosity default level of this logger
   \param v the value that must be reached before the actual logging take place
-  The default value takes place whenever during the log() function call not level is specified
+  The default value takes place whenever during the log() function call no level is specified
   */
 void
 Logger::setVerbosityDefaultLevel(const int &v)
@@ -245,7 +258,7 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
 void
 Logger::log(int priority, const char* mess, ...)
 {
-    if (priority <= m_logVerbosityAcceptableLevel)
+    if (priority <= m_logVerbosityAcceptedLevel)
     {
         va_list args;
         va_start(args,mess);
@@ -294,15 +307,18 @@ void
 Logger::dispatchBufferedMessages()
 {
 	QString s;
+    BufferOfStrings bos;
+
     muxMessages.lock();
-    if ( m_logVerbosityCurrentLevel != UNQL::LOG_OFF
-         && m_logVerbosityCurrentLevel <= m_logVerbosityAcceptableLevel
-         && m_bufferedStreamMessages.count() > 0 )
+    bos = m_bufferedStreamMessages.take(QThread::currentThread());
+    //qDebug() << "buffer of thread" << QThread::currentThread() << "has " << bos.count() << "messages" << bos.list();
+    if ( bos.priority() != UNQL::LOG_OFF
+         && bos.priority() <= m_logVerbosityAcceptedLevel
+         && bos.count() > 0 )
     {
-        s = m_bufferedStreamMessages.join(m_spacingString);
-        this->priv_log(m_logVerbosityCurrentLevel, s);
+        s = bos.list().join(m_spacingString);
+        this->priv_log(bos.priority(), s);
     }
-	m_bufferedStreamMessages.clear();
     muxMessages.unlock();
 }
 
@@ -311,11 +327,20 @@ Logger::dispatchBufferedMessages()
 Logger&
 Logger::operator<< ( const UNQL::LogMessagePriorityType& lmt )
 {
-    if(lmt != m_logVerbosityCurrentLevel) {
+    muxMessages.lock();
+        BufferOfStrings bos = m_bufferedStreamMessages[QThread::currentThread()];
+    muxMessages.unlock(); // <-- We need to unlock since dispatchBufferedMessages() will try to acquire the mutex
+
+    if(lmt != bos.priority()) {
         dispatchBufferedMessages();
     }
 
-    m_logVerbosityCurrentLevel = lmt;
+    bos.setPriority(lmt);
+
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()] = bos;
+    muxMessages.unlock();
+
 	return *this;
 }
 
@@ -335,8 +360,6 @@ Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
         break;
     }
 
-	//get back to default log level
-	m_logVerbosityCurrentLevel = m_logVerbosityDefaultLevel;
 	return *this;
 }
 
@@ -346,7 +369,7 @@ Logger&
 Logger::operator<< ( const QVariant& v )
 {
     muxMessages.lock();
-    m_bufferedStreamMessages.append(v.toString());
+        m_bufferedStreamMessages[QThread::currentThread()].append(v.toString());
     muxMessages.unlock();
 	return *this;
 }
@@ -358,7 +381,7 @@ Logger::operator<< ( const QStringList& sl )
 {
     muxMessages.lock();
     foreach (QString s,sl) {
-        m_bufferedStreamMessages.append(s);
+        m_bufferedStreamMessages[QThread::currentThread()].append(s);
     }
     muxMessages.unlock();
     return *this;
@@ -369,7 +392,7 @@ Logger::operator<< ( const QList<int>& vl )
 {
     muxMessages.lock();
     foreach (int v,vl) {
-        m_bufferedStreamMessages.append(QString::number(v));
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(v));
     }
     muxMessages.unlock();
     return *this;
@@ -385,7 +408,7 @@ Logger::operator<< ( const QMap<int, QList<int> >& amap )
         }
         liststr += ")";
         muxMessages.lock();
-            m_bufferedStreamMessages.append(QString::number(mk) + " -> " + liststr);
+            m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(mk) + " -> " + liststr);
         muxMessages.unlock();
     }
     return *this;
@@ -395,7 +418,7 @@ Logger&
 Logger::operator<< ( const double& d )
 {
     muxMessages.lock();
-        m_bufferedStreamMessages.append(QString::number(d));
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
     muxMessages.unlock();
 	return *this;
 }

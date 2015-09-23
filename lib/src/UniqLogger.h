@@ -118,6 +118,8 @@ public:
 		int addWriterToLogger       (const Logger*, const LogWriter&);
 		int removeWriterFromLogger  (const Logger*, const LogWriter&);
 
+        int threadsUsedForLogging() const;
+
         void setEncasingChars       ( const QChar& aStartChar, const QChar &aEndChar         );
         void setSpacingChar         ( const QChar& aSpaceChar                                );
         void setTimeStampFormat		( const QString&	                                     );

@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.3.1
+VERSION = 0.3.2
 
 # --- Please check that the config file reflects your desired build options
 include (config.pri)
@@ -222,24 +222,26 @@ message ("Library name: $$TARGET$$MYVER")
 # ----- Library sources ------
 
 HEADERS += \
-           src/Logger.h \
-           src/LogWriter.h \
-           src/FileWriter.h \
-           src/ConsoleWriter.h \
-           src/UniqLogger.h \
-           src/LogMessage.h \
-           src/tpool/nrthreadpool.h \
-           src/DummyWriter.h
+    src/Logger.h \
+    src/LogWriter.h \
+    src/FileWriter.h \
+    src/ConsoleWriter.h \
+    src/UniqLogger.h \
+    src/LogMessage.h \
+    src/tpool/nrthreadpool.h \
+    src/DummyWriter.h \
+    src/bufferofstrings.h
 
 SOURCES += \
-           src/Logger.cpp \
-           src/LogWriter.cpp \
-           src/FileWriter.cpp \
-           src/ConsoleWriter.cpp \
-           src/UniqLogger.cpp \
-           src/LogMessage.cpp \
-           src/tpool/nrthreadpool.cpp \
-           src/DummyWriter.cpp
+    src/Logger.cpp \
+    src/LogWriter.cpp \
+    src/FileWriter.cpp \
+    src/ConsoleWriter.cpp \
+    src/UniqLogger.cpp \
+    src/LogMessage.cpp \
+    src/tpool/nrthreadpool.cpp \
+    src/DummyWriter.cpp \
+    src/bufferofstrings.cpp
 
 INCLUDEPATH += src/tpool
 

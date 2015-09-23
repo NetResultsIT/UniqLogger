@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2014 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):																	*
  *				Francesco Lamonica		<f.lamonica@netresults.it>				*
  ********************************************************************************/
@@ -14,6 +14,7 @@
 #include <QVariant>
 
 #include "LogMessage.h"
+#include "bufferofstrings.h"
 
 #define ERRMSG_SIZE 5000
 
@@ -35,11 +36,11 @@ class ULOG_LIB_API Logger: public QObject
 {
 	Q_OBJECT
 
-    int m_logVerbosityAcceptableLevel, m_logVerbosityDefaultLevel, m_logVerbosityCurrentLevel;
+    int m_logVerbosityAcceptedLevel, m_logVerbosityDefaultLevel;
 
 	char buffer[ERRMSG_SIZE];
     QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
-	QStringList m_bufferedStreamMessages;
+    QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;
 
     mutable QList<LogWriter*> m_logDeviceList;
@@ -78,7 +79,7 @@ public:
     void setEncasingChars           ( const QChar&, const QChar& );
 
     //GETTERS
-    int getVerbosityLevel() const       { return m_logVerbosityCurrentLevel; }
+    int getVerbosityLevel() const;
     QString getModuleName() const       { return m_moduleName;      }
     QString getTStampFmtString() const  { return m_timeStampFormat; }
     QString getSpacingString() const    { return m_spacingString;   }

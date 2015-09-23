@@ -57,6 +57,7 @@ public:
 
     void testThreadedNetLogger(const QString &ip, int port);
     void testThreadedConsoleLogger();
+    void testBenchmark();
     //void test_strangeString(UniqLogger *ul);
 
 protected slots:

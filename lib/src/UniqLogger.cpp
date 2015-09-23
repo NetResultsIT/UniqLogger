@@ -50,10 +50,8 @@ UniqLogger::UniqLogger(int nthreads)
 
     m_ConsoleLogger = new ConsoleWriter();
     registerWriter(m_ConsoleLogger);
-    //m_ConsoleLogger->start();
 
     ULDBG << "Being here with app: " << QCoreApplication::instance();
-
 }
  
 
@@ -61,6 +59,23 @@ UniqLogger::UniqLogger(int nthreads)
 UniqLogger::~UniqLogger()
 {
     ULDBG << Q_FUNC_INFO;
+}
+
+
+
+/*!
+ * \brief UniqLogger::threadsUsedForLogging
+ * \return the number of threads that are available for the logging writers
+ */
+int
+UniqLogger::threadsUsedForLogging() const
+{
+    int nt = 0;
+
+    if (m_pTPool)
+        return m_pTPool->threadsInPool();
+
+    return nt;
 }
 
 
@@ -76,7 +91,7 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 
 	UniqLogger::gmuxUniqLoggerInstance.lock();
 	if (gUniqLoggerInstanceMap.contains(ulname))
-		ulptr=gUniqLoggerInstanceMap[ulname];
+        ulptr = gUniqLoggerInstanceMap[ulname];
 	else {
         if(gUniqLoggerInstanceMap.count() == 0) {
 			ulptr = &instance;
@@ -87,6 +102,10 @@ UniqLogger::instance(const QString &ulname, int nthreads)
         gUniqLoggerInstanceMap.insert(ulname, ulptr);
 	}
 	UniqLogger::gmuxUniqLoggerInstance.unlock();
+
+    if (nthreads != ulptr->threadsUsedForLogging()) {
+        qWarning() << "The UniqLogger instances was already configured with a different number of logging threads: " << ulptr->threadsUsedForLogging();
+    }
 
 	return ulptr;
 }

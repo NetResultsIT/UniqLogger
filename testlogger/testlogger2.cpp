@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QTimer>
+#include <QDateTime>
 
 #define TEST_FILE_ROTATION 0
 #define TEST_CONSOLE_COLOR 0
@@ -10,7 +11,8 @@
 #define TEST_NET_MULTISRC 1
 #define TEST_DB 0
 #define TEST_MONITOR 0
-#define TEST_THREADSAFETY 1
+#define TEST_THREADSAFETY 0
+#define TEST_BENCHMARK 1
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
@@ -91,6 +93,10 @@ testlogger_cli::testlogger_cli(QObject *parent)
     testThreadedConsoleLogger();
 #endif
 
+#if(TEST_BENCHMARK)
+    testBenchmark();
+#endif
+
     //Start timed logging
     timer->start(millis);
 }
@@ -122,19 +128,41 @@ testlogger_cli::testThreadedNetLogger(const QString &ip, int port)
 void
 testlogger_cli::testThreadedConsoleLogger()
 {
-    TestThreadObject2 *tobj1 = new TestThreadObject2(200, UNQL::LOG_INFO, "You should see this...");
+    TestThreadObject2 *tobj1 = new TestThreadObject2(200, UNQL::LOG_WARNING, "You should see this...");
     tobj1->l = loggerCr;
     TestThreadObject2 *tobj2 = new TestThreadObject2(100, UNQL::LOG_DBG, "But *definitely* NOT this...");
     tobj2->l = loggerCr;
+    TestThreadObject2 *tobj3 = new TestThreadObject2(150, UNQL::LOG_DBG, "And NOT even this...");
+    tobj3->l = loggerCr;
 
-    QThread *t1, *t2;
+    QThread *t1, *t2, *t3;
     t1 = new QThread(this);
     t2 = new QThread(this);
+    t3 = new QThread(this);
     tobj1->moveToThread(t1);
     tobj2->moveToThread(t2);
+    tobj3->moveToThread(t3);
 
     t1->start();
     t2->start();
+    t3->start();
+}
+
+
+
+void
+testlogger_cli::testBenchmark()
+{
+    int iterations = 1000000;
+    UniqLogger *ul = UniqLogger::instance("TESTER", 4);
+    Logger *l = ul->createFileLogger("BENCHMARK", "testlog");
+
+    QTime t;
+    t.start();
+    for (int i = 0; i < iterations; i++) {
+        *l << UNQL::LOG_INFO << "A test message" << UNQL::EOM;
+    }
+    qDebug() << "logged" << iterations << "in" << t.elapsed() << "msecs";
 }
 
 
