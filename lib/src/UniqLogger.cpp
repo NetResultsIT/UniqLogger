@@ -200,6 +200,7 @@ UniqLogger::createLogger(const QString &logname)
 
         bool b = connect(l,SIGNAL(writersToDelete(const QList<LogWriter*>)),this,SLOT(writerFinished(const QList<LogWriter*>)),Qt::DirectConnection);
         Q_ASSERT(b);
+        Q_UNUSED(b);
     }
 	return l;
 }
@@ -270,7 +271,7 @@ UniqLogger::createNetworkLogger(const QString & _logname, const QString &_ha, in
   \return a reference to the logger class created
   */
 Logger*
-UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName, const WriterConfig &wc)
+UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName, const WriterConfig &)
 {
 	Logger *l = createLogger(_logname);
 	LogWriter const &rlog = getDbWriter(aDbFileName);
@@ -499,9 +500,10 @@ int
 UniqLogger::removeWriterFromLogger(const Logger* _l, const LogWriter& writer)
 {
     int res = 0;
+    Logger *lptr = const_cast<Logger*>(_l);
 
     this->unregisterWriter(const_cast<LogWriter*>(&writer));
-	res = _l->removeLogDevice(const_cast<LogWriter*>(&writer));
+    res = lptr->removeLogDevice(const_cast<LogWriter*>(&writer));
     return res;
 }
  
@@ -518,7 +520,9 @@ int
 UniqLogger::addWriterToLogger(const Logger* _l, const LogWriter &writer)
 {
 	int res = 0;
-    res = _l->addLogDevice(const_cast<LogWriter*>(&writer));
+    Logger *lptr = const_cast<Logger*>(_l);
+
+    res = lptr->addLogDevice(const_cast<LogWriter*>(&writer));
     if (res == 0) {
         this->registerWriter(const_cast<LogWriter*>(&writer));
     }

@@ -28,9 +28,12 @@ LogMessage::message() const
     ec = m_formatting.endEncasingChar();
     spc = m_formatting.spacingString();
 
+
     QString priolev="UNKNOWN";
     if (UnqlPriorityLevelNamesMap.contains(m_level))
         priolev = UnqlPriorityLevelNamesMap[m_level];
+
+    msg.reserve(3*2 + 4 + m_tstamp.size() + m_loggerName.size() + m_msg.size() + priolev.size());
 
     msg = sc + m_tstamp + ec + spc + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg;
 

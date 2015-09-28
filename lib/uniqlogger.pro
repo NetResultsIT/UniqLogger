@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.3.2
+VERSION = 0.3.3
 
 # --- Please check that the config file reflects your desired build options
 include (config.pri)

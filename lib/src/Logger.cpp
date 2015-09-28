@@ -9,14 +9,15 @@
 
 #include <QStringList>
 #include <QDateTime>
+#include <QMutexLocker>
 
 /*!
   */
 Logger::Logger()
 {
-	m_logDeviceList.clear();
-	m_timeStampFormat = "hh:mm:ss";
-	m_moduleName = "Generic Module";
+    m_logDeviceList.clear();
+    m_timeStampFormat = "hh:mm:ss";
+    m_moduleName = "Generic Module";
     m_logVerbosityAcceptedLevel = UNQL::LOG_INFO;
     m_logVerbosityDefaultLevel = UNQL::LOG_INFO;
     m_spacingString = ' ';
@@ -47,8 +48,19 @@ Logger::getVerbosityLevel() const
     if (m_bufferedStreamMessages.contains(QThread::currentThread())) {
         return (int) m_bufferedStreamMessages[QThread::currentThread()].priority();
     }
-    return UNQL::LOG_OFF;
+    return m_logVerbosityDefaultLevel;
 }
+
+
+
+
+/*!
+  \brief gets the verbosity level of this logger
+  */
+int
+Logger::getVerbosityAcceptedLevel() const
+{ return m_logVerbosityAcceptedLevel; }
+
 
 
 /*!
@@ -56,9 +68,18 @@ Logger::getVerbosityLevel() const
   \param v the value that must be reached before the actual logging take place
   */
 void
-Logger::setVerbosityLevel(const int &v)
+Logger::setVerbosityAcceptedLevel(const int &v)
 { m_logVerbosityAcceptedLevel = v; }
 
+
+
+
+/*!
+  \brief gets the default verbosity level of this logger
+  */
+int
+Logger::getVerbosityDefaultLevel() const
+{ return m_logVerbosityDefaultLevel; }
 
 
 /*!
@@ -124,10 +145,11 @@ Logger::setModuleName(const QString &s)
   this method will add a new LogWriter to which this logger will dispatch its messages
   */
 int
-Logger::addLogDevice(LogWriter *el) const
+Logger::addLogDevice(LogWriter *el)
 {
+    QMutexLocker lock(&muxDevices);
     if (m_logDeviceList.contains(el))
-            return -1;
+        return -1;
 
     m_logDeviceList.append(el);
     return 0;
@@ -135,10 +157,11 @@ Logger::addLogDevice(LogWriter *el) const
 
 
 int
-Logger::removeLogDevice(LogWriter *el) const
+Logger::removeLogDevice(LogWriter *el)
 {
+    QMutexLocker lock(&muxDevices);
     if (!m_logDeviceList.contains(el))
-            return -1;
+        return -1;
 
     m_logDeviceList.removeAll(el);
     return 0;
@@ -148,11 +171,13 @@ Logger::removeLogDevice(LogWriter *el) const
 void
 Logger::dispatchMessage(const LogMessage &m)
 {
-	for (int i=0; i<m_logDeviceList.count(); i++)
+    QMutexLocker lock(&muxDevices);
+    for (int i=0; i<m_logDeviceList.count(); i++)
     {
         if (m_logDeviceList.at(i) == 0)
             qWarning() << "NULL WRITER";
-        m_logDeviceList.at(i)->appendMessage(m);
+        else
+            m_logDeviceList.at(i)->appendMessage(m);
     }
 }
 
@@ -162,6 +187,8 @@ void
 Logger::flush()
 {
     this->dispatchBufferedMessages();
+
+    QMutexLocker lock(&muxDevices);
     for (int i=0; i<m_logDeviceList.count(); i++)
     {
         m_logDeviceList.at(i)->flush();
@@ -306,7 +333,7 @@ Logger::log(const char* mess, ...)
 void
 Logger::dispatchBufferedMessages()
 {
-	QString s;
+    QString s;
     BufferOfStrings bos;
 
     muxMessages.lock();
@@ -341,7 +368,7 @@ Logger::operator<< ( const UNQL::LogMessagePriorityType& lmt )
         m_bufferedStreamMessages[QThread::currentThread()] = bos;
     muxMessages.unlock();
 
-	return *this;
+    return *this;
 }
 
 
@@ -349,7 +376,7 @@ Logger::operator<< ( const UNQL::LogMessagePriorityType& lmt )
 Logger&
 Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
 {
-	dispatchBufferedMessages();
+    dispatchBufferedMessages();
     switch(lsm) {
         case UNQL::fls:
             this->flush();
@@ -371,7 +398,7 @@ Logger::operator<< ( const QVariant& v )
     muxMessages.lock();
         m_bufferedStreamMessages[QThread::currentThread()].append(v.toString());
     muxMessages.unlock();
-	return *this;
+    return *this;
 }
 
 
@@ -420,5 +447,5 @@ Logger::operator<< ( const double& d )
     muxMessages.lock();
         m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
     muxMessages.unlock();
-	return *this;
+    return *this;
 }
