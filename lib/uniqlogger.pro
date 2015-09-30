@@ -119,7 +119,7 @@ win32 {
     #message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
 	
-	contains(IDE,VS) {
+    contains(IDE,VS) {
       TEMPLATE = vclib
     }
 
@@ -151,12 +151,17 @@ win32 {
     }
     CONFIG(release, debug|release) {
         message("******* Final release target is: $$TARGET")
-		QMAKE_CXXFLAGS_RELEASE += /Zi 
-		QMAKE_LFLAGS_RELEASE += /DEBUG
-		QMAKE_LFLAGS_RELEASE += /OPT:REF
-		QMAKE_LFLAGS_RELEASE += /OPT:ICF
+
+        # needed to create a core dump
+        QMAKE_CXXFLAGS_RELEASE += /Zi
+        QMAKE_LFLAGS_RELEASE += /DEBUG
+        QMAKE_LFLAGS_RELEASE += /OPT:REF
+        QMAKE_LFLAGS_RELEASE += /OPT:ICF
+        QMAKE_LIBDIR += $$WINDOWS_SDK
+
         DLL = $$join(TARGET,,release\\,$$MYVER)
     }
+
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$FINALDIR\" $$escape_expand(\\n\\t)"
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$DSTDIR\" $$escape_expand(\\n\\t)"
 }

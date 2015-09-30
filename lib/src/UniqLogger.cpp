@@ -103,6 +103,10 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 	}
 	UniqLogger::gmuxUniqLoggerInstance.unlock();
 
+    if (nthreads == 0) { //adjust nthreads for the check below
+        nthreads = QThread::idealThreadCount();
+    }
+
     if (nthreads != ulptr->threadsUsedForLogging()) {
         qWarning() << "The UniqLogger instances was already configured with a different number of logging threads: " << ulptr->threadsUsedForLogging();
     }
