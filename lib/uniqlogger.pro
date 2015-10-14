@@ -22,11 +22,6 @@ DEFINES -= UNICODE
 TEMPLATE = lib
 
 
-#enable debug
-DEFINES += ENABLE_ULOG_DBG
-DEFINES += ENABLE_TPOOL_DBG
-
-
 #this should work with Qt5, on Qt4 we do it manually
 #MYVER = $$split($$VERSION, .)
 MYVER = 0
@@ -44,6 +39,9 @@ else {
 
 contains ( DEFINES, ULOGDBG ) {
     message ( "WARNING - The library will be built in DEBUG mode!!!" )
+    #enable debug
+    DEFINES += ENABLE_ULOG_DBG
+    DEFINES += ENABLE_TPOOL_DBG
 }
 
 contains ( DEFINES, 'ULOG_NETLOGGING' ) {
