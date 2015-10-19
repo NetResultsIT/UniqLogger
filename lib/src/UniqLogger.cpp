@@ -50,6 +50,8 @@ UniqLogger::UniqLogger(int nthreads)
 
     m_ConsoleLogger = new ConsoleWriter();
     registerWriter(m_ConsoleLogger);
+    m_pTPool->runObject(m_ConsoleLogger);
+    m_ConsoleLogger->run();
 
     ULDBG << "Being here with app: " << QCoreApplication::instance();
 }
@@ -456,7 +458,10 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
   \return the pointer to the standard console logger
   */
 LogWriter &UniqLogger::getStdConsoleWriter()
-{ return *m_ConsoleLogger; }
+{
+    return *m_ConsoleLogger;
+
+}
 
 
 
