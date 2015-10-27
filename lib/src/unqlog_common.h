@@ -30,6 +30,14 @@ enum LogStreamManipType
     FLS=fls
 };
 
+
+enum RotationPolicy
+{
+    WeekDaysRotaion,
+    MonthDayRotation
+};
+
+
 }
 
 #endif

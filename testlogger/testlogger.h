@@ -40,15 +40,16 @@ public slots:
     }
 };
 
-class testlogger : public QMainWindow
+class testlogger_gui : public QMainWindow
 {
 	Q_OBJECT
-	Logger  *logger, *logger2, *logger3, *logger4, *logger5;
+	Logger  *loggerFile, *loggerNet2, *loggerConsole, *loggerNet1, *logger5;
     Logger* m_dummyLoggerPtr;
+    QTimer *timer;
 
 public:
-    testlogger(QWidget *parent = 0);
-	~testlogger();
+    testlogger_gui(QWidget *parent = 0);
+    ~testlogger_gui();
     void testThreadedNetLogger(const QString &ip, int port);
 
     void test_strangeString(UniqLogger *ul);
@@ -58,6 +59,8 @@ private:
 
     protected slots:
         void timedLog();
+        void onStartLog();
+        void onStopLog();
 };
 
 #endif // TESTLOGGER_H

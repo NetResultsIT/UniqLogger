@@ -38,6 +38,7 @@ public:
     //Makes sense just for FileWriter
     int maxFileSize;        /// The maximum file size (in MB) of a file written by the FileWriter
     int maxFileNum;         /// The number of files that FileWriter should use during rotation, 0 disables it
+    int rotationPolicy;     /// Whether a suffix (i.e. _Mon, _Tue, or 20150316) should be appended to rotate files on a time base
 
     //Makes sense just for RemoteWriter
     int reconnectionSecs;   /// The number of seconds a RemoteWriter will wait before trying to reconnect to its server
@@ -47,7 +48,6 @@ class LogWriter: public QObject
 {
 	Q_OBJECT
 
-    //QTimer *m_logTimer;
 	QString m_lastMessage;
     volatile bool m_stillClosing;
     int m_maxMessages;

@@ -8,20 +8,19 @@
 
 
 
-testlogger::testlogger(QWidget *parent)
+testlogger_gui::testlogger_gui(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
 
-    logger = 0;
-    logger2 = 0;
-    logger3 = 0;
-    logger4 = 0;
+    loggerFile = 0;
+    loggerNet2 = 0;
+    loggerConsole = 0;
+    loggerNet1 = 0;
     logger5 = 0;
     m_dummyLoggerPtr = 0;
 
-    QTimer *timer = new QTimer();
-    timer->start(1000);
+    timer = new QTimer();
 
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
@@ -32,25 +31,20 @@ testlogger::testlogger(QWidget *parent)
     UniqLogger *ul = UniqLogger::instance();
     ul->setEncasingChars('(',')');
     ul->setSpacingChar('.');
-    logger = ul->createFileLogger("test", "log.txt", wc2);
-    logger3 = ul->createConsoleLogger("CONSOLE",red);
+    loggerFile = ul->createFileLogger("test", "log.txt", wc2);
+    loggerConsole = ul->createConsoleLogger("CONSOLE",red);
 
 #ifdef TESTNET
     WriterConfig wconf;
     wconf.maxMessageNum = 10;
-    logger2 = ul->createNetworkLogger("test", "127.0.0.1",1675);
-    logger4 = ul->createNetworkLogger("testadsa", "127.0.0.1",1674, wconf);
-    const LogWriter &nlw = ul->getNetworkWriter("127.0.0.1",1674);
-    //ul->addWriterToLogger(logger,nlw);
-
+    loggerNet2 = ul->createNetworkLogger("test", "127.0.0.1",1675);
+    loggerNet1 = ul->createNetworkLogger("testadsa", "127.0.0.1",1674, wconf);
     //testThreadedNetLogger("127.0.0.1", 1674);
 #endif
 
 #ifdef TESTDB
     logger5 = ul->createDbLogger("bdtest","log.db");
 #endif
-    //logger4 = ul->createFileLogger("CONSOLE","log.txt");
-    //logger4 = ul->createConsoleLogger("CONSOLE",magenta);
 
     m_dummyLoggerPtr = ul->createDummyLogger("DUMMY_LOGGER_TEST");
     *m_dummyLoggerPtr << UNQL::LOG_CRITICAL << "this is a dummy logger test" << UNQL::EOM;
@@ -58,41 +52,58 @@ testlogger::testlogger(QWidget *parent)
     //test_strangeString(ul);
 
     /* SET LOGGER NAMES */
-	if (!logger2) {
-		qDebug() << "Error creating logger module2";
+    if (!loggerNet2) {
+        qDebug() << "Error creating logger net2";
 	}
 	else
-		logger2->setModuleName("NET");
+        loggerNet2->setModuleName("NET2");
 
-    if (!logger4) {
-		qDebug() << "Error creating logger module4";
+    if (!loggerNet1) {
+        qDebug() << "Error creating logger net1";
 	}
 	else
-        logger4->setModuleName("NETCONSOLE");
+        loggerNet1->setModuleName("NET1");
 
-	logger->setModuleName("FILE");
-	logger3->setModuleName("REDCONSOLE");
+    loggerFile->setModuleName("FILE");
+    loggerConsole->setModuleName("REDCONSOLE");
 
 
     //test_dummylog(ul);
 }
 
-testlogger::~testlogger()
+testlogger_gui::~testlogger_gui()
 {
 
 }
 
 
+
 void
-testlogger::testThreadedNetLogger(const QString &ip, int port)
+testlogger_gui::onStartLog()
+{
+    timer->start(1000);
+}
+
+
+
+void
+testlogger_gui::onStopLog()
+{
+    timer->stop();
+}
+
+
+
+void
+testlogger_gui::testThreadedNetLogger(const QString &ip, int port)
 {
     Q_UNUSED(ip);
     Q_UNUSED(port);
 
     TestThreadObject *tobj1 = new TestThreadObject(2000);
-    tobj1->l = logger4;
+    tobj1->l = loggerNet1;
     TestThreadObject *tobj2 = new TestThreadObject(3000);
-    tobj2->l = logger4;
+    tobj2->l = loggerNet1;
 
     QThread *t1, *t2;
     t1 = new QThread(this);
@@ -106,16 +117,15 @@ testlogger::testThreadedNetLogger(const QString &ip, int port)
 
 
 void
-testlogger::timedLog()
+testlogger_gui::timedLog()
 {
     qDebug() << Q_FUNC_INFO;
     static int i=0;
-    logger->log(UNQL::LOG_INFO, (QString("file text ") + QString::number(i) + QString().fill('a',1000)).toLatin1().constData() );
-    logger3->log(UNQL::LOG_INFO, (QString("console text ")+QString::number(i)).toLatin1().constData());
+    loggerFile->log(UNQL::LOG_INFO, (QString("file text ") + QString::number(i) + QString().fill('a',1000)).toLatin1().constData() );
+    loggerConsole->log(UNQL::LOG_INFO, (QString("console text ")+QString::number(i)).toLatin1().constData());
 
 #ifdef TESTNET
-    logger2->log(UNQL::LOG_CRITICAL,(QString("nt")+QString::number(i)).toLatin1().constData());
-    //logger4->log(UNQL::LOG_INFO, (QString("net text ")+QString::number(i)).toLatin1().constData());
+    loggerNet2->log(UNQL::LOG_CRITICAL, (QString("nt") + QString::number(i)).toLatin1().constData());
 #endif
 
 #ifdef TESTDB
@@ -123,23 +133,23 @@ testlogger::timedLog()
 #endif
 
     double dd = qrand();
-	logger3->monitor(dd,"nt","test variable dd");
+    loggerConsole->monitor(dd, "nt", "test variable dd");
     i++;
     if (i==5) {
         UniqLogger *ul = UniqLogger::instance();
-        ul->changeMonitorVarStatus("nt",true);
+        ul->changeMonitorVarStatus("nt", true);
     }
 
     if (i==15) {
         UniqLogger *ul = UniqLogger::instance();
-        ul->changeMonitorVarStatus("nt",false);
+        ul->changeMonitorVarStatus("nt", false);
     }
 
     *m_dummyLoggerPtr << UNQL::LOG_CRITICAL << "this is a dummy logger test" << UNQL::EOM;
 }
 
 
-void testlogger::test_strangeString(UniqLogger *ul)
+void testlogger_gui::test_strangeString(UniqLogger *ul)
 {
     QString s = "cioaaaa";
     QString s1 = "pipo";
@@ -153,16 +163,16 @@ void testlogger::test_strangeString(UniqLogger *ul)
     qDebug() << v2.toString() << "\n---\n" << v3.toString();
     const LogWriter &lw = ul->getConsoleWriter(white);
 
-    ul->addWriterToLogger(logger,lw);
-    *logger << s << UNQL::LOG_CRITICAL << s1 << UNQL::LOG_FATAL << 1.0 << "hello" << UNQL::eom;
-    *logger << s2 << UNQL::eom;
-    *logger << s3 << UNQL::eom;
+    ul->addWriterToLogger(loggerFile,lw);
+    *loggerFile << s << UNQL::LOG_CRITICAL << s1 << UNQL::LOG_FATAL << 1.0 << "hello" << UNQL::eom;
+    *loggerFile << s2 << UNQL::eom;
+    *loggerFile << s3 << UNQL::eom;
 }
 
 
 
 
-void testlogger::test_dummylog(UniqLogger *ul)
+void testlogger_gui::test_dummylog(UniqLogger *ul)
 {
     qDebug() << "Testing dummy logger 50 times";
     Logger *m_dummyLoggerPtr2;

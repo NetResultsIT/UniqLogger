@@ -74,9 +74,8 @@ LogWriter::flush()
 void
 LogWriter::priv_writeToDevice()
 {
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
-#endif
+    ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
+
     if (m_writeIdleMark) {
         LogMessage lm("UniqLogger", UNQL::LOG_INFO, " -- MARK -- ", QDateTime::currentDateTime().toString("hh:mm:ss"));
         mutex.lock();
@@ -144,7 +143,7 @@ LogWriter::setMaximumAllowedMessages(int i_maxmsg)
 void
 LogWriter::setSleepingMilliSecs(int msec)
 {	
-    m_sleepingMilliSecs=msec;
+    m_sleepingMilliSecs = msec;
     m_logTimer->setInterval(msec);
 } 
  

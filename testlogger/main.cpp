@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if (0)
-	testlogger w;
+    testlogger_gui w;
     w.show();
 #endif
 

@@ -19,11 +19,11 @@ class BufferOfStrings
 
 public:
     explicit BufferOfStrings(): m_priority(UNQL::LOG_INFO) {}
-    void append(const QString &s) { return m_sl.append(s); }
-    QStringList list() const { return m_sl; }
-    UNQL::LogMessagePriorityType priority() const { return m_priority; }
-    int count() const { return m_sl.count(); }
-    void setPriority(UNQL::LogMessagePriorityType p) { m_priority = p; }
+    void append(const QString &s);
+    QStringList list() const;
+    UNQL::LogMessagePriorityType priority() const;
+    int count() const;
+    void setPriority(UNQL::LogMessagePriorityType p);
 };
 
 #endif // BUFFEROFSTRINGS_H

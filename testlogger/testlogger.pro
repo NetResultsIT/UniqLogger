@@ -10,7 +10,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TEMPLATE = app
 TARGET = bin/testlogger
 INCLUDEPATH += . $$UNIQLOGGERPATH/src
-QMAKE_LIBDIR += $$UNIQLOGGERPATH/bin
 
 
 # Input
@@ -45,12 +44,15 @@ win32-msvc2013{
 
 ULIBDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 
-CONFIG(release, debug|release) {
-    QMAKE_LIBDIR += $$UNIQLOGGERPATH/release/$$ULIBDIR
-}
-CONFIG(debug, debug|release) {
-    QMAKE_LIBDIR += $$UNIQLOGGERPATH/debug/$$ULIBDIR
-}
+LIBS += -L$$UNIQLOGGERPATH/last_build
+
+#
+#CONFIG(release, debug|release) {
+#    QMAKE_LIBDIR += $$UNIQLOGGERPATH/release/$$ULIBDIR
+#}
+#CONFIG(debug, debug|release) {
+#    QMAKE_LIBDIR += $$UNIQLOGGERPATH/debug/$$ULIBDIR
+#}
 
 win32 {
     contains (IDE, VS) {
@@ -66,7 +68,7 @@ win32 {
     }
 }
 
-unix:!macx {
+unix:!macx,!ios {
     CONFIG(debug, debug|release) {
         LIBNAME = UniqLogger_d
     }
@@ -77,6 +79,24 @@ macx{
         LIBNAME = UniqLogger_debug
     }
 }
+
+
+ios{
+    message("Building testlogger for iOS")
+
+    iphonesimulator {
+        message("it will run on an iPhone Simulator")
+        CONFIG(debug, debug|release) {
+            LIBNAME = UniqLogger_iphonesimulator_debug
+            #PRE_TARGETDEPS = libUniqLogger_iphonesimulator_debug.a
+        }
+    }
+
+    iphoneos {
+
+    }
+}
+
 
 unix {
     LIBS += -l$$LIBNAME

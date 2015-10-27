@@ -99,6 +99,10 @@ DSTDIR = $$PWD/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 DLLPATH = bin/
 
+ios {
+    FINALDIR = $$join(FINALDIR,,,_ios)
+}
+
 CONFIG(debug, debug|release) {
     message("Debug build")
     FINALDIR = $$join(FINALDIR,,"$$PWD/debug/","/")
@@ -178,7 +182,7 @@ unix {
     }
 }
 
-unix:!macx {
+unix:!macx:!ios {
     CONFIG(debug, debug|release) {
         DLL = $$join(TARGET,,lib,_d.so*)
         DLLPATH=$$join(DLLPATH,,debug/,)
@@ -195,6 +199,7 @@ unix:!macx {
 }
 
 macx {
+QMAKE_MAC_SDK = macosx10.10
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
         DLL = $$join(TARGET,,lib,.*dylib)
@@ -203,7 +208,6 @@ macx {
 	DLL=$$join(DLL,,$$DLLPATH,)
     }
     CONFIG(release, debug|release) {
-        #DLL = $$join(TARGET,,release/,.dylib*)
 	TARGET = $$join(TARGET,,,)
         DLL = $$join(TARGET,,lib,.*dylib)
 	DLLPATH=$$join(DLLPATH,,release/,)
@@ -213,6 +217,42 @@ macx {
     #message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
+ios {
+    message("Building the library for iOS")
+    CONFIG += staticlib
+
+    iphoneos {
+        message("Building for a real iPhone device")
+        IOSSUFFIX = _iphoneos
+    }
+
+    iphonesimulator {
+        message("Building for an iPhone simulator (x86)")
+        IOSSUFFIX = _iphonesimulator
+    }
+
+
+    CONFIG(debug, debug|release) {
+        IOSSUFFIX = $$join(IOSSUFFIX,,,_debug)
+        TARGET = $$join(TARGET,,,$$IOSSUFFIX)
+        DLL = $$join(TARGET,,lib,.a)
+        DLLPATH=$$join(DLLPATH,,debug/,)
+        TARGET = $$join(TARGET,,$$DLLPATH,)
+        #Qt 5.5.1 for iOS seems to have a problem where they create libs so we comment the below statement
+        #DLL=$$join(DLL,,$$DLLPATH,)
+    }
+    CONFIG(release, debug|release) {
+        TARGET = $$join(TARGET,,,$$IOSSUFFIX)
+        DLL = $$join(TARGET,,lib,.a)
+        DLLPATH=$$join(DLLPATH,,debug/,)
+        TARGET = $$join(TARGET,,$$DLLPATH,)
+        #Qt 5.5.1 for iOS seems to have a problem where they create libs so we comment the below statement
+        #DLL=$$join(DLL,,$$DLLPATH,)
+    }
+
+    message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
+}
+
 unix {
     QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
@@ -220,7 +260,7 @@ unix {
 }
 
 
-message ("Library name: $$TARGET$$MYVER")
+message ("Library name: $$DLL")
 
 # ----- Library sources ------
 

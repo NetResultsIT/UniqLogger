@@ -24,6 +24,7 @@ private:
 	bool m_streamIsOpen, m_fileSizeExceeded;
 	QString m_logfileBaseName;
     FileRotationPolicyType m_fileRotationPolicy;
+    QString lastUsedLogfilePostfix;
 
 	QString calculateCurrentFileName(int num=0);
 	QString calculateOldLogFileName();

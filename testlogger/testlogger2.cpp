@@ -4,11 +4,11 @@
 #include <QTimer>
 #include <QDateTime>
 
-#define TEST_FILE_ROTATION 0
+#define TEST_FILE_ROTATION 1
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
 #define TEST_NET 0
-#define TEST_NET_MULTISRC 1
+#define TEST_NET_MULTISRC 0
 #define TEST_DB 0
 #define TEST_MONITOR 0
 #define TEST_THREADSAFETY 0
@@ -176,7 +176,7 @@ testlogger_cli::timedLog()
 
 #if(TEST_FILE_ROTATION)
     qDebug() << "written " << i * 2 << "KB to file...";
-    loggerF1->log(UNQL::LOG_INFO, ( QString("file text iteration ") + QString::number(i) + " " +QString().fill('a', 1500) ).toLatin1().constData() );
+    loggerF1->log(UNQL::LOG_INFO, ( QString("file text iteration ") + QString::number(i) + " " + QString().fill('a', 1500) ).toLatin1().constData() );
     loggerF2->log(UNQL::LOG_INFO, ( QString("file2 text iteration") + QString::number(i) + " " + QString().fill('b', 500) ).toLatin1().constData() );
 #endif
 

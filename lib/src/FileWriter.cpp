@@ -15,11 +15,11 @@ FileWriter::FileWriter()
 : LogWriter()
 {
     m_fileRotationPolicy = StrictRotation;
-    m_fileSizeExceeded=false;
-	m_maxFileSizeMB=1.0;
-    m_RotationCurFileNumber=1;
-	m_rotationMaxFileNumber=2;
-    m_logfileBaseName="logfile.txt";
+    m_fileSizeExceeded = false;
+    m_maxFileSizeMB = 1.0;
+    m_RotationCurFileNumber = 1;
+    m_rotationMaxFileNumber = 2;
+    m_logfileBaseName = "logfile.txt";
 }
 
 
@@ -31,9 +31,7 @@ FileWriter::~FileWriter()
     //on exit, write all we've got
     this->flush();
     m_logFile.close();
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "Deleting filewriter on " << m_logFile.fileName();
-#endif
+    ULDBG << Q_FUNC_INFO << "Deleting filewriter on " << m_logFile.fileName();
 }
 
 
@@ -43,7 +41,7 @@ FileWriter::~FileWriter()
   */
 void
 FileWriter::setLogfileMaxSize(int filesize)
-{   m_maxFileSizeMB=filesize;	}
+{   m_maxFileSizeMB = filesize;	}
  
 
 /*!
@@ -52,7 +50,7 @@ FileWriter::setLogfileMaxSize(int filesize)
  */
 void
 FileWriter::setLogfileRotationRange(int maxfilenum)
-{   m_rotationMaxFileNumber=maxfilenum;	}
+{   m_rotationMaxFileNumber = maxfilenum;	}
  
 
 /*!
@@ -64,7 +62,7 @@ FileWriter::calculateOldLogFileName()
 {
     QString tmp="";
 
-	int i = m_RotationCurFileNumber-m_rotationMaxFileNumber;
+    int i = m_RotationCurFileNumber - m_rotationMaxFileNumber;
     if (i>0)
     {
         tmp = calculateCurrentFileName(i);
@@ -83,10 +81,11 @@ FileWriter::calculateCurrentFileName(int num)
     QString fullfilename = QDir::fromNativeSeparators(m_logfileBaseName);
     QString filename = fullfilename.split("/").takeLast();
     QString filepath;
+
     if (fullfilename.lastIndexOf("/") >= 0)
         filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
-    int filenum;
 
+    int filenum;
 
     if (num == 0) {
         if (m_fileRotationPolicy == StrictRotation)
@@ -103,21 +102,21 @@ FileWriter::calculateCurrentFileName(int num)
 
     if (sl.count() == 1) //no dots
     {
-            filename.append("-");
-            filename += QString::number(filenum);
+        filename.append("-");
+        filename += QString::number(filenum);
     }
     else if (sl.count() == 2) //one dot
     {
-            filename = sl[0];
-            filename.append("-");
-            filename += QString::number(filenum);
-            filename += ".";
-            filename += sl[1];
+        filename = sl[0];
+        filename.append("-");
+        filename += QString::number(filenum);
+        filename += ".";
+        filename += sl[1];
     }
     else //more than one dot
     {
-            sl[0] += QString::number(filenum);
-            filename = sl.join(".");
+        sl[0] += QString::number(filenum);
+        filename = sl.join(".");
     }
 
     return filepath + filename;
@@ -135,8 +134,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     if (m_logFile.isOpen()) //we were already logging to a file
     {
         mutex.lock();
-        LogMessage lm("UniqLogger",UNQL::LOG_INFO,"Closing previously opened logfile",QDateTime::currentDateTime().toString("hh:mm:ss"));
-        //m_logMessageList.append("["+QTime::currentTime().toString("hh:mm:ss")+"] [LOGGER] Closing previously opened logfile");
+        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Closing previously opened logfile", QDateTime::currentDateTime().toString("hh:mm:ss"));
         m_logMessageList.append(lm);
         m_streamIsOpen=false;
         mutex.unlock();
@@ -148,20 +146,18 @@ FileWriter::changeOutputFile(const QString &aFilename)
     if (!m_logFile.isOpen()) //we were already logging to a file
     {
         mutex.lock();
-        LogMessage lm("UniqLogger",UNQL::LOG_CRITICAL,"Cannot open logfile "+aFilename+" for writing",QDateTime::currentDateTime().toString("hh:mm:ss"));
+        LogMessage lm("UniqLogger", UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", QDateTime::currentDateTime().toString("hh:mm:ss"));
         m_logMessageList.append(lm);
-        //m_logMessageList.append("["+QTime::currentTime().toString("hh:mm:ss")+"] [LOGGER] [CRITICAL] Cannot open logfile "+filename+" for writing!");
-        m_streamIsOpen=false;
+        m_streamIsOpen = false;
         mutex.unlock();
         m_logFile.close();
     }
     else
     {
-        m_streamIsOpen=true;
+        m_streamIsOpen = true;
         mutex.lock();
-        LogMessage lm("UniqLogger",UNQL::LOG_INFO,"Opened logfile "+aFilename+" for writing",QDateTime::currentDateTime().toString("hh:mm:ss"));
+        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", QDateTime::currentDateTime().toString("hh:mm:ss"));
         m_logMessageList.append(lm);
-        //m_logMessageList.append("["+QTime::currentTime().toString("hh:mm:ss")+"] [LOGGER] Opened logfile "+filename+" for writing");
         mutex.unlock();
     }
 }
@@ -188,9 +184,8 @@ FileWriter::setOutputFile(const QString& aFilename)
 void
 FileWriter::writeToDevice()
 {
-#ifdef ULOGDBG
-   qDebug() << "Writing to file";
-#endif
+   ULDBG << "Writing to file";
+
    if (!m_streamIsOpen)
        setOutputFile();
    if (!m_logIsPaused)
@@ -234,7 +229,7 @@ FileWriter::rotateFilesIfNeeded()
             //check to see if we need to delete some files
             QString oldfile = calculateOldLogFileName();
             if (!oldfile.isEmpty())
-                    QFile::remove(oldfile);
+                QFile::remove(oldfile);
         }
         else {
             m_logFile.flush();
@@ -249,7 +244,7 @@ FileWriter::rotateFilesIfNeeded()
             }
 
             //now move the other files starting from the one b4 last
-            for (int i=m_rotationMaxFileNumber-2; i>=0; i--) {
+            for (int i = m_rotationMaxFileNumber-2; i>=0; i--) {
                 QString olderfile = calculateCurrentFileName(i);
                 QString newerfile = calculateCurrentFileName(i+1);
                 if (QFile::exists(olderfile)) {
