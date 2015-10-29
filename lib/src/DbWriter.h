@@ -10,7 +10,7 @@
 #include "LogWriter.h"
 #include <QFile>
 
-class DbHandler;
+class UnqlDbHandler;
 
 class DbWriter: public LogWriter
 {
@@ -19,7 +19,7 @@ class DbWriter: public LogWriter
     int m_maxFileSizeMB;
     bool m_fileSizeExceeded;
 	QString m_logfileBaseName;
-    DbHandler *m_dbh;
+    UnqlDbHandler *m_dbh;
 
 	void writeToDevice();
 

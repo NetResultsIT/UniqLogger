@@ -56,9 +56,9 @@ DbWriter::setOutputFile(QString _filename)
         //TODO - choose if use the old file or delete it
     }
     else {
-        DbHandler::createLoggerDb(_filename);
+        UnqlDbHandler::createLoggerDb(_filename);
     }
-    m_dbh = new DbHandler(_filename);
+    m_dbh = new UnqlDbHandler(_filename);
 }
 
 

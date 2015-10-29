@@ -13,7 +13,7 @@
 #include <QCoreApplication>
 #include <QStringList>
 
-DbHandler::DbHandler(QString inDbname) :
+UnqlDbHandler::UnqlDbHandler(QString inDbname) :
 	_M_DbName(inDbname)
 {
 
@@ -33,7 +33,7 @@ DbHandler::DbHandler(QString inDbname) :
 #endif
 }
 
-DbHandler::DbHandler(QString inDbname, QString inDbuser, QString inDbpwd, QString inDbhost, int inDbport) :
+UnqlDbHandler::UnqlDbHandler(QString inDbname, QString inDbuser, QString inDbpwd, QString inDbhost, int inDbport) :
 	_M_DbHost(inDbhost),
 	_M_DbName(inDbname),
 	_M_DbUsername(inDbuser),
@@ -62,7 +62,7 @@ DbHandler::DbHandler(QString inDbname, QString inDbuser, QString inDbpwd, QStrin
 #endif
 }
 
-DbHandler::~DbHandler()
+UnqlDbHandler::~UnqlDbHandler()
 {
     closeDbConn();
     QSqlDatabase::removeDatabase(_M_DbName);
@@ -73,7 +73,7 @@ DbHandler::~DbHandler()
   \return true if the DB is opened successfully, false otherwise
   */
 bool
-DbHandler::openDbConn()
+UnqlDbHandler::openDbConn()
 {
     bool ok = false;
     /* qDebug() << "OpenDbConn() -- db is open (" << _M_db.isOpen() <<") -- db is valid ("
@@ -104,7 +104,7 @@ DbHandler::openDbConn()
   \brief Closes the connection that the QSqlDatabase may have opened
   */
 void
-DbHandler::closeDbConn()
+UnqlDbHandler::closeDbConn()
 {
 	/* qDebug() << "closeDbConn() -- db is open (" << _M_db.isOpen() <<") -- db is valid ("
 			<< _M_db.isValid() <<") -- db is openError ("<< _M_db.isOpenError() <<")"; */
@@ -123,7 +123,7 @@ DbHandler::closeDbConn()
 	This method is called in kctiserver ctor and only if in the .ini file the logQevents flag is set to true.
   */
 int
-DbHandler::createLoggerDb(QString qeventdbname)
+UnqlDbHandler::createLoggerDb(QString qeventdbname)
 {
 	QCoreApplication *capp = QCoreApplication::instance();
 	//capp->addLibraryPath("/usr/lib/qt4/plugins/sqldrivers");
@@ -195,7 +195,7 @@ DbHandler::createLoggerDb(QString qeventdbname)
 
 
 void
-DbHandler::logEvent(const QString &module, const QString &tstamp, const QString &level, const QString &message)
+UnqlDbHandler::logEvent(const QString &module, const QString &tstamp, const QString &level, const QString &message)
 {
 	openDbConn();
 
