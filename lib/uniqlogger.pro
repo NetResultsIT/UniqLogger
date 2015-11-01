@@ -168,6 +168,8 @@ win32 {
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$DSTDIR\" $$escape_expand(\\n\\t)"
 }
 
+
+#Common UNIX stuff
 unix {
     CONFIG(debug, debug|release) {
         QMAKE_CFLAGS += -g
@@ -182,7 +184,12 @@ unix {
     }
 }
 
-unix:!macx:!ios {
+
+
+# Linux specific
+unix:!macx:!ios:!android  {
+    message("Building UniqLogger for Linux / Unix")
+
     CONFIG(debug, debug|release) {
         DLL = $$join(TARGET,,lib,_d.so*)
         DLLPATH=$$join(DLLPATH,,debug/,)
@@ -198,8 +205,49 @@ unix:!macx:!ios {
     #message ("unix!macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
+
+
+android {
+    message("Building UniqLogger for Android")
+    equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
+        message("Android Arch: armv7a")
+        error("Currently not supported")
+    }
+    equals(ANDROID_TARGET_ARCH, armeabi) {
+        message("Android Arch: armeabi")
+        error("Currently not supported")
+    }
+    equals(ANDROID_TARGET_ARCH, x86)  {
+        message("Android Arch: x86")
+        CONFIG(debug, debug|release) {
+            LIBSUFFIX += _android_x86_debug
+        }
+        else {
+            LIBSUFFIX += _android_x86
+        }
+    }
+
+    CONFIG(debug, debug|release) {
+        TARGET = $$join(TARGET,,,$$LIBSUFFIX)
+        DLL = $$join(TARGET,,lib,.so)
+        DLLPATH=$$join(DLLPATH,,debug/,)
+        TARGET = $$join(TARGET,,$$DLLPATH,)
+        DLL=$$join(DLL,,$$DLLPATH,)
+    }
+    CONFIG(release, debug|release) {
+        TARGET = $$join(TARGET,,,$$LIBSUFFIX)
+        DLL = $$join(TARGET,,lib,.so)
+        DLLPATH=$$join(DLLPATH,,debug/,)
+        TARGET = $$join(TARGET,,$$DLLPATH,)
+        DLL=$$join(DLL,,$$DLLPATH,)
+    }
+}
+
+
+
+
+# Mac OS X only
 macx {
-QMAKE_MAC_SDK = macosx10.10
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
         DLL = $$join(TARGET,,lib,.*dylib)
@@ -217,6 +265,8 @@ QMAKE_MAC_SDK = macosx10.10
     #message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
+
+# iOS specific
 ios {
     message("Building the library for iOS")
     CONFIG += staticlib
@@ -253,6 +303,8 @@ ios {
     message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
 }
 
+
+# final UNIX common stuff
 unix {
     QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
