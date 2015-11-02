@@ -211,7 +211,12 @@ android {
     message("Building UniqLogger for Android")
     equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
         message("Android Arch: armv7a")
-        error("Currently not supported")
+        CONFIG(debug, debug|release) {
+            LIBSUFFIX += _android_arm7_debug
+        }
+        else {
+            LIBSUFFIX += _android_arm7
+        }
     }
     equals(ANDROID_TARGET_ARCH, armeabi) {
         message("Android Arch: armeabi")
