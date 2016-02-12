@@ -14,6 +14,10 @@
  #include "DbWriter.h"
 #endif
 
+#ifdef ULOG_ANDROIDLOGGING
+ #include "AndroidWriter.h"
+#endif
+
 #include "FileWriter.h"
 #include "ConsoleWriter.h"
 #include "Logger.h"
@@ -225,6 +229,20 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &i_wc
     Logger *l = createLogger(_logname);
     LogWriter &dw = getDummyWriter();
     dw.setWriterConfig(i_wconf);
+    this->addWriterToLogger(l, dw);
+    return l;
+}
+
+
+/*!
+ * \brief creates an Android native logger and automatically connects a file writer with default values
+ * \param _logname the module name for this logger
+ * \return the pointer to the logger class created or a null pointer if something went wrong
+ */
+Logger *UniqLogger::createAndroidLogger(const QString& _logname)
+{
+    Logger *l = createLogger(_logname);
+    LogWriter &dw = getAndroidWriter();
     this->addWriterToLogger(l, dw);
     return l;
 }
@@ -495,6 +513,19 @@ UniqLogger::getDummyWriter()
     registerWriter(dw);
     //dw->start();
     return *dw;
+}
+
+
+
+LogWriter &UniqLogger::getAndroidWriter()
+{
+
+    AndroidWriter* aw = new AndroidWriter();
+    registerWriter(aw);
+    m_pTPool->runObject(aw);
+    aw->run();
+
+    return *aw;
 }
 
 

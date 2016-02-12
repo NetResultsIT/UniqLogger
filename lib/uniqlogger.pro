@@ -212,10 +212,12 @@ android {
     equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
         message("Android Arch: armv7a")
         CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_arm7_debug
+            #LIBSUFFIX += _android_arm7_debug
+            LIBSUFFIX += _android_debug
         }
         else {
-            LIBSUFFIX += _android_arm7
+            #LIBSUFFIX += _android_arm7
+            LIBSUFFIX += _android
         }
     }
     equals(ANDROID_TARGET_ARCH, armeabi) {
@@ -225,10 +227,12 @@ android {
     equals(ANDROID_TARGET_ARCH, x86)  {
         message("Android Arch: x86")
         CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_debug
+            #LIBSUFFIX += _android_x86_debug
+            LIBSUFFIX += _android_debug
         }
         else {
-            LIBSUFFIX += _android_x86
+            #LIBSUFFIX += _android_x86
+            LIBSUFFIX += _android
         }
     }
 
@@ -246,6 +250,9 @@ android {
         TARGET = $$join(TARGET,,$$DLLPATH,)
         DLL=$$join(DLL,,$$DLLPATH,)
     }
+
+    HEADERS += src/AndroidWriter.h
+    SOURCES += src/AndroidWriter.cpp
 }
 
 

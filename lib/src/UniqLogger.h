@@ -103,6 +103,7 @@ public:
         Logger* createDummyLogger   ( const QString &logName,                               const WriterConfig &wc=WriterConfig() );
         Logger* createNetworkLogger ( const QString &logName, const QString &addr,int port, const WriterConfig &wc=WriterConfig() );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,   const WriterConfig &wc=WriterConfig() );
+        Logger* createAndroidLogger ( const QString &logName                                                                      );
 
         LogWriter& getDbWriter        ( const QString &aDbFileName          );
         LogWriter& getNetworkWriter   ( const QString &address, int port    );
@@ -110,6 +111,7 @@ public:
         LogWriter& getConsoleWriter   ( ConsoleColorType c=NONE             );
         LogWriter& getStdConsoleWriter();
         LogWriter& getDummyWriter     ();
+        LogWriter& getAndroidWriter   ();
 
         void addMonitorVar ( const QString &var, bool initialStatus=false );
         void changeMonitorVarStatus ( const QString &var, bool status );
