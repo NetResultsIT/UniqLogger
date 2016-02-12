@@ -233,7 +233,7 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &i_wc
     return l;
 }
 
-
+#ifdef ULOG_ANDROIDLOGGING
 /*!
  * \brief creates an Android native logger and automatically connects a file writer with default values
  * \param _logname the module name for this logger
@@ -246,7 +246,7 @@ Logger *UniqLogger::createAndroidLogger(const QString& _logname)
     this->addWriterToLogger(l, dw);
     return l;
 }
-
+#endif
 
 
 /*!
@@ -516,7 +516,7 @@ UniqLogger::getDummyWriter()
 }
 
 
-
+#ifdef ULOG_ANDROIDLOGGING
 LogWriter &UniqLogger::getAndroidWriter()
 {
 
@@ -527,7 +527,7 @@ LogWriter &UniqLogger::getAndroidWriter()
 
     return *aw;
 }
-
+#endif
 
 
 /*!
