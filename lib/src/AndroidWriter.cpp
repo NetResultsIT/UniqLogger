@@ -25,8 +25,9 @@ void AndroidWriter::writeToDevice()
 {
     mutex.lock();
     if (!m_logIsPaused) {
-        for (LogMessage message : m_logMessageList) {
-
+        int count = m_logMessageList.count();
+        for (int i = 0; i < count; i++) {
+            LogMessage message = m_logMessageList.takeFirst();
             android_LogPriority priority = androidPriorityMap.value(message.level(), ANDROID_LOG_UNKNOWN);
 
             if (priority != ANDROID_LOG_UNKNOWN) {
