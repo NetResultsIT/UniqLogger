@@ -23,8 +23,8 @@
 #include "Logger.h"
 #include "DummyWriter.h"
  
-
 #include "nrthreadpool.h"
+
 
 //Define (and not simply declare) the static members (see C++ FAQ 10.12)
 QMutex UniqLogger::gmuxUniqLoggerInstance;
@@ -37,12 +37,12 @@ extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
   */
 UniqLogger::UniqLogger(int nthreads)
 {
-    m_defaultTimeStampFormat="hh:mm:ss";
-    m_defaultSpaceChar=' ';
-    m_defaultStartEncasingChar='[';
-    m_defaultEndEncasingChar=']';
+    m_defaultTimeStampFormat = DEF_UNQL_TS_FMT;
+    m_defaultSpaceChar = ' ';
+    m_defaultStartEncasingChar = '[';
+    m_defaultEndEncasingChar = ']';
 
-    m_pTPool = new NRThreadPool(nthreads, this);
+    m_pTPool = new NRThreadPool(nthreads, "UNQL_WPool", this);
 
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,   "FATAL");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL,"CRITICAL");
@@ -198,17 +198,17 @@ UniqLogger::createLogger(const QString &logname)
 		l->muxMonitorVar = &muxMonitorVarMap;	//we need the friendship here
 		l->m_varMonitorMap = &m_VarMonitorMap;	//we need the friendship here
 
-        if (m_defaultTimeStampFormat!="hh:mm:ss")
+        if (m_defaultTimeStampFormat != DEF_UNQL_TS_FMT)
             l->setTimeStampFormat(m_defaultTimeStampFormat);
-        if (m_defaultSpaceChar!=' ')
+        if (m_defaultSpaceChar != ' ')
             l->setSpacingString(m_defaultSpaceChar);
-        if (m_defaultStartEncasingChar!='[')
+        if (m_defaultStartEncasingChar != '[')
             l->setEncasingChars(m_defaultStartEncasingChar, m_defaultEndEncasingChar);
 
         //after having set the various strings we set the module name
         l->setModuleName(logname);
 
-        bool b = connect(l,SIGNAL(writersToDelete(const QList<LogWriter*>)),this,SLOT(writerFinished(const QList<LogWriter*>)),Qt::DirectConnection);
+        bool b = connect(l,SIGNAL(writersToDelete(const QList<LogWriter*>)), this, SLOT(writerFinished(const QList<LogWriter*>)), Qt::DirectConnection);
         Q_ASSERT(b);
         Q_UNUSED(b);
     }

@@ -18,6 +18,8 @@
 
 #define ERRMSG_SIZE 5000
 
+#define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"
+
 class UniqLogger;
 class Logger;
 class LogWriter;

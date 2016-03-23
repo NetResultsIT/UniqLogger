@@ -202,7 +202,11 @@ unix:!macx:!ios:!android  {
         TARGET = $$join(TARGET,,$$DLLPATH,)
         DLL=$$join(DLL,,$$DLLPATH,)
     }
-    #message ("unix!macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
+    #message ("unix!macx!ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
+
+    android {
+        message("Building for android")
+    }
 }
 
 

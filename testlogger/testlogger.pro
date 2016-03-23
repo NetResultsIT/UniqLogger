@@ -88,7 +88,6 @@ ios{
         message("it will run on an iPhone Simulator")
         CONFIG(debug, debug|release) {
             LIBNAME = UniqLogger_iphonesimulator_debug
-            #PRE_TARGETDEPS = libUniqLogger_iphonesimulator_debug.a
         }
     }
 
@@ -97,7 +96,26 @@ ios{
     }
 }
 
+android {
+
+    message("Building testlogger for Android")
+    equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
+        message("Android Arch: armv7a")
+        error("Currently not supported")
+    }
+    equals(ANDROID_TARGET_ARCH, armeabi) {
+        message("Android Arch: armeabi")
+        error("Currently not supported")
+    }
+    equals(ANDROID_TARGET_ARCH, x86)  {
+        message("Android Arch: x86")
+        CONFIG(debug, debug|release) {
+            LIBNAME = UniqLogger_android_x86_debug
+        }
+    }
+}
+
 
 unix {
-    LIBS += -l$$LIBNAME
+    LIBS += -l$$LIBNAME -lz
 }
