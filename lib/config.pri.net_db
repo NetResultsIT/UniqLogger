@@ -1,0 +1,6 @@
+############################################################################### 
+# UniqLogger build configuration
+# With Network and Db
+DEFINES += ULOG_NETLOGGING
+DEFINES += ULOG_DBLOGGING
+

@@ -5,7 +5,9 @@
 VERSION = 0.3.3
 
 # --- Please check that the config file reflects your desired build options
-include (config.pri)
+!exists(config.pri) {
+    message("No config.pri found, building with default options: no net and no DB support")
+} else: include (config.pri)
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
@@ -91,6 +93,12 @@ win32-msvc2012{
 win32-msvc2013{
     message("Using VC++ 2013")
     COMPILER=VC2013
+}
+
+
+win32-msvc2015{
+    message("Using VC++ 2015")
+    COMPILER=VC2015
 }
 
 message("COMPILER: $$COMPILER")
