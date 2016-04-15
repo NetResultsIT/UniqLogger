@@ -224,12 +224,10 @@ android {
     equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
         message("Android Arch: armv7a")
         CONFIG(debug, debug|release) {
-            #LIBSUFFIX += _android_arm7_debug
-            LIBSUFFIX += _android_debug
+            LIBSUFFIX += _android_arm_debug
         }
         else {
-            #LIBSUFFIX += _android_arm7
-            LIBSUFFIX += _android
+            LIBSUFFIX += _android_arm
         }
     }
     equals(ANDROID_TARGET_ARCH, armeabi) {
@@ -239,29 +237,25 @@ android {
     equals(ANDROID_TARGET_ARCH, x86)  {
         message("Android Arch: x86")
         CONFIG(debug, debug|release) {
-            #LIBSUFFIX += _android_x86_debug
-            LIBSUFFIX += _android_debug
+            LIBSUFFIX += _android_x86_debug
         }
         else {
-            #LIBSUFFIX += _android_x86
-            LIBSUFFIX += _android
+            LIBSUFFIX += _android_x86
         }
     }
 
     CONFIG(debug, debug|release) {
-        TARGET = $$join(TARGET,,,$$LIBSUFFIX)
-        DLL = $$join(TARGET,,lib,.so)
-        DLLPATH=$$join(DLLPATH,,debug/,)
-        TARGET = $$join(TARGET,,$$DLLPATH,)
-        DLL=$$join(DLL,,$$DLLPATH,)
+        BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
-        TARGET = $$join(TARGET,,,$$LIBSUFFIX)
-        DLL = $$join(TARGET,,lib,.so)
-        DLLPATH=$$join(DLLPATH,,debug/,)
-        TARGET = $$join(TARGET,,$$DLLPATH,)
-        DLL=$$join(DLL,,$$DLLPATH,)
+        BLDTYPE=release
     }
+
+    TARGET = $$join(TARGET,,,$$LIBSUFFIX)
+    DLL = $$join(TARGET,,lib,.so)
+    DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
+    TARGET = $$join(TARGET,,$$DLLPATH,)
+    DLL=$$join(DLL,,$$DLLPATH,)
 
     HEADERS += src/AndroidWriter.h
     SOURCES += src/AndroidWriter.cpp
@@ -274,18 +268,18 @@ android {
 macx {
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
-        DLL = $$join(TARGET,,lib,.*dylib)
-	DLLPATH=$$join(DLLPATH,,debug/,)
-	TARGET = $$join(TARGET,,$$DLLPATH,)
-	DLL=$$join(DLL,,$$DLLPATH,)
+        BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
-	TARGET = $$join(TARGET,,,)
-        DLL = $$join(TARGET,,lib,.*dylib)
-	DLLPATH=$$join(DLLPATH,,release/,)
-	TARGET = $$join(TARGET,,$$DLLPATH,)
-	DLL=$$join(DLL,,$$DLLPATH,)
+        TARGET = $$join(TARGET,,,)
+        BLDTYPE=release
     }
+
+    DLL = $$join(TARGET,,lib,.*dylib)
+    DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
+    TARGET = $$join(TARGET,,$$DLLPATH,)
+    DLL=$$join(DLL,,$$DLLPATH,)
+
     #message ("macx DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 }
 
@@ -308,21 +302,17 @@ ios {
 
     CONFIG(debug, debug|release) {
         IOSSUFFIX = $$join(IOSSUFFIX,,,_debug)
-        TARGET = $$join(TARGET,,,$$IOSSUFFIX)
-        DLL = $$join(TARGET,,lib,.a)
-        DLLPATH=$$join(DLLPATH,,debug/,)
-        TARGET = $$join(TARGET,,$$DLLPATH,)
-        #Qt 5.5.1 for iOS seems to have a problem where they create libs so we comment the below statement
-        #DLL=$$join(DLL,,$$DLLPATH,)
+        BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
-        TARGET = $$join(TARGET,,,$$IOSSUFFIX)
-        DLL = $$join(TARGET,,lib,.a)
-        DLLPATH=$$join(DLLPATH,,debug/,)
-        TARGET = $$join(TARGET,,$$DLLPATH,)
-        #Qt 5.5.1 for iOS seems to have a problem where they create libs so we comment the below statement
-        #DLL=$$join(DLL,,$$DLLPATH,)
+        BLDTYPE=release
     }
+
+    TARGET = $$join(TARGET,,,$$IOSSUFFIX)
+    DLL = $$join(TARGET,,lib,.a)
+    DLLPATH=$$join(DLLPATH,,$$OUT_PWD/$$BLDTYPE/,)
+    TARGET = $$join(TARGET,,$$DLLPATH,)
+    DLL=$$join(DLL,,$$DLLPATH,)
 
     message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
 }
@@ -369,4 +359,4 @@ QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN
 
-message(" ==== End of QMake build process ==== ")
+message(" ==== End of UniqLogger QMake build process ==== ")
