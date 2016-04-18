@@ -16,11 +16,15 @@ class DbWriter;
 class FileWriter;
 class LogWriter;
 class DummyWriter;
+class ConsoleWriter;
+class WriterConfig;
 
 class NRThreadPool;
 
 #include "Logger.h"
+#if (1)
 #include "ConsoleWriter.h"
+#endif
 
 
 /*!
