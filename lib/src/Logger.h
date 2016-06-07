@@ -16,7 +16,7 @@
 #include "LogMessage.h"
 #include "bufferofstrings.h"
 
-#define ERRMSG_SIZE 5000
+#define UNQL_ERRMSG_SIZE 5000
 
 #define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"
 
@@ -40,7 +40,7 @@ class ULOG_LIB_API Logger: public QObject
 
     int m_logVerbosityAcceptedLevel, m_logVerbosityDefaultLevel;
 
-    char buffer[ERRMSG_SIZE];
+    char buffer[UNQL_ERRMSG_SIZE];
     QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
     QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;
