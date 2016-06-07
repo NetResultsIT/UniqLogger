@@ -291,9 +291,9 @@ Logger::log(int priority, const char* mess, ...)
         va_start(args,mess);
 
 #if defined(_MSC_VER) && _MSC_VER < 1400
-        _vsnprintf(buffer,ERRMSG_SIZE,mess,args);
+        _vsnprintf(buffer,UNQL_ERRMSG_SIZE,mess,args);
 #else
-        vsnprintf(buffer,ERRMSG_SIZE,mess,args);
+        vsnprintf(buffer,UNQL_ERRMSG_SIZE,mess,args);
 #endif
 
         QString msg = buffer;
@@ -314,14 +314,14 @@ Logger::log(int priority, const char* mess, ...)
 void
 Logger::log(const char* mess, ...)
 {
-	char buffer2[ERRMSG_SIZE];
+    char buffer2[UNQL_ERRMSG_SIZE];
 	va_list args;
 
 	va_start(args,mess);
 #if defined(_MSC_VER) && _MSC_VER < 1400
-	_vsnprintf(buffer2,ERRMSG_SIZE,mess,args);
+    _vsnprintf(buffer2,UNQL_ERRMSG_SIZE,mess,args);
 #else
-	vsnprintf(buffer2,ERRMSG_SIZE,mess,args);
+    vsnprintf(buffer2,UNQL_ERRMSG_SIZE,mess,args);
 #endif
 	va_end(args);
 
