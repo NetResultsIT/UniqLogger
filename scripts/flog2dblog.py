@@ -10,20 +10,22 @@ TESTDB = "example.db"
 
 def open_db(filename):
     global conn
-    conn = sqlite3.connect('example.db')
+    conn = sqlite3.connect(filename)
     conn.text_factory = str
 
 
 def create_database():
     c = conn.cursor()
 
-    c.execute("CREATE TABLE IF NOT EXISTS  ul_level (\
+    c.execute("CREATE TABLE IF NOT EXISTS ul_level (\
                     id          INTEGER PRIMARY KEY,\
                     level_name  VARCHAR(40),\
                     level_value INTEGER UNIQUE\
                )")
 
-    c.execute("CREATE TABLE IF NOT EXISTS  ul_event (\
+    conn.commit()
+
+    c.execute("CREATE TABLE IF NOT EXISTS ul_event (\
                     id          INTEGER PRIMARY KEY,\
                     tstamp      TIMESTAMP,\
                     module      VARCHAR(40) NOT NULL,\
@@ -33,8 +35,12 @@ def create_database():
 
     errdict = {"FATAL": 0, "CRITICAL": 10, "WARNING": 100, "INFO": 1000, "DEBUG": 10000, "FULL DEBUG": 100000}
 
-    for key, value in errdict.iteritems():
-        c.execute("INSERT INTO ul_level (level_name, level_value) VALUES (\"" + key + "\", " + str(value) + ")")
+    try:
+        for key, value in errdict.iteritems():
+            c.execute("INSERT INTO ul_level (level_name, level_value) VALUES (\"" + key + "\", " + str(value) + ")")
+    finally:
+        print("The table level was already populated... skipping")
+        return
 
     return
 
@@ -59,7 +65,7 @@ def insert_data(m, msg):
 def migrate_file(lfile):
     global conn
 
-    print("here " + os.getcwd())
+    #print("here " + os.getcwd())
     linecount = 0
     msg = ""
     oldm = None
@@ -69,20 +75,19 @@ def migrate_file(lfile):
         m = _re.match(line)
         if m:
             if (oldm):
-                print("A new line is found, inserting old data")
+                #print("A new line is found, inserting old data")
                 insert_data(oldm, msg)
                 oldm = None
                 msg = ""
-            print ("MATCHED line with the following tokens=", m.group(1), m.group(2), m.group(3), m.group(4))
+            #print ("MATCHED line with the following tokens=", m.group(1), m.group(2), m.group(3), m.group(4))
             oldm = m
             msg = m.group(4)
         else:
-            print ("This line seems to be part of previous entry: ", line,) # this goes to the current file
+            #print ("This line seems to be part of previous entry: ", line,) # this goes to the current file
             msg = msg + line
 
 
     if (oldm):
-        print("Inserting oldm for the last time")
         insert_data(oldm, msg)
         oldm = None
         msg = ""
@@ -109,7 +114,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     open_db(dbfile)
-    if not os.path.isfile(dbfile):
+    if not os.path.isfile(dbfile) or os.stat(dbfile).st_size == 0:
         create_database()
     t0 = datetime.datetime.now()
     lc = migrate_file(logfile)
