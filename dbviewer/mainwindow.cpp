@@ -15,7 +15,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->btnFilter, SIGNAL(clicked(bool)), this, SLOT(applyFilter()));
     connect(ui->actionChoose_Db_file, SIGNAL(triggered(bool)), this, SLOT(chooseDbFile()));
-    loadFile("example.db");
 }
 
 MainWindow::~MainWindow()

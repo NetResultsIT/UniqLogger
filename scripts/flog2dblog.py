@@ -11,6 +11,7 @@ TESTDB = "example.db"
 def open_db(filename):
     global conn
     conn = sqlite3.connect('example.db')
+    conn.text_factory = str
 
 
 def create_database():
@@ -44,12 +45,13 @@ def close_db():
     conn.close()
 
 
-def insert_data(m):
+def insert_data(m, msg):
     global conn
     c = conn.cursor()
 
     c.execute("INSERT INTO  ul_event (tstamp, module, level,\
-                    message) VALUES (\"" + m.group(1) + "\", \"" + m.group(2) + "\", (select level_value from ul_level where level_name = '" + m.group(3) + "'), \"" + m.group(4) + "\")")
+                    message) VALUES (\"" + m.group(1) + "\", \"" + m.group(2) + "\", \
+                    (select level_value from ul_level where level_name = '" + m.group(3) + "'), ?)", [msg])
 
     return
 
@@ -59,15 +61,32 @@ def migrate_file(lfile):
 
     print("here " + os.getcwd())
     linecount = 0
+    msg = ""
+    oldm = None
     for line in fileinput.input(lfile):
         linecount += 1
-        _re = re.compile("^\[(.*)\] \[(.*)\] \[(.*)\] (.*)")
+        _re = re.compile("^\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*)")
         m = _re.match(line)
         if m:
-            print ("MATCHED line with the following tokens=", m.group(1))
-            insert_data(m)
+            if (oldm):
+                print("A new line is found, inserting old data")
+                insert_data(oldm, msg)
+                oldm = None
+                msg = ""
+            print ("MATCHED line with the following tokens=", m.group(1), m.group(2), m.group(3), m.group(4))
+            oldm = m
+            msg = m.group(4)
         else:
-            print line, # this goes to the current file
+            print ("This line seems to be part of previous entry: ", line,) # this goes to the current file
+            msg = msg + line
+
+
+    if (oldm):
+        print("Inserting oldm for the last time")
+        insert_data(oldm, msg)
+        oldm = None
+        msg = ""
+
     return linecount
 
 
@@ -78,7 +97,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     logfile = sys.argv[1]
-    dbfile = sys.argv[2]
+
+    if len(sys.argv) < 3:
+        print("You did not provide an output db filename, using default uniqlogger.db")
+        dbfile = "uniqlogger.db"
+    else:
+        dbfile = sys.argv[2]
 
     if not os.path.isfile(logfile):
         print("No such file: " + logfile)
