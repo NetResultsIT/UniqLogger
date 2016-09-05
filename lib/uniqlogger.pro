@@ -368,7 +368,8 @@ unix {
     LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.a
 }
 win32 {
-    ### TODO
+    message ("[*] linking zlib statically...")
+    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.lib
 }
 
 QMAKE_CLEAN += -r
