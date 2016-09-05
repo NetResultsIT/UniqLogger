@@ -15,6 +15,8 @@
 
 #include "LogMessage.h"
 
+class FileCompressor;
+
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS
    #define ULOG_LIB_API __declspec(dllexport)
@@ -39,6 +41,14 @@ public:
     int maxFileSize;        /// The maximum file size (in MB) of a file written by the FileWriter
     int maxFileNum;         /// The number of files that FileWriter should use during rotation, 0 disables it
     int rotationPolicy;     /// Whether a suffix (i.e. _Mon, _Tue, or 20150316) should be appended to rotate files on a time base
+    /* file log compression specific vars */
+    int compressionLevel;   /// The compression level used to compress the rotated log files
+                            /// 0: do not compress
+                            /// 1: min compression level (faster)
+                            /// 9: max compression level (slower)
+                            /// default: 0 - do not compress
+    int compressionAlgo;    /// Algorithm used to compress (gz or zip): default value is zip
+
 
     //Makes sense just for RemoteWriter
     int reconnectionSecs;   /// The number of seconds a RemoteWriter will wait before trying to reconnect to its server

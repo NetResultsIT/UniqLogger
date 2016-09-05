@@ -9,6 +9,14 @@ VERSION = 0.3.3
     message("No config.pri found, building with default options: no net and no DB support")
 } else: include (config.pri)
 
+!exists(depspath.pri) {
+    error("No depspath.pri found, giving up")
+} else: include (depspath.pri)
+
+!exists($$PWD/filecompressor/trunk/fileCompressor.pri) {
+    error("Cannot find fileCompressor.pri: giving up")
+} else: include ($$PWD/filecompressor/trunk/fileCompressor.pri)
+
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 QT -= gui
@@ -22,7 +30,6 @@ CONFIG -= flat
 DEFINES -= UNICODE
 
 TEMPLATE = lib
-
 
 #this should work with Qt5, on Qt4 we do it manually
 #MYVER = $$split($$VERSION, .)
@@ -325,7 +332,6 @@ unix {
     QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
 }
 
-
 message ("Library name: $$DLL")
 
 # ----- Library sources ------
@@ -341,22 +347,42 @@ HEADERS += \
     src/DummyWriter.h \
     src/bufferofstrings.h
 
-SOURCES += \
-    src/Logger.cpp \
-    src/LogWriter.cpp \
-    src/FileWriter.cpp \
-    src/ConsoleWriter.cpp \
-    src/UniqLogger.cpp \
-    src/LogMessage.cpp \
-    src/tpool/nrthreadpool.cpp \
-    src/DummyWriter.cpp \
-    src/bufferofstrings.cpp
+SOURCES += src/Logger.cpp
+SOURCES += src/LogWriter.cpp
+SOURCES += src/FileWriter.cpp
+SOURCES += src/ConsoleWriter.cpp
+SOURCES += src/UniqLogger.cpp
+SOURCES += src/LogMessage.cpp
+SOURCES += src/tpool/nrthreadpool.cpp
+SOURCES += src/DummyWriter.cpp
+SOURCES += src/bufferofstrings.cpp
 
 INCLUDEPATH += src/tpool
+INCLUDEPATH += $$FILECOMPRESSO_ROOT
+INCLUDEPATH += $$MINIZIP_BASE_PATH
+##INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
+##INCLUDEPATH += $$ZLIB_BASE_PATH/include
 
+unix {
+    ##message ("[*] Trying linking zlib statically from: $$ZLIB_PATH")
+    ##QMAKE_LIBDIR += $$ZLIB_PATH
+    ##LIBS += -L$$ZLIB_PATH -lz
+    message ("[*] LIBS: $$LIBS QMAKE_LIBDIR: $$QMAKE_LIBDIR")
+}
+win32 {
+    ### TODO
+}
 
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN
 
 message(" ==== End of UniqLogger QMake build process ==== ")
+
+DISTFILES += \
+    depspath.pri.sample \
+    configs/buildbot_win7.pri \
+    ci/bbot_iqac_agent_config.pri
+
+SUBDIRS += \
+    configs/buildbot-uniqlogger.pro

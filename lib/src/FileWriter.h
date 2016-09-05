@@ -15,7 +15,9 @@ class FileWriter: public LogWriter
 	Q_OBJECT
 
 public:
-    enum FileRotationPolicyType { StrictRotation, IncrementalNumbers };
+    enum FileRotationPolicyType { StrictRotation,    // files numbers rotated on the maxfile no
+                                  IncrementalNumbers // rotated files have a sliding-window numer schema
+                                };
 
 private:
 	QFile m_logFile;
@@ -26,11 +28,18 @@ private:
     FileRotationPolicyType m_fileRotationPolicy;
     QString lastUsedLogfilePostfix;
 
+    int m_compressionLevel;
+    int m_compressionAlgo;
+
+
 	QString calculateCurrentFileName(int num=0);
 	QString calculateOldLogFileName();
 	void changeOutputFile(const QString&);
 	void writeToDevice();
     void rotateFilesIfNeeded();
+
+    void compressIfNeeded( const QString& i_toCompressFilename );
+    const QString addCompressFileExtension(const QString& i_filename);
 
 public:
     explicit FileWriter();

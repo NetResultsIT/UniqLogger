@@ -11,6 +11,8 @@
 #include <QFileInfo>
 #include <qdir.h>
 
+#include "FileCompressor.h"
+
 FileWriter::FileWriter()
 : LogWriter()
 {
@@ -82,14 +84,21 @@ FileWriter::calculateCurrentFileName(int num)
     QString filename = fullfilename.split("/").takeLast();
     QString filepath;
 
-    if (fullfilename.lastIndexOf("/") >= 0)
+
+    if (fullfilename.lastIndexOf("/") >= 0) {
         filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
+    }
 
     int filenum;
 
+    /*
+     *  The file with num == 0 --> no number, will not have any special extension if
+     *  compression is enabled, because it is the file we are logging on
+     */
     if (num == 0) {
-        if (m_fileRotationPolicy == StrictRotation)
+        if (m_fileRotationPolicy == StrictRotation) {
             return fullfilename;
+        }
 
         filenum = m_RotationCurFileNumber;
     }
@@ -118,6 +127,17 @@ FileWriter::calculateCurrentFileName(int num)
         sl[0] += QString::number(filenum);
         filename = sl.join(".");
     }
+
+#if (0)
+    /*
+     *  if we are compressing log files, the file will gave the extension .zip or .gz
+     */
+    if ( m_compressionLevel > 0 )
+    {
+        filename += FileCompressor::filenameExtension(
+                    static_cast<FileCompressor::compressedFileFormatEnum>(m_compressionAlgo) );
+    }
+#endif
 
     return filepath + filename;
 }
@@ -223,22 +243,34 @@ FileWriter::rotateFilesIfNeeded()
     //check if we need to change file
     if ( (m_maxFileSizeMB > 0) && ( (m_logFile.size() / 1000000.0) > m_maxFileSizeMB) )
     {
-        if (m_fileRotationPolicy == IncrementalNumbers) {
+        switch (m_fileRotationPolicy)
+        {
+        case IncrementalNumbers:
+        {
             m_RotationCurFileNumber++;
-            changeOutputFile(calculateCurrentFileName());
+            QString currFileName = calculateCurrentFileName();
+            changeOutputFile( currFileName );
             //check to see if we need to delete some files
             QString oldfile = calculateOldLogFileName();
-            if (!oldfile.isEmpty())
+            if (!oldfile.isEmpty()) {
                 QFile::remove(oldfile);
+            }
         }
-        else {
+            break;
+        case StrictRotation:
+        {
             m_logFile.flush();
             m_logFile.close();
 
             //remove the last file (if exists)
             QString lastfile = calculateCurrentFileName(m_rotationMaxFileNumber-1);
-            if (QFile::exists(lastfile))
+            // if we are compressing the rotated log files, we need to add the extension to the filename (.zip|.gz)
+            if ( m_compressionLevel > 0 ) {
+                lastfile = addCompressFileExtension(lastfile);
+            }
+            if (QFile::exists(lastfile)) {
                 QFile::remove(lastfile);
+            }
             else {
                 qDebug() << lastfile << " does not exists, cannot delete";
             }
@@ -247,19 +279,72 @@ FileWriter::rotateFilesIfNeeded()
             for (int i = m_rotationMaxFileNumber-2; i>=0; i--) {
                 QString olderfile = calculateCurrentFileName(i);
                 QString newerfile = calculateCurrentFileName(i+1);
+                if ( m_compressionLevel > 0 && i != 0 ) {
+                    olderfile = addCompressFileExtension(olderfile);
+                    newerfile = addCompressFileExtension(newerfile);
+                }
                 if (QFile::exists(olderfile)) {
                     QFile::rename(olderfile,newerfile);
                 }
                 else {
                     qDebug() << olderfile << " does not exists cannot rename into " << newerfile;
                 }
+            } /* loop to rename old rotated files */
+
+            QString currFileName = calculateCurrentFileName();
+            changeOutputFile( currFileName );
+
+            if ( m_compressionLevel > 0 )
+            {
+                QString currFileName = calculateCurrentFileName(1);
+                compressIfNeeded( currFileName );
             }
 
-            changeOutputFile(calculateCurrentFileName());
         }
+            break;
+        default:
+            break;
+        } /* switch( rotation policy ) */
     }
 }
- 
+
+const QString
+FileWriter::addCompressFileExtension(const QString& i_filename)
+{
+    return i_filename + QString(".") + FileCompressor::filenameExtension(
+                static_cast<FileCompressor::compressedFileFormatEnum>(m_compressionAlgo) );
+}
+
+void
+FileWriter::compressIfNeeded( const QString& i_toCompressFilename )
+{
+    if ( m_compressionLevel > 0 )
+    {
+        QString compressedfileName = addCompressFileExtension(i_toCompressFilename);
+        qDebug() << "to compress filename: " << i_toCompressFilename;
+        qDebug() << "compressed filename:  " << compressedfileName;
+        mutex.lock();
+        bool b = FileCompressor::fileCompress(i_toCompressFilename,
+                                     compressedfileName,
+                                     static_cast<FileCompressor::compressedFileFormatEnum>(m_compressionAlgo),
+                                     m_compressionLevel);
+        if (!b) {
+            qDebug() << "Error compressing file: " << i_toCompressFilename;
+        }
+        else {
+            /* remove original (uncompressed) file */
+            QFile toRemove(i_toCompressFilename);
+            b = toRemove.remove();
+            if (!b) {
+                qDebug() << "Error removing file to compress: " << i_toCompressFilename;
+            }
+            else {
+                qDebug() << "Removing file to compress (already compressed): " << i_toCompressFilename;
+            }
+        }
+        mutex.unlock();
+    }
+}
 
 void
 FileWriter::setWriterConfig(const WriterConfig &wconf)
@@ -268,4 +353,7 @@ FileWriter::setWriterConfig(const WriterConfig &wconf)
 
     m_maxFileSizeMB = wconf.maxFileSize;
     m_rotationMaxFileNumber = wconf.maxFileNum;
+
+    m_compressionLevel = wconf.compressionLevel;
+    m_compressionAlgo  = wconf.compressionAlgo;
 }
