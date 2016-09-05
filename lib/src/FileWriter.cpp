@@ -299,7 +299,6 @@ FileWriter::rotateFilesIfNeeded()
                 QString currFileName = calculateCurrentFileName(1);
                 compressIfNeeded( currFileName );
             }
-
         }
             break;
         default:

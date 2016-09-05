@@ -360,14 +360,12 @@ SOURCES += src/bufferofstrings.cpp
 INCLUDEPATH += src/tpool
 INCLUDEPATH += $$FILECOMPRESSO_ROOT
 INCLUDEPATH += $$MINIZIP_BASE_PATH
-##INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
-##INCLUDEPATH += $$ZLIB_BASE_PATH/include
+INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
+INCLUDEPATH += $$ZLIB_BASE_PATH/include
 
 unix {
-    ##message ("[*] Trying linking zlib statically from: $$ZLIB_PATH")
-    ##QMAKE_LIBDIR += $$ZLIB_PATH
-    ##LIBS += -L$$ZLIB_PATH -lz
-    message ("[*] LIBS: $$LIBS QMAKE_LIBDIR: $$QMAKE_LIBDIR")
+    message ("[*] linking zlib statically...")
+    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.a
 }
 win32 {
     ### TODO

@@ -151,7 +151,6 @@ LogWriter::setSleepingMilliSecs(int msec)
 } 
  
 
-
 /*!
   \brief adds a message to the internal list for later writing
   \param s the message to be logged
