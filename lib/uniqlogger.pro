@@ -364,6 +364,8 @@ INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
 INCLUDEPATH += $$ZLIB_BASE_PATH/include
 
 unix {
+    ## to enable fopen64 on ubunutu 12.04
+    DEFINES *= _LARGEFILE64_SOURCE
     message ("[*] linking zlib statically...")
     LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.a
 }
