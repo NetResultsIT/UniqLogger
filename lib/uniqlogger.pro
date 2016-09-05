@@ -371,7 +371,8 @@ unix {
 }
 win32 {
     message ("[*] linking zlib statically...")
-    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.lib
+    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/zlib.lib
+    message ("HAVE_UNISTD_H:")
 }
 
 QMAKE_CLEAN += -r
