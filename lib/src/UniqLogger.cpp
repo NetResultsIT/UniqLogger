@@ -627,7 +627,11 @@ UniqLogger::delMonitorVar(const QString &var)
 void
 UniqLogger::setTimeStampFormat(const QString &aTimeFormat)
 {
-    m_defaultTimeStampFormat = aTimeFormat;
+    UniqLogger::gmuxUniqLoggerInstance.lock();
+    {
+        m_defaultTimeStampFormat = aTimeFormat;
+    }
+    UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
  
 
@@ -641,8 +645,12 @@ UniqLogger::setTimeStampFormat(const QString &aTimeFormat)
 void
 UniqLogger::setEncasingChars(const QChar &aStartChar, const QChar &aEndChar)
 {
-    m_defaultStartEncasingChar = aStartChar;
-    m_defaultEndEncasingChar = aEndChar;
+    UniqLogger::gmuxUniqLoggerInstance.lock();
+    {
+        m_defaultStartEncasingChar = aStartChar;
+        m_defaultEndEncasingChar = aEndChar;
+    }
+    UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
  
 
@@ -655,7 +663,11 @@ UniqLogger::setEncasingChars(const QChar &aStartChar, const QChar &aEndChar)
 void
 UniqLogger::setSpacingChar(const QChar &aSpaceChar)
 {
-    m_defaultSpaceChar = aSpaceChar;
+    UniqLogger::gmuxUniqLoggerInstance.lock();
+    {
+        m_defaultSpaceChar = aSpaceChar;
+    }
+    UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
  
 
@@ -669,5 +681,9 @@ but will indeed change those that were obtained passing true (default value) to 
 void
 UniqLogger::setStdConsoleColor(ConsoleColorType c)
 {
-    m_ConsoleLogger->setConsoleColor(c);
+    UniqLogger::gmuxUniqLoggerInstance.lock();
+    {
+        m_ConsoleLogger->setConsoleColor(c);
+    }
+    UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
