@@ -10,12 +10,14 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TEMPLATE = app
 TARGET = bin/testlogger
 INCLUDEPATH += . $$UNIQLOGGERPATH/src
-
+CONFIG += debug_and_release
 
 # Input
-HEADERS += testlogger.h testlogger2.h
+HEADERS += testlogger.h testlogger2.h \
+    testlogger_zip.h
 FORMS += testlogger.ui
-SOURCES += main.cpp testlogger.cpp testlogger2.cpp
+SOURCES += main.cpp testlogger.cpp testlogger2.cpp \
+    testlogger_zip.cpp
 
 
 LIBNAME = UniqLogger

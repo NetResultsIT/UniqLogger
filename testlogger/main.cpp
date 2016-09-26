@@ -1,6 +1,7 @@
 #include <QApplication>
 #include "testlogger.h"
 #include "testlogger2.h"
+#include "testlogger_zip.h"
 
 #ifdef WIN32
 #define sleep(x) Sleep(1000*x)
@@ -68,10 +69,13 @@ int main(int argc, char *argv[])
     w.show();
 #endif
 
-#if (1)
+#if (0)
     testlogger_cli w;
 #endif
 
+#if (1)
+    TestloggerZip w;
+#endif
 
 	return a.exec();
 }
