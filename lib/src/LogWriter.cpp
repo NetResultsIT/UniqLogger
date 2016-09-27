@@ -26,6 +26,7 @@ WriterConfig::WriterConfig()
         writerFlushSecs  = 5;     // each writer will flush data every 5 seconds
         writeIdleMark    = false; // If no messages are to be written, write a MARK string to show writer is alive
         reconnectionSecs = 5;     // If RemoteWrite connection drops, try to reconnect every X secs
+        rotationPolicy   = StrictRotation; // We use the strict rotation policy by default
 }
 
 /***************

@@ -16,11 +16,14 @@ class TestloggerZip : public QObject
 
     UniqLogger*  m_unqloggerPtr;
     Logger*      m_flogPtr;
+    QString      m_fileName;
+    int          m_fileCount;
 
 protected slots:
     void run_all_tests();
     void test_compressSingleFile();
     void test_uniqloggerCompressRotation();
+    void test_uniqloggerFilesGenerated();
 
 public:
     TestloggerZip();

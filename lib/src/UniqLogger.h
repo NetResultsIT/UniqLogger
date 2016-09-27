@@ -111,7 +111,7 @@ public:
 
         LogWriter& getDbWriter        ( const QString &aDbFileName          );
         LogWriter& getNetworkWriter   ( const QString &address, int port    );
-        LogWriter& getFileWriter      ( const QString &inFileName           );
+        LogWriter& getFileWriter      (const QString &inFileName, FileRotationPolicyType i_rotationPolicy = StrictRotation);
         LogWriter& getConsoleWriter   ( ConsoleColorType c=NONE             );
         LogWriter& getStdConsoleWriter();
         LogWriter& getDummyWriter     ();

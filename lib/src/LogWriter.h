@@ -27,6 +27,13 @@ class FileCompressor;
  #define ULOG_LIB_API
 #endif
 
+
+
+enum FileRotationPolicyType { StrictRotation,    // files numbers rotated on the maxfile no
+                              IncrementalNumbers // rotated files have a sliding-window numer schema
+                                };
+
+
 class ULOG_LIB_API WriterConfig
 {
 public:
@@ -40,7 +47,7 @@ public:
     //Makes sense just for FileWriter
     int maxFileSize;        /// The maximum file size (in MB) of a file written by the FileWriter
     int maxFileNum;         /// The number of files that FileWriter should use during rotation, 0 disables it
-    int rotationPolicy;     /// Whether a suffix (i.e. _Mon, _Tue, or 20150316) should be appended to rotate files on a time base
+    FileRotationPolicyType rotationPolicy;     /// The rotation policy enum (StrictRotation or IncrementalNumbers)
     /* file log compression specific vars */
     int compressionLevel;   /// The compression level used to compress the rotated log files
                             /// 0: do not compress

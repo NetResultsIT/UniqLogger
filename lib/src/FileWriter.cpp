@@ -13,10 +13,10 @@
 
 #include "FileCompressor.h"
 
-FileWriter::FileWriter()
+FileWriter::FileWriter(FileRotationPolicyType i_rotationPolicy)
 : LogWriter()
 {
-    m_fileRotationPolicy = StrictRotation;
+    m_fileRotationPolicy = i_rotationPolicy;
     m_fileSizeExceeded = false;
     m_maxFileSizeMB = 1.0;
     m_RotationCurFileNumber = 1;
@@ -253,7 +253,16 @@ FileWriter::rotateFilesIfNeeded()
             //check to see if we need to delete some files
             QString oldfile = calculateOldLogFileName();
             if (!oldfile.isEmpty()) {
+                if ( m_compressionLevel > 0 )
+                {
+                    oldfile = addCompressFileExtension(oldfile);
+                }
                 QFile::remove(oldfile);
+            }
+            if ( m_compressionLevel > 0 )
+            {
+                QString previousFile = calculateCurrentFileName(m_RotationCurFileNumber - 1);
+                compressIfNeeded( previousFile );
             }
         }
             break;
