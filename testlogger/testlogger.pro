@@ -61,7 +61,7 @@ win32 {
         TEMPLATE = vcapp
     }
 
-    CONFIG += flat
+    CONFIG += flat console
     CONFIG(debug, debug|release) {
         QMAKE_POST_LINK="copy ..\\lib\\debug\\$${COMPILER}_qt-$$QT_VERSION\\UniqLoggerd0.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
         LIBS += UniqLoggerd0.lib
