@@ -9,6 +9,7 @@
 #include <QFile>
 
 #ifdef WIN32
+    #include "windows.h"
     #define SLEEP(X) Sleep(X/1000)
 #else
     #include <unistd.h>
