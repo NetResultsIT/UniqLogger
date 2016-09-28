@@ -6,8 +6,14 @@
 #include "testlogger_zip.h"
 #include <QTimer>
 #include <QDebug>
-#include <unistd.h>
 #include <QFile>
+
+#ifdef WIN32
+    #define SLEEP(X) Sleep(X/1000)
+#else
+    #include <unistd.h>
+    #define SLEEP(X) usleep(X)
+#endif
 
 TestloggerZip::TestloggerZip()
 {
@@ -32,7 +38,7 @@ void TestloggerZip::writeLog(Logger* io_loggerPtr, int i_MBToWrite)
     {
         *io_loggerPtr << logstr << UNQL::EOM;
         byteLogged += logstr.size();
-        usleep(10000);
+        SLEEP(10000);
     }
 }
 
