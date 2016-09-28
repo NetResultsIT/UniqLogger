@@ -253,13 +253,13 @@ FileWriter::rotateFilesIfNeeded()
             //check to see if we need to delete some files
             QString oldfile = calculateOldLogFileName();
             if (!oldfile.isEmpty()) {
-                if ( m_compressionLevel > 0 )
+                if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
                 {
                     oldfile = addCompressFileExtension(oldfile);
                 }
                 QFile::remove(oldfile);
             }
-            if ( m_compressionLevel > 0 )
+            if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
             {
                 QString previousFile = calculateCurrentFileName(m_RotationCurFileNumber - 1);
                 compressIfNeeded( previousFile );
@@ -274,7 +274,8 @@ FileWriter::rotateFilesIfNeeded()
             //remove the last file (if exists)
             QString lastfile = calculateCurrentFileName(m_rotationMaxFileNumber-1);
             // if we are compressing the rotated log files, we need to add the extension to the filename (.zip|.gz)
-            if ( m_compressionLevel > 0 ) {
+            if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
+            {
                 lastfile = addCompressFileExtension(lastfile);
             }
             if (QFile::exists(lastfile)) {
@@ -303,7 +304,8 @@ FileWriter::rotateFilesIfNeeded()
             QString currFileName = calculateCurrentFileName();
             changeOutputFile( currFileName );
 
-            if ( m_compressionLevel > 0 )
+            /* If the rotation file count is 1 we don't need to compress old files */
+            if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
             {
                 QString currFileName = calculateCurrentFileName(1);
                 compressIfNeeded( currFileName );
