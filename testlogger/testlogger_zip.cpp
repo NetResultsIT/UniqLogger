@@ -58,6 +58,8 @@ void TestloggerZip::test_SingleFile(const QString& i_fileName, FileRotationPolic
     /* Write 3MB to log */
     writeLog(flogPtr, 3);
 
+    flogPtr->deleteLater();
+
     QString fileNameToCheck = i_fileName;
     if ( i_rotationPolicy == IncrementalNumbers )
     {
@@ -72,7 +74,6 @@ void TestloggerZip::test_SingleFile(const QString& i_fileName, FileRotationPolic
     {
         qDebug() << "Log file correctly created!";
     }
-    flogPtr->deleteLater();
 
     qDebug() << "uniqlogger zip test terminated...";
 }
@@ -92,6 +93,8 @@ void TestloggerZip::test_3FilesStrictRotation(const QString& i_fileName, int i_c
 
     /* Write 6MB to log */
     writeLog(flogPtr, 6);
+
+    flogPtr->deleteLater();
 
     if ( !QFile::exists(i_fileName) )
     {
@@ -116,7 +119,7 @@ void TestloggerZip::test_3FilesStrictRotation(const QString& i_fileName, int i_c
     qDebug() << "Log files correctly created!";
 
     qDebug() << "uniqlogger zip test terminated...";
-    flogPtr->deleteLater();
+
 
 }
 
@@ -136,6 +139,8 @@ void TestloggerZip::test_3FilesIncrementalRotation(const QString& i_fileName, in
 
     /* Write 6MB to log */
     writeLog(flogPtr, 6);
+
+    flogPtr->deleteLater();
 
     QString lastFilePattern("%1-%2");
     QString previousFilePattern("%1-%2");
@@ -163,7 +168,6 @@ void TestloggerZip::test_3FilesIncrementalRotation(const QString& i_fileName, in
 
     qDebug() << "uniqlogger zip test terminated...";
 
-    flogPtr->deleteLater();
 
 }
 
@@ -220,6 +224,8 @@ void TestloggerZip::run_all_tests()
     test_noCompress3FilesStrictRotation();
     test_compress3FilesIncrementalRotation();
     test_noCompress3FilesIncrementalRotation();
+
+    qDebug() << "#### All logger tests are terminated ####";
 }
 
 
