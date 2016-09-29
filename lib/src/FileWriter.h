@@ -14,9 +14,6 @@ class FileWriter: public LogWriter
 {
 	Q_OBJECT
 
-public:
-    enum FileRotationPolicyType { StrictRotation, IncrementalNumbers };
-
 private:
 	QFile m_logFile;
 	double m_maxFileSizeMB;
@@ -26,14 +23,21 @@ private:
     FileRotationPolicyType m_fileRotationPolicy;
     QString lastUsedLogfilePostfix;
 
+    int m_compressionLevel;
+    int m_compressionAlgo;
+
+
 	QString calculateCurrentFileName(int num=0);
 	QString calculateOldLogFileName();
 	void changeOutputFile(const QString&);
 	void writeToDevice();
     void rotateFilesIfNeeded();
 
+    void compressIfNeeded( const QString& i_toCompressFilename );
+    const QString addCompressFileExtension(const QString& i_filename);
+
 public:
-    explicit FileWriter();
+    explicit FileWriter(FileRotationPolicyType i_rotationPolicy = StrictRotation);
     virtual ~FileWriter();
 
     virtual void setWriterConfig(const WriterConfig &wconf);
@@ -43,6 +47,7 @@ public:
 	void setLogfileRotationRange(int maxfilenum);
 	void stopLogging(bool erasefile=false);
     QString getBaseName() const { return m_logfileBaseName; }
+    FileRotationPolicyType getRotationPolicy() const { return m_fileRotationPolicy; }
 };
 
 #endif

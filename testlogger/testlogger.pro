@@ -10,12 +10,14 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TEMPLATE = app
 TARGET = bin/testlogger
 INCLUDEPATH += . $$UNIQLOGGERPATH/src
-
+CONFIG += debug_and_release
 
 # Input
-HEADERS += testlogger.h testlogger2.h
+HEADERS += testlogger.h testlogger2.h \
+    testlogger_zip.h
 FORMS += testlogger.ui
-SOURCES += main.cpp testlogger.cpp testlogger2.cpp
+SOURCES += main.cpp testlogger.cpp testlogger2.cpp \
+    testlogger_zip.cpp
 
 
 LIBNAME = UniqLogger
@@ -59,9 +61,9 @@ win32 {
         TEMPLATE = vcapp
     }
 
-    CONFIG += flat
+    CONFIG += flat console
     CONFIG(debug, debug|release) {
-        QMAKE_POST_LINK="copy ..\\lib\\debug\\$$COMPILER_qt-$$QT_VERSION\\UniqLoggerd.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
+        QMAKE_POST_LINK="copy ..\\lib\\debug\\$${COMPILER}_qt-$$QT_VERSION\\UniqLoggerd0.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
         LIBS += UniqLoggerd0.lib
     } else {
         LIBS += UniqLogger0.lib

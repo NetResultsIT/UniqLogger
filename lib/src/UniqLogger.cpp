@@ -24,6 +24,7 @@
 #include "DummyWriter.h"
  
 #include "nrthreadpool.h"
+#include <stdexcept>
 
 
 //Define (and not simply declare) the static members (see C++ FAQ 10.12)
@@ -258,11 +259,18 @@ Logger *UniqLogger::createAndroidLogger(const QString& _logname)
 Logger*
 UniqLogger::createFileLogger(const QString & _logname, const QString &_filename, const WriterConfig &i_wconf)
 {
-	Logger *l = createLogger(_logname);
-    LogWriter &fw = getFileWriter(_filename);
-    fw.setWriterConfig(i_wconf);
-    this->addWriterToLogger(l, fw);
-	return l;
+    try
+    {
+        Logger *l = createLogger(_logname);
+        LogWriter &fw = getFileWriter(_filename, i_wconf.rotationPolicy);
+        fw.setWriterConfig(i_wconf);
+        this->addWriterToLogger(l, fw);
+        return l;
+    }catch (std::exception &except)
+    {
+        ULDBG << except.what();
+        return NULL;
+    }
 }
  
 
@@ -352,10 +360,12 @@ UniqLogger::createConsoleLogger(const QString &_logname, bool useStdConsoleLogge
 
 /*!
   \brief returns a file writer that can be added to other loggers
+        If it fails it throw an exception
   \param _filename the filename where this logger will write messages by default
-  \return the pointer to the logger class created or a null pointer if something went wrong
+  \param i_rotationPolicy the file rotation policy (by default StrictRotation is used)
+  \return the reference to the logger class created
   */
-LogWriter &UniqLogger::getFileWriter(const QString &_filename)
+LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolicyType i_rotationPolicy)
 {
 
     FileWriter *fw;
@@ -367,6 +377,11 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
         lw = it.key();
         fw = dynamic_cast<FileWriter*>(lw);
         if (fw && fw->getBaseName() == _filename) {
+            if ( fw->getRotationPolicy() != i_rotationPolicy )
+            {
+                muxDeviceCounter.unlock();
+                throw std::runtime_error("Requested an existing FileWriter with same filename but different rotation policy!");
+            }
             ULDBG << "Existing Filewriter found! ------------------->><<-------" << fw;
 			muxDeviceCounter.unlock();
 			return *fw;
@@ -374,7 +389,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename)
         fw = 0;
     }
     muxDeviceCounter.unlock();
-    fw = new FileWriter();
+    fw = new FileWriter(i_rotationPolicy);
 
     ULDBG << "Filewriter for file "<< _filename <<" not found, creating one " << fw;
 

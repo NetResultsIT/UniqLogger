@@ -9,6 +9,14 @@ VERSION = 0.3.3
     message("No config.pri found, building with default options: no net and no DB support")
 } else: include (config.pri)
 
+!exists(depspath.pri) {
+    error("No depspath.pri found, giving up")
+} else: include (depspath.pri)
+
+!exists($$PWD/filecompressor/trunk/fileCompressor.pri) {
+    error("Cannot find fileCompressor.pri: giving up")
+} else: include ($$PWD/filecompressor/trunk/fileCompressor.pri)
+
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 QT -= gui
@@ -22,7 +30,6 @@ CONFIG -= flat
 DEFINES -= UNICODE
 
 TEMPLATE = lib
-
 
 #this should work with Qt5, on Qt4 we do it manually
 #MYVER = $$split($$VERSION, .)
@@ -325,7 +332,6 @@ unix {
     QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
 }
 
-
 message ("Library name: $$DLL")
 
 # ----- Library sources ------
@@ -341,22 +347,44 @@ HEADERS += \
     src/DummyWriter.h \
     src/bufferofstrings.h
 
-SOURCES += \
-    src/Logger.cpp \
-    src/LogWriter.cpp \
-    src/FileWriter.cpp \
-    src/ConsoleWriter.cpp \
-    src/UniqLogger.cpp \
-    src/LogMessage.cpp \
-    src/tpool/nrthreadpool.cpp \
-    src/DummyWriter.cpp \
-    src/bufferofstrings.cpp
+SOURCES += src/Logger.cpp
+SOURCES += src/LogWriter.cpp
+SOURCES += src/FileWriter.cpp
+SOURCES += src/ConsoleWriter.cpp
+SOURCES += src/UniqLogger.cpp
+SOURCES += src/LogMessage.cpp
+SOURCES += src/tpool/nrthreadpool.cpp
+SOURCES += src/DummyWriter.cpp
+SOURCES += src/bufferofstrings.cpp
 
 INCLUDEPATH += src/tpool
+INCLUDEPATH += $$FILECOMPRESSOR_ROOT
+INCLUDEPATH += $$MINIZIP_BASE_PATH
+INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
+INCLUDEPATH += $$ZLIB_BASE_PATH/include
 
+unix:!ios {
+    ## to enable fopen64 on ubunutu 12.04
+    DEFINES *= _LARGEFILE64_SOURCE
+    message ("[*] linking zlib statically...")
+    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.a
+}
+win32 {
+    message ("[*] linking zlib statically...")
+    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/zlib.lib
+    message ("HAVE_UNISTD_H:")
+}
 
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN
 
 message(" ==== End of UniqLogger QMake build process ==== ")
+
+DISTFILES += \
+    depspath.pri.sample \
+    configs/buildbot_win7.pri \
+    ci/bbot_iqac_agent_config.pri
+
+SUBDIRS += \
+    configs/buildbot-uniqlogger.pro
