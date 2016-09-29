@@ -363,7 +363,7 @@ INCLUDEPATH += $$MINIZIP_BASE_PATH
 INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
 INCLUDEPATH += $$ZLIB_BASE_PATH/include
 
-unix {
+unix:!ios {
     ## to enable fopen64 on ubunutu 12.04
     DEFINES *= _LARGEFILE64_SOURCE
     message ("[*] linking zlib statically...")
