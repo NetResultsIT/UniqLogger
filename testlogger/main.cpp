@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QCoreApplication>
 #include "testlogger.h"
 #include "testlogger2.h"
 #include "testlogger_zip.h"
@@ -56,7 +57,8 @@ static void test_logger_leak()
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
+    /*QApplication a(argc, argv);*/
+    QCoreApplication a(argc, argv);
 
     qDebug() << "Ideal thread count reported: " << QThread::idealThreadCount();
 
