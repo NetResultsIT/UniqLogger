@@ -684,8 +684,6 @@ UniqLogger::setSpacingChar(const QChar &aSpaceChar)
     }
     UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
- 
-
 
 /*!
     \brief this method will change the color the standard console writer will log with
