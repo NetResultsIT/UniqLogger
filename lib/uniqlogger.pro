@@ -266,6 +266,9 @@ android {
 
     HEADERS += src/AndroidWriter.h
     SOURCES += src/AndroidWriter.cpp
+
+    # Android doesn't support fopen64 & C.
+    DEFINES += IOAPI_NO_64
 }
 
 
@@ -376,8 +379,8 @@ win32 {
 }
 
 QMAKE_CLEAN += -r
-QMAKE_CLEAN += $$DLL $$FINALDIR $$DSTDIR/*
-QMAKE_DISTCLEAN += $$QMAKE_CLEAN
+QMAKE_CLEAN += $$DLL $$DSTDIR/*
+QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR
 
 message(" ==== End of UniqLogger QMake build process ==== ")
 
