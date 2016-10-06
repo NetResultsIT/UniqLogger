@@ -119,5 +119,5 @@ android {
 
 
 unix {
-    LIBS += -l$$LIBNAME -lz
+    LIBS += -l$$LIBNAME
 }
