@@ -13,9 +13,10 @@ VERSION = 0.4.0
     error("No depspath.pri found, giving up")
 } else: include (depspath.pri)
 
-!exists($$PWD/filecompressor/trunk/fileCompressor.pri) {
+
+!exists($$FILECOMPRESSOR_ROOT/fileCompressor.pri) {
     error("Cannot find fileCompressor.pri: giving up")
-} else: include ($$PWD/filecompressor/trunk/fileCompressor.pri)
+} else: include ($$FILECOMPRESSOR_ROOT/fileCompressor.pri)
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
@@ -361,22 +362,6 @@ SOURCES += src/DummyWriter.cpp
 SOURCES += src/bufferofstrings.cpp
 
 INCLUDEPATH += src/tpool
-INCLUDEPATH += $$FILECOMPRESSOR_ROOT
-INCLUDEPATH += $$MINIZIP_BASE_PATH
-INCLUDEPATH += $$ZLIB_BASE_PATH/include/zlib
-INCLUDEPATH += $$ZLIB_BASE_PATH/include
-
-unix:!ios {
-    ## to enable fopen64 on ubunutu 12.04
-    DEFINES *= _LARGEFILE64_SOURCE
-    message ("[*] linking zlib statically...")
-    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/libz.a
-}
-win32 {
-    message ("[*] linking zlib statically...")
-    LIBS += -L$$ZLIB_PATH $$ZLIB_PATH/zlib.lib
-    message ("HAVE_UNISTD_H:")
-}
 
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$DSTDIR/*

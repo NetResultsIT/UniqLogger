@@ -15,7 +15,6 @@
 
 #include "LogMessage.h"
 
-class FileCompressor;
 
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS
