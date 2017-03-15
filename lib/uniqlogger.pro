@@ -115,9 +115,6 @@ DSTDIR = $$PWD/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
 DLLPATH = bin/
 
-ios {
-    FINALDIR = $$join(FINALDIR,,,_ios)
-}
 
 CONFIG(debug, debug|release) {
     message("Debug build")
