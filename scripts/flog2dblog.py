@@ -1,3 +1,4 @@
+# Script to convert a file log to a db log
 import os
 import sqlite3
 import sys
