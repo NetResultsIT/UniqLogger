@@ -2,11 +2,11 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.4.0
+VERSION = 0.4.1
 
 # --- Please check that the config file reflects your desired build options
 !exists(config.pri) {
-    message("No config.pri found, building with default options: no net and no DB support")
+    message("No config.pri found, building with default options: no NETWORK and no DB support")
 } else: include (config.pri)
 
 !exists(depspath.pri) {
@@ -62,7 +62,7 @@ contains ( DEFINES, 'ULOG_NETLOGGING' ) {
     SOURCES += 	src/RemoteWriter.cpp
 }
 else {
-    message("[*] Network Logging: DISABLED")
+    message("[ ] Network Logging: DISABLED")
 }
 
 contains ( DEFINES, 'ULOG_DBLOGGING' ) {
@@ -76,7 +76,7 @@ contains ( DEFINES, 'ULOG_DBLOGGING' ) {
                 src/DbHandler.cpp
 }
 else {
-    message("[*] Db Logging: DISABLED")
+    message("[ ] Db Logging: DISABLED")
 }
 # --------
 
@@ -131,9 +131,10 @@ message ("Library will be copied also in $$DSTDIR")
 message ("Actual library will be in $$FINALDIR$$DLLPATH")
 
 win32 {
+    message("Building UniqLogger library for Win32")
     #message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
-	
+
     contains(IDE,VS) {
       TEMPLATE = vclib
     }
@@ -201,7 +202,7 @@ unix {
 
 # Linux specific
 unix:!macx:!ios:!android  {
-    message("Building UniqLogger for Linux / Unix")
+    message("Building UniqLogger library for Linux / Unix")
 
     CONFIG(debug, debug|release) {
         DLL = $$join(TARGET,,lib,_d.so*)
@@ -225,7 +226,7 @@ unix:!macx:!ios:!android  {
 
 
 android {
-    message("Building UniqLogger for Android")
+    message("Building UniqLogger library for Android")
     equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
         message("Android Arch: armv7a")
         CONFIG(debug, debug|release) {
@@ -274,6 +275,7 @@ android {
 
 # Mac OS X only
 macx {
+    message("Building UniqLogger library for MacOS")
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,_debug)
         BLDTYPE=debug
@@ -294,19 +296,17 @@ macx {
 
 # iOS specific
 ios {
-    message("Building the library for iOS")
+    message("Building UniqLogger library for iOS")
+
+    lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
+    lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
     CONFIG += staticlib
 
-    iphoneos {
-        message("Building for a real iPhone device")
-        IOSSUFFIX = _iphoneos
-    }
+    # armv7s is superset of armv7 and is ok since iOS6 on iphone 5 (we do not plan to support anything lower than iOS 10 and that's not going on iPhone 4)
+    QMAKE_APPLE_DEVICE_ARCHS = armv7s arm64
+    QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
 
-    iphonesimulator {
-        message("Building for an iPhone simulator (x86)")
-        IOSSUFFIX = _iphonesimulator
-    }
-
+    CONFIG -= bitcode
 
     CONFIG(debug, debug|release) {
         IOSSUFFIX = $$join(IOSSUFFIX,,,_debug)
@@ -368,8 +368,7 @@ message(" ==== End of UniqLogger QMake build process ==== ")
 
 DISTFILES += \
     depspath.pri.sample \
-    configs/buildbot_win7.pri \
-    ci/bbot_iqac_agent_config.pri
+    $$FILECOMPRESSOR_ROOT/fileCompressor.pri
 
 SUBDIRS += \
     configs/buildbot-uniqlogger.pro
