@@ -7,6 +7,9 @@ pre-requisites
 > cp depspath-pri.sample depspath.pri
 > cp config-<config-that-fits> config.pri
 - configure the file according to your dev environment paths
+> cd filecompressor/trunk
+> cp config.pri.sample config.pri
+>  edit config.pri according to your need (please read the comments in the config.pri file)
 > cd filecompressor/trunk/third_party/zlib/lib
 > ln -s <your-os> linux-[32|64]
   i.e. ln -s ub1204-64b linux-64
