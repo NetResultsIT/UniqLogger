@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #include "FileWriter.h"
@@ -9,7 +9,8 @@
 #include <QStringList>
 #include <QTime>
 #include <QFileInfo>
-#include <qdir.h>
+#include <QDir>
+#include <QQueue>
 
 #include "FileCompressor.h"
 
@@ -21,7 +22,8 @@ FileWriter::FileWriter(FileRotationPolicyType i_rotationPolicy)
     m_maxFileSizeMB = 1.0;
     m_RotationCurFileNumber = 1;
     m_rotationMaxFileNumber = 2;
-    m_logfileBaseName = "logfile.txt";
+    m_logfileBaseName = "uniqlogfile.txt";
+    m_lastWrittenDateTime = QDateTime::currentDateTime();
 }
 
 
@@ -72,6 +74,44 @@ FileWriter::calculateOldLogFileName()
     return tmp;
 }
  
+
+/*!
+ * \brief FileWriter::addNumberAndTimeToFilename
+ * \param sl
+ * \param filenum
+ */
+void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
+{
+    s += "-";
+    s += QString::number(filenum);
+
+    QDateTime now = QDateTime::currentDateTime();
+
+    if (
+        m_timeRotationPolicy == HourlyRotation
+        && m_lastWrittenDateTime.secsTo(now) > 3600
+       )
+    {
+        s += "-h" + now.toString("HH");
+        m_lastWrittenDateTime = now;
+    }
+    else if (
+             (
+                 m_timeRotationPolicy == DayOfWeekRotation
+              || m_timeRotationPolicy == DayOfMonthRotation
+             )
+             && m_lastWrittenDateTime.addDays(1) >= now
+            )
+    {
+        QString dayPartFormat = "ddd"; //By default set as day of week
+        if (m_timeRotationPolicy == DayOfMonthRotation)
+            dayPartFormat = "dd";
+
+        s += "-" + now.toString(dayPartFormat);
+        m_lastWrittenDateTime = now;
+    }
+}
+
 
 /*!
   \brief calculates the log file that is going to be used for the logging
@@ -156,9 +196,10 @@ FileWriter::changeOutputFile(const QString &aFilename)
         mutex.lock();
         LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Closing previously opened logfile", QDateTime::currentDateTime().toString("hh:mm:ss"));
         m_logMessageList.append(lm);
-        m_streamIsOpen=false;
+        m_streamIsOpen = false;
         mutex.unlock();
         m_logFile.close();
+        m_lastUsedFilenames.append(m_logFile.fileName());
     }
 
     m_logFile.setFileName(aFilename);
@@ -208,6 +249,7 @@ FileWriter::writeToDevice()
 
    if (!m_streamIsOpen)
        setOutputFile();
+
    if (!m_logIsPaused)
    {
        mutex.lock();
@@ -273,6 +315,7 @@ FileWriter::rotateFilesIfNeeded()
 
             //remove the last file (if exists)
             QString lastfile = calculateCurrentFileName(m_rotationMaxFileNumber-1);
+            Q_ASSERT(lastfile == m_lastUsedFilenames.last());
             // if we are compressing the rotated log files, we need to add the extension to the filename (.zip|.gz)
             if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
             {
@@ -282,7 +325,7 @@ FileWriter::rotateFilesIfNeeded()
                 QFile::remove(lastfile);
             }
             else {
-                qDebug() << lastfile << " does not exists, cannot delete";
+                ULDBG << lastfile << " does not exists, cannot delete";
             }
 
             //now move the other files starting from the one b4 last
@@ -297,7 +340,7 @@ FileWriter::rotateFilesIfNeeded()
                     QFile::rename(olderfile,newerfile);
                 }
                 else {
-                    qDebug() << olderfile << " does not exists cannot rename into " << newerfile;
+                    ULDBG << olderfile << " does not exists cannot rename into " << newerfile;
                 }
             } /* loop to rename old rotated files */
 

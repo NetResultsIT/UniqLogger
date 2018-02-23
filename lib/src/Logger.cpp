@@ -1,7 +1,7 @@
 /********************************************************************************
  *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #include "Logger.h"
@@ -202,12 +202,12 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 {
     bool status = false;
 
-	muxMonitorVar->lock();
-	if (m_varMonitorMap->contains(key)) {
+    muxMonitorVar->lock();
+    if (m_varMonitorMap->contains(key)) {
 #ifdef ULOGDBG
        qDebug()  << key << " is in the map, checking its status...";
 #endif
-	   status = (*m_varMonitorMap)[key];
+       status = (*m_varMonitorMap)[key];
 #ifdef ULOGDBG
        qDebug() << key << " monitor status is " << status;
 #endif
@@ -233,7 +233,7 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
         qDebug() << "not monitoring " << key << " is not enabled in the map";
 #endif
     }
-	muxMonitorVar->unlock();
+    muxMonitorVar->unlock();
 }
 
 
@@ -315,19 +315,19 @@ void
 Logger::log(const char* mess, ...)
 {
     char buffer2[UNQL_ERRMSG_SIZE];
-	va_list args;
+    va_list args;
 
-	va_start(args,mess);
+    va_start(args,mess);
 #if defined(_MSC_VER) && _MSC_VER < 1400
     _vsnprintf(buffer2,UNQL_ERRMSG_SIZE,mess,args);
 #else
     vsnprintf(buffer2,UNQL_ERRMSG_SIZE,mess,args);
 #endif
-	va_end(args);
+    va_end(args);
 
     this->log(m_logVerbosityDefaultLevel, buffer2);
 }
- 
+
 
 
 void
@@ -414,6 +414,7 @@ Logger::operator<< ( const QStringList& sl )
     return *this;
 }
 
+
 Logger&
 Logger::operator<< ( const QList<int>& vl )
 {
@@ -424,6 +425,7 @@ Logger::operator<< ( const QList<int>& vl )
     muxMessages.unlock();
     return *this;
 }
+
 
 Logger&
 Logger::operator<< ( const QMap<int, QList<int> >& amap )
@@ -440,6 +442,7 @@ Logger::operator<< ( const QMap<int, QList<int> >& amap )
     }
     return *this;
 }
+
 
 Logger&
 Logger::operator<< ( const double& d )

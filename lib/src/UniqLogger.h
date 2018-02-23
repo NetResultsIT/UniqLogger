@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica		<f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #ifndef ULOGGER_H
@@ -74,24 +74,24 @@ class ULOG_LIB_API UniqLogger : public QObject
 {
     Q_OBJECT
 
-	static QMutex gmuxUniqLoggerInstance;
-	static QMap<QString,UniqLogger*> gUniqLoggerInstanceMap;
+    static QMutex gmuxUniqLoggerInstance;
+    static QMap<QString,UniqLogger*> gUniqLoggerInstanceMap;
 
-	QMutex muxDeviceCounter, muxMonitorVarMap;
+    QMutex muxDeviceCounter, muxMonitorVarMap;
     QString m_defaultTimeStampFormat;
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
 
 protected:
-        UniqLogger(int nthreads);
-        ~UniqLogger();
+    UniqLogger(int nthreads);
+    ~UniqLogger();
 
 protected slots:
-        void writerFinished(const QList<LogWriter*> aList);
+    void writerFinished(const QList<LogWriter*> aList);
 
 private:
         NRThreadPool *m_pTPool;
         LogWriterUsageMapType m_DevicesMap;
-        ConsoleWriter  *m_ConsoleLogger;
+        ConsoleWriter *m_ConsoleLogger;
         VarMonitoringMap m_VarMonitorMap;
 
         void registerWriter(LogWriter*);
@@ -121,15 +121,17 @@ public:
         void changeMonitorVarStatus ( const QString &var, bool status );
         void delMonitorVar ( const QString &var );
 
-		int addWriterToLogger       (const Logger*, const LogWriter&);
-		int removeWriterFromLogger  (const Logger*, const LogWriter&);
+        int addWriterToLogger       (const Logger*, const LogWriter&);
+        int removeWriterFromLogger  (const Logger*, const LogWriter&);
 
         int threadsUsedForLogging() const;
 
-        void setEncasingChars       ( const QChar& aStartChar, const QChar &aEndChar         );
-        void setSpacingChar         ( const QChar& aSpaceChar                                );
-        void setTimeStampFormat		( const QString&	                                     );
-        void setStdConsoleColor     ( ConsoleColorType c        							 );
+        void setEncasingChars       ( const QChar& aStartChar, const QChar &aEndChar        );
+        void setSpacingChar         ( const QChar& aSpaceChar                               );
+        void setTimeStampFormat     ( const QString&                                        );
+        void setStdConsoleColor     ( ConsoleColorType c                                    );
+
+        void flushAllWriters();
 };
 
 #endif // ULOGGER_H

@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #ifndef __DB_LOGGER_INCS__
@@ -14,14 +14,14 @@ class UnqlDbHandler;
 
 class DbWriter: public LogWriter
 {
-	Q_OBJECT
+    Q_OBJECT
 
     int m_maxFileSizeMB;
     bool m_fileSizeExceeded;
-	QString m_logfileBaseName;
+    QString m_logfileBaseName;
     UnqlDbHandler *m_dbh;
 
-	void writeToDevice();
+    void writeToDevice();
 
 public:
     DbWriter(const QString &);

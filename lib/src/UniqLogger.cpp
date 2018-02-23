@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica		<f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #include "UniqLogger.h"
@@ -93,22 +93,22 @@ UniqLogger::threadsUsedForLogging() const
 UniqLogger*
 UniqLogger::instance(const QString &ulname, int nthreads)
 {
-	UniqLogger *ulptr;
+    UniqLogger *ulptr;
     static UniqLogger instance(nthreads);
 
-	UniqLogger::gmuxUniqLoggerInstance.lock();
-	if (gUniqLoggerInstanceMap.contains(ulname))
+    UniqLogger::gmuxUniqLoggerInstance.lock();
+    if (gUniqLoggerInstanceMap.contains(ulname))
         ulptr = gUniqLoggerInstanceMap[ulname];
-	else {
+    else {
         if(gUniqLoggerInstanceMap.count() == 0) {
-			ulptr = &instance;
-		}
-		else {
+            ulptr = &instance;
+        }
+        else {
             ulptr = new UniqLogger(nthreads);
-		}
+        }
         gUniqLoggerInstanceMap.insert(ulname, ulptr);
-	}
-	UniqLogger::gmuxUniqLoggerInstance.unlock();
+    }
+    UniqLogger::gmuxUniqLoggerInstance.unlock();
 
     if (nthreads == 0) { //adjust nthreads for the check below
         nthreads = QThread::idealThreadCount();
@@ -118,7 +118,7 @@ UniqLogger::instance(const QString &ulname, int nthreads)
         qWarning() << "The UniqLogger instances was already configured with a different number of logging threads: " << ulptr->threadsUsedForLogging();
     }
 
-	return ulptr;
+    return ulptr;
 }
  
 
@@ -129,7 +129,7 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 void
 UniqLogger::registerWriter(LogWriter *lw)
 {
-	muxDeviceCounter.lock();
+    muxDeviceCounter.lock();
     if (m_DevicesMap.contains(lw)) {
         int refcount = m_DevicesMap[lw];
         m_DevicesMap[lw] = refcount+1;
@@ -137,7 +137,7 @@ UniqLogger::registerWriter(LogWriter *lw)
     else {
         m_DevicesMap.insert(lw,0);
     }
-	muxDeviceCounter.unlock();
+    muxDeviceCounter.unlock();
 }
 
 
@@ -194,10 +194,10 @@ UniqLogger::writerFinished(const QList<LogWriter*> aList)
 Logger*
 UniqLogger::createLogger(const QString &logname)
 {
-	Logger *l = new Logger();					//we need the friendship here
+    Logger *l = new Logger();					//we need the friendship here
     if (l) {
-		l->muxMonitorVar = &muxMonitorVarMap;	//we need the friendship here
-		l->m_varMonitorMap = &m_VarMonitorMap;	//we need the friendship here
+        l->muxMonitorVar = &muxMonitorVarMap;	//we need the friendship here
+        l->m_varMonitorMap = &m_VarMonitorMap;	//we need the friendship here
 
         if (m_defaultTimeStampFormat != DEF_UNQL_TS_FMT)
             l->setTimeStampFormat(m_defaultTimeStampFormat);
@@ -323,7 +323,7 @@ UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName,
 Logger*
 UniqLogger::createConsoleLogger(const QString &_logname, ConsoleColorType c, const WriterConfig &wc)
 {
-	Logger *l = createLogger(_logname);
+    Logger *l = createLogger(_logname);
     LogWriter &clog = getConsoleWriter(c);
     clog.setWriterConfig(wc);
     this->addWriterToLogger(l, clog);
@@ -371,7 +371,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolic
     FileWriter *fw;
     LogWriter *lw;
 
-	muxDeviceCounter.lock();
+    muxDeviceCounter.lock();
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
@@ -383,8 +383,8 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolic
                 throw std::runtime_error("Requested an existing FileWriter with same filename but different rotation policy!");
             }
             ULDBG << "Existing Filewriter found! ------------------->><<-------" << fw;
-			muxDeviceCounter.unlock();
-			return *fw;
+            muxDeviceCounter.unlock();
+            return *fw;
         }
         fw = 0;
     }
@@ -399,7 +399,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolic
     m_pTPool->runObject(fw);
     fw->run();
 
-	return *fw;
+    return *fw;
 }
 
 
@@ -699,4 +699,24 @@ UniqLogger::setStdConsoleColor(ConsoleColorType c)
         m_ConsoleLogger->setConsoleColor(c);
     }
     UniqLogger::gmuxUniqLoggerInstance.unlock();
+}
+
+
+/*!
+ * \brief UniqLogger::flushAllWriters This function will flush all writers in order to make them write whatever they might be
+ * holding in their internal memory. It's primary function is to be called by a signal handler in case of catastrophic crashes
+ * to dump (if possible) every logging statement gathered so far.
+ */
+void
+UniqLogger::flushAllWriters()
+{
+    LogWriter *lw;
+
+    muxDeviceCounter.lock();
+    LogWriterUsageMapType::Iterator it;
+    for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
+        lw = it.key();
+        lw->flush();
+    }
+    muxDeviceCounter.unlock();
 }

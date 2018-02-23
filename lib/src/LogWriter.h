@@ -1,7 +1,7 @@
 /********************************************************************************
  *   Copyright (C) 2008-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #ifndef __EXTERNAL_LOGGER_INCS__
@@ -28,10 +28,18 @@
 
 
 
-enum FileRotationPolicyType { StrictRotation,    // files numbers rotated on the maxfile no
-                              IncrementalNumbers // rotated files have a sliding-window numer schema
-                                };
+enum FileRotationPolicyType {
+    StrictRotation,     // Rotate over single file
+    IncrementalNumbers, // New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate)
+    HigherNumbersNewer  // New logs are inserted in files with a higher number, no renaming / moving of files
+};
 
+enum TimeRotationPolicyType {
+    NoTimeRotation,     /*!< Do not perform any time-based rotation */
+    HourlyRotation,     /*!< Rotates over day of the month with suffixes like: h01, h12, h23, etc.*/
+    DayOfWeekRotation,  /*!< Rotates over day of the week with suffixes like: Mon, Tue, etc. */
+    DayOfMonthRotation  /*!< Rotates over day of the month with suffixes like: d01, d12, d23, etc. */
+};
 
 class ULOG_LIB_API WriterConfig
 {
@@ -62,9 +70,9 @@ public:
 
 class LogWriter: public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
-	QString m_lastMessage;
+    QString m_lastMessage;
     volatile bool m_stillClosing;
     int m_maxMessages;
     bool m_writeIdleMark;
@@ -72,9 +80,9 @@ class LogWriter: public QObject
 protected:
     QTimer *m_logTimer;
     QList<LogMessage> m_logMessageList;
-	int m_sleepingMilliSecs;
-	bool m_logIsPaused;
-	QMutex mutex;
+    int m_sleepingMilliSecs;
+    bool m_logIsPaused;
+    QMutex mutex;
 
 protected slots:
     virtual void writeToDevice()=0;
@@ -82,14 +90,14 @@ protected slots:
     void priv_startLogTimer(); // <-- BEWARE this method is called with invokeMethod do NOT change its name
 
 public:
-	LogWriter();
+    LogWriter();
     virtual ~LogWriter();
 
-	void setSleepingMilliSecs(int);
+    void setSleepingMilliSecs(int);
     void setMaximumAllowedMessages(int);
     void appendMessage(const LogMessage&);
     virtual void run();
-	void pauseLogging(bool);
+    void pauseLogging(bool);
     void flush();
     virtual void setWriterConfig( const WriterConfig &wconf);
 };

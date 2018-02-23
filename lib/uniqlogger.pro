@@ -5,13 +5,13 @@
 VERSION = 0.4.1
 
 # --- Please check that the config file reflects your desired build options
-!exists(config.pri) {
+!exists($$PWD/config.pri) {
     message("No config.pri found, building with default options: no NETWORK and no DB support")
-} else: include (config.pri)
+} else: include ($$PWD/config.pri)
 
-!exists(depspath.pri) {
+!exists($$PWD/depspath.pri) {
     error("No depspath.pri found, giving up")
-} else: include (depspath.pri)
+} else: include ($$PWD/depspath.pri)
 
 
 !exists($$FILECOMPRESSOR_ROOT/fileCompressor.pri) {
@@ -39,6 +39,7 @@ MYVER = 0
 
 message ("UniqLogger Version: $$VERSION")
 message ("QT_VERSION $$QT_VERSION")
+
 # --- Printing messages on building options
 contains ( IDE, 'VS' ) {
     message("A Visual studio project file will be generated")
@@ -47,6 +48,33 @@ else {
     message("Makefile(s) will be generated")
 }
 
+# ----- Library sources ------
+
+HEADERS += \
+    src/Logger.h \
+    src/LogWriter.h \
+    src/FileWriter.h \
+    src/ConsoleWriter.h \
+    src/UniqLogger.h \
+    src/LogMessage.h \
+    src/ext/tpool/nrthreadpool.h \
+    src/DummyWriter.h \
+    src/bufferofstrings.h
+
+SOURCES += \
+    src/Logger.cpp \
+    src/LogWriter.cpp \
+    src/FileWriter.cpp \
+    src/ConsoleWriter.cpp \
+    src/UniqLogger.cpp \
+    src/LogMessage.cpp \
+    src/ext/tpool/nrthreadpool.cpp \
+    src/DummyWriter.cpp \
+    src/bufferofstrings.cpp
+
+INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool
+
+# --- UniqLogger Modules
 contains ( DEFINES, ULOGDBG ) {
     message ( "WARNING - The library will be built in DEBUG mode!!!" )
     #enable debug
@@ -58,7 +86,6 @@ contains ( DEFINES, 'ULOG_NETLOGGING' ) {
     message("[*] Network Logging: ENABLED")
     QT += network
     HEADERS +=  src/RemoteWriter.h
-
     SOURCES += 	src/RemoteWriter.cpp
 }
 else {
@@ -69,11 +96,15 @@ contains ( DEFINES, 'ULOG_DBLOGGING' ) {
     message("[*] Db Logging:      ENABLED")
     QT += sql
 
-    HEADERS +=  src/DbWriter.h \
-                src/DbHandler.h
+    INCLUDEPATH += $$PWD/src/ext/dbh
 
-    SOURCES += 	src/DbWriter.cpp \
-                src/DbHandler.cpp
+    HEADERS +=  src/DbWriter.h \
+                src/ext/dbh/nrdbhandler.h \
+                src/UnqlDbHandler.h
+
+    SOURCES +=  src/DbWriter.cpp \
+                src/ext/dbh/nrdbhandler.cpp \
+                src/UnqlDbHandler.cpp
 }
 else {
     message("[ ] Db Logging: DISABLED")
@@ -83,30 +114,34 @@ else {
 #Set our default compiler (Linux & Mac)
 COMPILER = g++
 
-win32-msvc2008{
+win32-msvc2008 {
     message("Using VC++ 2008")
     COMPILER=VC2008
 }
 
-win32-msvc2010{
+win32-msvc2010 {
     message("Using VC++ 2010")
     COMPILER=VC2010
 }
 
-win32-msvc2012{
+win32-msvc2012 {
     message("Using VC++ 2012")
     COMPILER=VC2012
 }
 
-win32-msvc2013{
+win32-msvc2013 {
     message("Using VC++ 2013")
     COMPILER=VC2013
 }
 
-
-win32-msvc2015{
+win32-msvc2015 {
     message("Using VC++ 2015")
     COMPILER=VC2015
+}
+
+win32-msvc2017 {
+    message("Using VC++ 2017")
+    COMPILER=VC2017
 }
 
 message("COMPILER: $$COMPILER")
@@ -335,30 +370,6 @@ unix {
 
 message ("Library name: $$DLL")
 
-# ----- Library sources ------
-
-HEADERS += \
-    src/Logger.h \
-    src/LogWriter.h \
-    src/FileWriter.h \
-    src/ConsoleWriter.h \
-    src/UniqLogger.h \
-    src/LogMessage.h \
-    src/tpool/nrthreadpool.h \
-    src/DummyWriter.h \
-    src/bufferofstrings.h
-
-SOURCES += src/Logger.cpp
-SOURCES += src/LogWriter.cpp
-SOURCES += src/FileWriter.cpp
-SOURCES += src/ConsoleWriter.cpp
-SOURCES += src/UniqLogger.cpp
-SOURCES += src/LogMessage.cpp
-SOURCES += src/tpool/nrthreadpool.cpp
-SOURCES += src/DummyWriter.cpp
-SOURCES += src/bufferofstrings.cpp
-
-INCLUDEPATH += src/tpool
 
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$DSTDIR/*
@@ -367,7 +378,6 @@ QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR
 message(" ==== End of UniqLogger QMake build process ==== ")
 
 DISTFILES += \
-    depspath.pri.sample \
     $$FILECOMPRESSOR_ROOT/fileCompressor.pri
 
 SUBDIRS += \

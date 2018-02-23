@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #include "DbWriter.h"
@@ -9,14 +9,14 @@
 #include <QStringList>
 #include <QTime>
 #include <QFileInfo>
-#include "DbHandler.h"
+#include "UnqlDbHandler.h"
 
 DbWriter::DbWriter(const QString &dbFileName)
 : LogWriter()
 {
-    m_fileSizeExceeded=false;
-    m_maxFileSizeMB=1;
-    m_logfileBaseName=dbFileName;
+    m_fileSizeExceeded = false;
+    m_maxFileSizeMB = 1;
+    m_logfileBaseName = dbFileName;
     this->setOutputFile(dbFileName); //this will create the DbHandler Object
 }
 
@@ -29,10 +29,9 @@ DbWriter::~DbWriter()
     //on exit, write all we've got
     this->flush();
     delete m_dbh;
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "Deleting dbwriter on " << m_logfileName.fileName();
-#endif
+    ULDBG << Q_FUNC_INFO << "Deleting dbwriter on " << m_logfileBaseName;
 }
+
 
 /*!
   \brief sets the maximum size (in Megabytes) allowed for a single log file
@@ -40,7 +39,7 @@ DbWriter::~DbWriter()
   */
 void
 DbWriter::setLogfileMaxSize(int filesize)
-{   m_maxFileSizeMB=filesize;	}
+{   m_maxFileSizeMB=filesize;   }
  
 
 /*!
@@ -48,59 +47,57 @@ DbWriter::setLogfileMaxSize(int filesize)
   \param _filename the basename of the log files
   */
 void
-DbWriter::setOutputFile(QString _filename)
+DbWriter::setOutputFile(QString i_filename)
 {
-    m_logfileBaseName = _filename;
+    m_logfileBaseName = i_filename;
 
-    if (QFile::exists(_filename)) {
+    if (QFile::exists(i_filename)) {
         //TODO - choose if use the old file or delete it
     }
     else {
-        UnqlDbHandler::createLoggerDb(_filename);
+        UnqlDbHandler::createLoggerDb(i_filename);
     }
-    m_dbh = new UnqlDbHandler(_filename);
+
+    DbhConfig conf("", "", "127.0.0.1", i_filename);
+    conf.dbType = "QSQLITE";
+
+    m_dbh = new UnqlDbHandler(conf);
 }
 
 
 /*!
   \brief writes the messages in the queue on the current log file
   */
-#include <QTime>
 void
 DbWriter::writeToDevice()
 {
-#ifdef ULOGDBG
-   qDebug() << "Writing to db";
-#endif
-   if (!m_logIsPaused)
-   {
-       mutex.lock();
-       int nummsg = m_logMessageList.count();
-       for (int i=0; i<nummsg; i++) {
-           LogMessage mess = m_logMessageList.takeFirst();
-           QString s = mess.rawMessage();
-           QString ts = mess.tstamp();
-           int level = mess.level();
-           QString ln = mess.loggerName();
-           QString lev = QString::number(level);
-			
-		   if (!s.isEmpty()) //do not write an empty entry on db
+    ULDBG << "Writing to db";
+
+    if (m_logIsPaused)
+        return;
+
+    mutex.lock();
+    int nummsg = m_logMessageList.count();
+    for (int i=0; i<nummsg; i++) {
+        LogMessage mess = m_logMessageList.takeFirst();
+        QString s = mess.rawMessage();
+        QString ts = mess.tstamp();
+        int level = mess.level();
+        QString ln = mess.loggerName();
+        QString lev = QString::number(level);
+
+        if (!s.isEmpty()) //do not write an empty entry on db
             m_dbh->logEvent(ln, ts, lev, s);
-       }
-       mutex.unlock();
+    }
+    mutex.unlock();
 
-       //check if we need to change file
-       //QString curfile = calculateCurrentFileName();
-       QFileInfo fi(m_logfileBaseName);
-	   if (m_maxFileSizeMB>0 && (fi.size()/1000000)>m_maxFileSizeMB)
-       {
-   
-       }
-
-       //msleep(m_SleepingMilliSecs);
-   }
+    //check if we need to change file
+    //QString curfile = calculateCurrentFileName();
+    QFileInfo fi(m_logfileBaseName);
+    if (m_maxFileSizeMB>0 && (fi.size()/1000000)>m_maxFileSizeMB)
+    {
+        //FIXME - implement rotation
+    }
 }
 
-
- 
 
