@@ -315,7 +315,7 @@ FileWriter::rotateFilesIfNeeded()
 
             //remove the last file (if exists)
             QString lastfile = calculateCurrentFileName(m_rotationMaxFileNumber-1);
-            Q_ASSERT(lastfile == m_lastUsedFilenames.last());
+            //Q_ASSERT(lastfile == m_lastUsedFilenames.last());
             // if we are compressing the rotated log files, we need to add the extension to the filename (.zip|.gz)
             if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
             {

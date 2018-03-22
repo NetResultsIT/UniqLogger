@@ -8,7 +8,6 @@
 #define __CONSOLE_LOGGER_INCS__
 
 #include "LogWriter.h"
-#include <iostream>
 
 using namespace std;
 

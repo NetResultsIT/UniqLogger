@@ -8,6 +8,7 @@
 
 #include <QStringList>
 #include <QTime>
+#include <iostream>
 
 QMutex ConsoleWriter::m_consoleMux;
 

@@ -8,7 +8,6 @@
 
 #include <QStringList>
 #include <QDateTime>
-#include "FileCompressor.h"
 
 /******************
  *                *
@@ -17,16 +16,30 @@
  ******************/
 
 WriterConfig::WriterConfig()
+    : maxMessageNum    ( 0 )                        // unlimited
+    , writerFlushSecs  ( 5 )                        // each writer will flush data every 5 seconds
+    , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
+    , maxFileSize      ( 0 )                        // unlimited MB size of logfile
+    , maxFileNum       ( 1 )                        // log on just one file by default
+    , rotationPolicy   ( StrictRotation )           // We use the strict rotation policy by default
+    , compressionLevel ( 0 )
+    , compressionAlgo  ( FileCompressor::ZIP_FILE )
+    , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
 {
-        maxMessageNum    = 0;      // unlimited
-        maxFileSize      = 0;      // unlimited MB size of logfile
-        maxFileNum       = 1;      // log on just one file by default
-        compressionLevel = 0;
-        compressionAlgo  = FileCompressor::ZIP_FILE;
-        writerFlushSecs  = 5;     // each writer will flush data every 5 seconds
-        writeIdleMark    = false; // If no messages are to be written, write a MARK string to show writer is alive
-        reconnectionSecs = 5;     // If RemoteWrite connection drops, try to reconnect every X secs
-        rotationPolicy   = StrictRotation; // We use the strict rotation policy by default
+}
+
+WriterConfig::WriterConfig(int i_maxFileSize, int i_maxFileNum, FileRotationPolicyType i_rotationPolicy, int i_compressionLevel, int i_compressionAlgo)
+    : maxMessageNum    ( 0 )                        // unlimited
+    , writerFlushSecs  ( 5 )                        // each writer will flush data every 5 seconds
+    , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
+    , maxFileSize      ( i_maxFileSize )
+    , maxFileNum       ( i_maxFileNum )
+    , rotationPolicy   ( i_rotationPolicy )
+    , compressionLevel ( i_compressionLevel )
+    , compressionAlgo  ( i_compressionAlgo )
+    , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
+{
+
 }
 
 /***************

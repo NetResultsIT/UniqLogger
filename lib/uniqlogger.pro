@@ -72,6 +72,18 @@ SOURCES += \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp
 
+# ----- Headers to export -----
+INCLUDE_HEADERS += \
+    src/UniqLogger.h \
+    src/Logger.h \
+    src/LogWriter.h \
+    src/LogMessage.h \
+    src/ConsoleWriter.h \
+    src/unqlog_common.h \
+    src/bufferofstrings.h \
+    $$FILECOMPRESSOR_ROOT/FileCompressor.h
+
+
 INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool
 
 # --- UniqLogger Modules
@@ -148,6 +160,7 @@ message("COMPILER: $$COMPILER")
 
 DSTDIR = $$PWD/last_build/
 FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
+INCLUDE_DIR = $$PWD/include/
 DLLPATH = bin/
 
 
@@ -363,9 +376,12 @@ ios {
 
 # final UNIX common stuff
 unix {
-    QMAKE_POST_LINK="mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
-    QMAKE_POST_LINK+="cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
-    QMAKE_POST_LINK+="cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
+    QMAKE_POST_LINK += "mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
+    QMAKE_POST_LINK += "mkdir -p $$INCLUDE_DIR $$escape_expand(\\n\\t)"
+
+    QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
+    QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
+    QMAKE_POST_LINK += "cp -aP $$INCLUDE_HEADERS $$INCLUDE_DIR $$escape_expand(\\n\\t)"
 }
 
 message ("Library name: $$DLL")

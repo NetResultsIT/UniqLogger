@@ -14,7 +14,7 @@
 #include <QDebug>
 
 #include "LogMessage.h"
-
+#include "FileCompressor.h"
 
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS
@@ -45,6 +45,22 @@ class ULOG_LIB_API WriterConfig
 {
 public:
     explicit WriterConfig();
+
+    /*!
+     * \brief WriterConfig
+     * Usefull constructor to initialize inline a WriterConfig for a FileWriter
+     *
+     * \param i_maxFileSize
+     * \param i_maxFileNum
+     * \param i_rotationPolicy
+     * \param compressionLevel
+     * \param compressionAlgo
+     */
+    explicit WriterConfig(int i_maxFileSize,
+                          int i_maxFileNum,
+                          FileRotationPolicyType i_rotationPolicy = StrictRotation,
+                          int i_compressionLevel = 0,
+                          int i_compressionAlgo = FileCompressor::ZIP_FILE);
 
     //Common
     int maxMessageNum;      /// Maximum number of still unwritten messages that the writer will hold before discarding, 0 means infinite
