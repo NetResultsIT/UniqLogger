@@ -59,7 +59,8 @@ HEADERS += \
     src/LogMessage.h \
     src/ext/tpool/nrthreadpool.h \
     src/DummyWriter.h \
-    src/bufferofstrings.h
+    src/bufferofstrings.h \
+    src/CompressionAlgo.h
 
 SOURCES += \
     src/Logger.cpp \
@@ -70,7 +71,8 @@ SOURCES += \
     src/LogMessage.cpp \
     src/ext/tpool/nrthreadpool.cpp \
     src/DummyWriter.cpp \
-    src/bufferofstrings.cpp
+    src/bufferofstrings.cpp \
+    src/CompressionAlgo.cpp
 
 # ----- Headers to export -----
 INCLUDE_HEADERS += \

@@ -5,9 +5,12 @@
  ********************************************************************************/
 
 #include "LogWriter.h"
+#include "FileCompressor.h"
 
 #include <QStringList>
 #include <QDateTime>
+
+
 
 /******************
  *                *
@@ -28,7 +31,11 @@ WriterConfig::WriterConfig()
 {
 }
 
-WriterConfig::WriterConfig(int i_maxFileSize, int i_maxFileNum, FileRotationPolicyType i_rotationPolicy, int i_compressionLevel, int i_compressionAlgo)
+WriterConfig::WriterConfig(int i_maxFileSize,
+                           int i_maxFileNum,
+                           FileRotationPolicyType i_rotationPolicy,
+                           int i_compressionLevel,
+                           QSharedPointer<CompressionAlgoIface> i_compressionAlgoPtr)
     : maxMessageNum    ( 0 )                        // unlimited
     , writerFlushSecs  ( 5 )                        // each writer will flush data every 5 seconds
     , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
@@ -36,7 +43,7 @@ WriterConfig::WriterConfig(int i_maxFileSize, int i_maxFileNum, FileRotationPoli
     , maxFileNum       ( i_maxFileNum )
     , rotationPolicy   ( i_rotationPolicy )
     , compressionLevel ( i_compressionLevel )
-    , compressionAlgo  ( i_compressionAlgo )
+    , compressionAlgo  ( i_compressionAlgoPtr->compresionAlgo() )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
 {
 

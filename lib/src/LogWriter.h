@@ -12,9 +12,10 @@
 #include <QMutex>
 #include <QTimer>
 #include <QDebug>
+#include <QSharedPointer>
 
 #include "LogMessage.h"
-#include "FileCompressor.h"
+#include "CompressionAlgo.h"
 
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS
@@ -60,7 +61,8 @@ public:
                           int i_maxFileNum,
                           FileRotationPolicyType i_rotationPolicy = StrictRotation,
                           int i_compressionLevel = 0,
-                          int i_compressionAlgo = FileCompressor::ZIP_FILE);
+                          QSharedPointer<CompressionAlgoIface> i_compressionAlgoPtr = QSharedPointer<CompressionAlgoIface>(new CompressionAlgoZip));
+                          //int i_compressionAlgo = FileCompressor::ZIP_FILE);
 
     //Common
     int maxMessageNum;      /// Maximum number of still unwritten messages that the writer will hold before discarding, 0 means infinite
