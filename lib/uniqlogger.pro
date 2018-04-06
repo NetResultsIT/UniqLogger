@@ -83,7 +83,7 @@ INCLUDE_HEADERS += \
     src/ConsoleWriter.h \
     src/unqlog_common.h \
     src/bufferofstrings.h \
-    $$FILECOMPRESSOR_ROOT/FileCompressor.h
+    src/CompressionAlgo.h
 
 
 INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool
@@ -391,7 +391,7 @@ message ("Library name: $$DLL")
 
 QMAKE_CLEAN += -r
 QMAKE_CLEAN += $$DLL $$DSTDIR/*
-QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR
+QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR $$INCLUDE_DIR
 
 message(" ==== End of UniqLogger QMake build process ==== ")
 
