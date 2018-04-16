@@ -36,6 +36,9 @@ class LogMessage
 
 public:
     LogMessage(const QString &aLoggerName, UNQL::LogMessagePriorityType level, const QString &aMsg, const QString &aTstamp);
+
+    static QString getCurrentTstampString();
+
     QString loggerName() const  { return m_loggerName;  }
     QString message() const;
     QString rawMessage() const  { return m_msg;         }

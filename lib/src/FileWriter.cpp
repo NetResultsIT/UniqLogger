@@ -45,7 +45,7 @@ FileWriter::~FileWriter()
   */
 void
 FileWriter::setLogfileMaxSize(int filesize)
-{   m_maxFileSizeMB = filesize;	}
+{   m_maxFileSizeMB = filesize; }
  
 
 /*!
@@ -54,7 +54,7 @@ FileWriter::setLogfileMaxSize(int filesize)
  */
 void
 FileWriter::setLogfileRotationRange(int maxfilenum)
-{   m_rotationMaxFileNumber = maxfilenum;	}
+{   m_rotationMaxFileNumber = maxfilenum;   }
  
 
 /*!
@@ -191,13 +191,14 @@ FileWriter::calculateCurrentFileName(int num)
 void
 FileWriter::changeOutputFile(const QString &aFilename)
 {
+    QMutexLocker ml(&mutex);
     if (m_logFile.isOpen()) //we were already logging to a file
     {
-        mutex.lock();
-        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Closing previously opened logfile", QDateTime::currentDateTime().toString("hh:mm:ss"));
+        //mutex.lock();
+        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Closing previously opened logfile", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
-        mutex.unlock();
+        //mutex.unlock();
         m_logFile.close();
         m_lastUsedFilenames.append(m_logFile.fileName());
     }
@@ -206,20 +207,20 @@ FileWriter::changeOutputFile(const QString &aFilename)
     m_logFile.open( QIODevice::WriteOnly | QIODevice::Append );
     if (!m_logFile.isOpen()) //we were already logging to a file
     {
-        mutex.lock();
-        LogMessage lm("UniqLogger", UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", QDateTime::currentDateTime().toString("hh:mm:ss"));
+        //mutex.lock();
+        LogMessage lm("UniqLogger", UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
-        mutex.unlock();
+        //mutex.unlock();
         m_logFile.close();
     }
     else
     {
         m_streamIsOpen = true;
-        mutex.lock();
-        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", QDateTime::currentDateTime().toString("hh:mm:ss"));
+        //mutex.lock();
+        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
-        mutex.unlock();
+        //mutex.unlock();
     }
 }
  
@@ -245,37 +246,38 @@ FileWriter::setOutputFile(const QString& aFilename)
 void
 FileWriter::writeToDevice()
 {
-   ULDBG << "Writing to file";
+    ULDBG << "Writing to file";
 
-   if (!m_streamIsOpen)
-       setOutputFile();
+    if (!m_streamIsOpen)
+        setOutputFile();
 
-   if (!m_logIsPaused)
-   {
-       mutex.lock();
-       int nummsg = m_logMessageList.count();
-       for (int i=0; i<nummsg; i++)
-           if (m_logFile.isOpen()) //we could be in the middle of changing logfile
-           {
-               QString terminator = "\n";
+    if (!m_logIsPaused)
+    {
+        mutex.lock();
+        int nummsg = m_logMessageList.count();
+        for (int i=0; i<nummsg; i++)
+            if (m_logFile.isOpen()) //we could be in the middle of changing logfile
+            {
+                QString terminator = "\n";
 
 #ifdef WIN32
-               terminator.prepend("\r");
+                terminator.prepend("\r");
 #endif
-
-               QString s = m_logMessageList.takeFirst().message() + terminator;
+                LogMessage lm = m_logMessageList.takeFirst();
+                QString m = lm.message();
+                QString s = m + terminator;
 #ifdef ULOGDBG
-               int dddd = m_logFile.write(s.toLatin1());
-               qDebug() << "wrote " << dddd << " on " << m_logFile.fileName();
+                int dddd = m_logFile.write(s.toLatin1());
+                qDebug() << "wrote " << dddd << " on " << m_logFile.fileName();
 #else
-	           m_logFile.write(s.toLatin1());
+                m_logFile.write(s.toLatin1());
 #endif
-           }
-       mutex.unlock();
-       m_logFile.flush();
+            }
+        m_logFile.flush();
+        mutex.unlock();
 
-       rotateFilesIfNeeded();
-   }
+        rotateFilesIfNeeded();
+    }
 }
 
 

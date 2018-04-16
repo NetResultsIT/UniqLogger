@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #ifndef __INTERNAL_LOGGER_INCS__
@@ -18,7 +18,6 @@
 
 #define UNQL_ERRMSG_SIZE 5000
 
-#define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"
 
 class UniqLogger;
 class Logger;
@@ -40,7 +39,6 @@ class ULOG_LIB_API Logger: public QObject
 
     int m_logVerbosityAcceptedLevel, m_logVerbosityDefaultLevel;
 
-    char buffer[UNQL_ERRMSG_SIZE];
     QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
     QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;

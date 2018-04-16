@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.4.1
+VERSION = 0.5.0
 
 # --- Please check that the config file reflects your desired build options
 !exists($$PWD/config.pri) {
@@ -76,14 +76,14 @@ SOURCES += \
 
 # ----- Headers to export -----
 INCLUDE_HEADERS += \
-    src/UniqLogger.h \
-    src/Logger.h \
-    src/LogWriter.h \
-    src/LogMessage.h \
-    src/ConsoleWriter.h \
-    src/unqlog_common.h \
-    src/bufferofstrings.h \
-    src/CompressionAlgo.h
+    $$PWD/src/UniqLogger.h \
+    $$PWD/src/Logger.h \
+    $$PWD/src/LogWriter.h \
+    $$PWD/src/LogMessage.h \
+    $$PWD/src/ConsoleWriter.h \
+    $$PWD/src/unqlog_common.h \
+    $$PWD/src/bufferofstrings.h \
+    $$PWD/src/CompressionAlgo.h
 
 
 INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool

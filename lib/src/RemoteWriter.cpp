@@ -64,8 +64,8 @@ RemoteWriter::connectToServer()
     if (b)
         return 0;
 
-    LogMessage msg("Remote Logger", UNQL::LOG_WARNING, "Connection fail to server "+m_serverAddress+":"+QString::number(m_serverPort),
-                   QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING, "Connection fail to server " + m_serverAddress+":" + QString::number(m_serverPort),
+                   LogMessage::getCurrentTstampString());
     appendMessage(msg);
 
     //now we restart the connection timer
@@ -85,8 +85,8 @@ RemoteWriter::onConnectionToServer()
 #ifdef ULOGDBG
     qDebug() << "Connected to server";
 #endif
-    LogMessage msg("Remote Logger", UNQL::LOG_INFO, "Connected to server "+m_serverAddress+":"+QString::number(m_serverPort),
-                   QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage msg("Remote Logwriter", UNQL::LOG_INFO, "Connected to server " + m_serverAddress + ":" + QString::number(m_serverPort),
+                   LogMessage::getCurrentTstampString());
     appendMessage(msg);
     m_reconnectionTimer->stop();
 }
@@ -102,8 +102,8 @@ RemoteWriter::onDisconnectionFromServer()
 #ifdef ULOGDBG
     qDebug() << "Disconnected from server";
 #endif
-    LogMessage msg("Remote Logger", UNQL::LOG_WARNING, "Disconnected from server "+m_serverAddress+":"+QString::number(m_serverPort),
-                   QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING, "Disconnected from server " + m_serverAddress + ":" + QString::number(m_serverPort),
+                   LogMessage::getCurrentTstampString());
     appendMessage(msg);
     m_reconnectionTimer->start(m_reconnectionTimeout);
 }
@@ -121,7 +121,6 @@ RemoteWriter::run()
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
     QMetaObject::invokeMethod(this, "connectToServer");
-
 }
 
 void

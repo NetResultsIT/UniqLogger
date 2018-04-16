@@ -12,7 +12,6 @@
 #include <QMutex>
 #include <QTimer>
 #include <QDebug>
-#include <QSharedPointer>
 
 #include "LogMessage.h"
 #include "CompressionAlgo.h"
@@ -46,23 +45,9 @@ class ULOG_LIB_API WriterConfig
 {
 public:
     explicit WriterConfig();
-
-    /*!
-     * \brief WriterConfig
-     * Usefull constructor to initialize inline a WriterConfig for a FileWriter
-     *
-     * \param i_maxFileSize
-     * \param i_maxFileNum
-     * \param i_rotationPolicy
-     * \param compressionLevel
-     * \param compressionAlgo
-     */
-    explicit WriterConfig(int i_maxFileSize,
-                          int i_maxFileNum,
-                          FileRotationPolicyType i_rotationPolicy = StrictRotation,
-                          int i_compressionLevel = 0,
-                          QSharedPointer<CompressionAlgoIface> i_compressionAlgoPtr = QSharedPointer<CompressionAlgoIface>(new CompressionAlgoZip));
-                          //int i_compressionAlgo = FileCompressor::ZIP_FILE);
+    QString toString() const;
+    bool operator ==(const WriterConfig &rhs) const;
+    bool operator !=(const WriterConfig &rhs) const;
 
     //Common
     int maxMessageNum;      /// Maximum number of still unwritten messages that the writer will hold before discarding, 0 means infinite
@@ -92,13 +77,12 @@ class LogWriter: public QObject
 
     QString m_lastMessage;
     volatile bool m_stillClosing;
-    int m_maxMessages;
-    bool m_writeIdleMark;
+    bool m_alreadyConfigured;
 
 protected:
     QTimer *m_logTimer;
     QList<LogMessage> m_logMessageList;
-    int m_sleepingMilliSecs;
+    WriterConfig m_Config;
     bool m_logIsPaused;
     QMutex mutex;
 
@@ -111,6 +95,11 @@ public:
     LogWriter();
     virtual ~LogWriter();
 
+    const WriterConfig& getWriterConfig() const;
+    bool isAlreadyConfigured() const;
+    bool isLoggingPaused() const;
+
+    /* SETTERs */
     void setSleepingMilliSecs(int);
     void setMaximumAllowedMessages(int);
     void appendMessage(const LogMessage&);

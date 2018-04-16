@@ -1,7 +1,7 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #include "ConsoleWriter.h"
@@ -15,12 +15,10 @@ QMutex ConsoleWriter::m_consoleMux;
 ConsoleWriter::ConsoleWriter()
 : LogWriter()
 {
-    //qDebug() << this << " Console writer ctor ";
     m_color = NONE; //default value
-    m_sleepingMilliSecs = 500; //on console we're more aggressive
-    //qDebug() << this << " end of console write ctor " << m_color;
 }
  
+
 /*!
   \brief In the class dtor we want to flush whatever we might have got that is not written
   */
@@ -29,6 +27,7 @@ ConsoleWriter::~ConsoleWriter()
     //on exit, write all we've got
     this->flush();
 }
+
 
 /*!
   \brief writes the messages in the queue on the console with the specified color

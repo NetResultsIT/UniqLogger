@@ -27,7 +27,6 @@ Logger::Logger()
 
 Logger::~Logger()
 {
-
 #ifdef ULOGDBG
     qDebug() << Q_FUNC_INFO << "Deleting logger " << m_moduleName;
 #endif
@@ -287,15 +286,17 @@ Logger::log(int priority, const char* mess, ...)
 {
     if (priority <= m_logVerbosityAcceptedLevel)
     {
+        char buffer[UNQL_ERRMSG_SIZE];
+
         va_list args;
-        va_start(args,mess);
+        va_start(args, mess);
 
 #if defined(_MSC_VER) && _MSC_VER < 1400
-        _vsnprintf(buffer,UNQL_ERRMSG_SIZE,mess,args);
+        _vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
 #else
-        vsnprintf(buffer,UNQL_ERRMSG_SIZE,mess,args);
+        vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
 #endif
-
+        buffer[UNQL_ERRMSG_SIZE-1] = '\0';
         QString msg = buffer;
         priv_log(priority, msg);
 
@@ -319,11 +320,12 @@ Logger::log(const char* mess, ...)
 
     va_start(args,mess);
 #if defined(_MSC_VER) && _MSC_VER < 1400
-    _vsnprintf(buffer2,UNQL_ERRMSG_SIZE,mess,args);
+    _vsnprintf(buffer2, UNQL_ERRMSG_SIZE-1, mess, args);
 #else
-    vsnprintf(buffer2,UNQL_ERRMSG_SIZE,mess,args);
+    vsnprintf(buffer2, UNQL_ERRMSG_SIZE-1, mess, args);
 #endif
     va_end(args);
+    buffer2[UNQL_ERRMSG_SIZE-1] = '\0';
 
     this->log(m_logVerbosityDefaultLevel, buffer2);
 }

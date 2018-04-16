@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -9,7 +9,6 @@
 
 #include <QStringList>
 #include <QDateTime>
-
 
 
 /******************
@@ -29,25 +28,51 @@ WriterConfig::WriterConfig()
     , compressionAlgo  ( FileCompressor::ZIP_FILE )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
 {
+/* empty ctor */
 }
 
-WriterConfig::WriterConfig(int i_maxFileSize,
-                           int i_maxFileNum,
-                           FileRotationPolicyType i_rotationPolicy,
-                           int i_compressionLevel,
-                           QSharedPointer<CompressionAlgoIface> i_compressionAlgoPtr)
-    : maxMessageNum    ( 0 )                        // unlimited
-    , writerFlushSecs  ( 5 )                        // each writer will flush data every 5 seconds
-    , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
-    , maxFileSize      ( i_maxFileSize )
-    , maxFileNum       ( i_maxFileNum )
-    , rotationPolicy   ( i_rotationPolicy )
-    , compressionLevel ( i_compressionLevel )
-    , compressionAlgo  ( i_compressionAlgoPtr->compresionAlgo() )
-    , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
+
+QString
+WriterConfig::toString() const
 {
+    QString s;
+    QStringList sl;
+    sl << "COMMON PARAMS"
+       << "\nMax queued messages: " << ((maxMessageNum==0) ? "unlimited" : "0") << "\nFlushing seconds: " << QString::number(writerFlushSecs)
+       << "\nLog idle mark: " << (writeIdleMark ? "true" : "false")
+       << "\nFILE ONLY PARAMS"
+       << "\nMax file size (MB): " << QString::number(maxFileSize) << "\nMax number of files: " << QString::number(maxFileNum)
+       << "\nRotationPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
+       << "\nNETWORK PARAMS"
+       << "\nReconnection seconds: " << QString::number(reconnectionSecs)
+       << "\n----------";
 
+    return s = sl.join("");
 }
+
+
+bool
+WriterConfig::operator ==(const WriterConfig& rhs) const
+{
+    if ( maxMessageNum      == rhs.maxMessageNum    &&
+         writerFlushSecs    == rhs.writerFlushSecs  &&
+         writeIdleMark      == rhs.writeIdleMark    &&
+         maxFileNum         == rhs.maxFileNum       &&
+         maxFileSize        == rhs.maxFileSize      &&
+         rotationPolicy     == rhs.rotationPolicy   &&
+         compressionLevel   == rhs.compressionLevel &&
+         reconnectionSecs   == rhs.reconnectionSecs
+        )
+    {
+        return true;
+    }
+
+    return false;
+}
+
+
+bool WriterConfig::operator !=(const WriterConfig &rhs) const
+{ return !(*this == rhs); }
 
 /***************
  *             *
@@ -57,12 +82,10 @@ WriterConfig::WriterConfig(int i_maxFileSize,
 
 
 LogWriter::LogWriter()
+    : m_alreadyConfigured(false)
 {
     m_logIsPaused       = false;
-    m_sleepingMilliSecs = 5000;
-    m_maxMessages       = -1;
-    m_writeIdleMark     = false;
-    LogMessage lm("UniqLogger", UNQL::LOG_INFO, "a Logger Started", QDateTime::currentDateTime().toString("hh:mm:ss"));
+    LogMessage lm("UniqLogger", UNQL::LOG_INFO, "a Logger Started", LogMessage::getCurrentTstampString());
     m_logMessageList.append(lm);
     m_logTimer = new QTimer(this);
 }
@@ -74,9 +97,38 @@ LogWriter::LogWriter()
   */
 LogWriter::~LogWriter()
 {
+    m_logMessageList.clear();
+    m_logTimer->stop();
+    disconnect(m_logTimer);
     ULDBG << Q_FUNC_INFO;
 }
 
+
+/*!
+ * \brief LogWriter::getWriterConfig
+ * \return a const reference to the actual writer configuration
+ */
+const WriterConfig&
+LogWriter::getWriterConfig() const
+{ return m_Config; }
+
+
+/*!
+ * \brief LogWriter::isLoggingPaused
+ * \return whether or not the logging is puased on this writer
+ */
+bool
+LogWriter::isLoggingPaused() const
+{ return m_logIsPaused; }
+
+
+/*!
+ * \brief LogWriter::isAlreadyConfigured
+ * \return whether or not this writer has been configured once or is runnign with defaults
+ */
+bool
+LogWriter::isAlreadyConfigured() const
+{ return m_alreadyConfigured; }
 
 
 /*!
@@ -100,8 +152,8 @@ LogWriter::priv_writeToDevice()
 {
     ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
 
-    if (m_writeIdleMark) {
-        LogMessage lm("UniqLogger", UNQL::LOG_INFO, " -- MARK -- ", QDateTime::currentDateTime().toString("hh:mm:ss"));
+    if (m_Config.writeIdleMark) {
+        LogMessage lm("UniqLogger", UNQL::LOG_INFO, " -- MARK -- ", LogMessage::getCurrentTstampString());
         mutex.lock();
         if ( m_logMessageList.empty() )
             m_logMessageList.append(lm);
@@ -116,7 +168,7 @@ void
 LogWriter::priv_startLogTimer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
-    m_logTimer->start(m_sleepingMilliSecs);
+    m_logTimer->start(m_Config.writerFlushSecs * 1000);
 }
 
 
@@ -127,9 +179,13 @@ LogWriter::priv_startLogTimer()
 void
 LogWriter::setWriterConfig(const WriterConfig &wconf)
 {
+    m_alreadyConfigured = true;
+    m_Config = wconf;
+    /*
     m_sleepingMilliSecs = wconf.writerFlushSecs * 1000;
     m_writeIdleMark     = wconf.writeIdleMark;
     m_maxMessages       = wconf.maxMessageNum;
+    */
 }
 
 
@@ -140,8 +196,6 @@ LogWriter::setWriterConfig(const WriterConfig &wconf)
 void
 LogWriter::run()
 {
-    m_logTimer->setInterval(m_sleepingMilliSecs);
-    //qDebug() << this << "setting timer interval to "<< m_sleepingMilliSecs;
     connect(m_logTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
 
     ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();
@@ -155,7 +209,7 @@ LogWriter::run()
 void
 LogWriter::setMaximumAllowedMessages(int i_maxmsg)
 {
-    m_maxMessages = i_maxmsg;
+    m_Config.maxMessageNum = i_maxmsg;
 }
 
 
@@ -166,8 +220,8 @@ LogWriter::setMaximumAllowedMessages(int i_maxmsg)
   */
 void
 LogWriter::setSleepingMilliSecs(int msec)
-{	
-    m_sleepingMilliSecs = msec;
+{
+    m_Config.writerFlushSecs = msec / 1000;
     m_logTimer->setInterval(msec);
 } 
  
@@ -181,7 +235,7 @@ LogWriter::appendMessage(const LogMessage &s)
 {
     mutex.lock();
         if (!m_logIsPaused) {
-            if (m_logMessageList.count() >= m_maxMessages && m_maxMessages>0) {
+            if (m_logMessageList.count() >= m_Config.maxMessageNum && m_Config.maxMessageNum > 0) {
                 ULDBG << "Message List was full, discarding previous messages..." << this;
                 m_logMessageList.removeFirst();
             }

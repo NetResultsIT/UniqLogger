@@ -1,7 +1,7 @@
 /********************************************************************************
  *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #ifndef __CONSOLE_LOGGER_INCS__
@@ -24,9 +24,9 @@ enum ConsoleColorType {
                         blue        =   34,
                         magenta     =   35,
                         cyan        =   36,
-						gray        =   37,
-						grey        =   37,
-						white       =   37/*,
+                        gray        =   37,
+                        grey        =   37,
+                        white       =   37/*,
                         darkgray    =   30,
                         lightred    =   31,
                         lightgreen  =   32,
@@ -39,7 +39,7 @@ enum ConsoleColorType {
 
 class ConsoleWriter: public LogWriter
 {
-	Q_OBJECT
+    Q_OBJECT
 
     ConsoleColorType m_color;
     static QMutex m_consoleMux;

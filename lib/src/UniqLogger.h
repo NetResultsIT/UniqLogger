@@ -1,7 +1,7 @@
 /********************************************************************************
  *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
- *              Francesco Lamonica		<f.lamonica@netresults.it>              *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #ifndef ULOGGER_H
@@ -76,6 +76,7 @@ class ULOG_LIB_API UniqLogger : public QObject
 
     static QMutex gmuxUniqLoggerInstance;
     static QMap<QString,UniqLogger*> gUniqLoggerInstanceMap;
+    static bool DEFAULT_OK;
 
     QMutex muxDeviceCounter, muxMonitorVarMap;
     QString m_defaultTimeStampFormat;
@@ -97,15 +98,17 @@ private:
         void registerWriter(LogWriter*);
         void unregisterWriter(LogWriter*);
 
+        Logger* createLogger        (const QString &logName);
+        bool checkMatchingConfigForWriter(LogWriter &w, const WriterConfig & wc);
+
 public:
         static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
 
-        Logger* createLogger        ( const QString &logName                                                                      );
+        Logger* createDummyLogger   ( const QString &logName,                               const WriterConfig &wc=WriterConfig() );
         Logger* createConsoleLogger ( const QString &logName, ConsoleColorType c,           const WriterConfig &wc=WriterConfig() );
         Logger* createConsoleLogger ( const QString &logName, bool log2StdConsole=true,     const WriterConfig &wc=WriterConfig() );
-        Logger* createFileLogger    ( const QString &logName, const QString &inFileName,    const WriterConfig &wc=WriterConfig() );
-        Logger* createDummyLogger   ( const QString &logName,                               const WriterConfig &wc=WriterConfig() );
-        Logger* createNetworkLogger ( const QString &logName, const QString &addr,int port, const WriterConfig &wc=WriterConfig() );
+        Logger* createFileLogger    ( const QString &logName, const QString &fileName,          const WriterConfig &wc=WriterConfig(), bool &ok=DEFAULT_OK );
+        Logger* createNetworkLogger ( const QString &logName, const QString &address, int port, const WriterConfig &wc=WriterConfig(), bool &ok=DEFAULT_OK );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,   const WriterConfig &wc=WriterConfig() );
         Logger* createAndroidLogger ( const QString &logName                                                                      );
 
@@ -121,7 +124,7 @@ public:
         void changeMonitorVarStatus ( const QString &var, bool status );
         void delMonitorVar ( const QString &var );
 
-        int addWriterToLogger       (const Logger*, const LogWriter&);
+        int addWriterToLogger       (const Logger*, LogWriter &);
         int removeWriterFromLogger  (const Logger*, const LogWriter&);
 
         int threadsUsedForLogging() const;

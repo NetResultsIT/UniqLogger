@@ -37,6 +37,7 @@ enum RotationPolicy
     MonthDayRotation
 };
 
+#define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"
 
 }
 

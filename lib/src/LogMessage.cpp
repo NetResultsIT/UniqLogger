@@ -5,7 +5,7 @@
  ********************************************************************************/
 
 #include "LogMessage.h"
-
+#include <QDateTime>
 
 QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
 
@@ -29,7 +29,7 @@ LogMessage::message() const
     spc = m_formatting.spacingString();
 
 
-    QString priolev="UNKNOWN";
+    QString priolev = "UNKNOWN";
     if (UnqlPriorityLevelNamesMap.contains(m_level))
         priolev = UnqlPriorityLevelNamesMap[m_level];
 
@@ -38,4 +38,14 @@ LogMessage::message() const
     msg = sc + m_tstamp + ec + spc + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg;
 
     return msg;
+}
+
+
+/*!
+ * \brief LogMessage::getTstampString is a static function that will return a string with current timestamp using the default timeformat
+ * \return a string containing current timestamp
+ */
+QString LogMessage::getCurrentTstampString()
+{
+    return QDateTime::currentDateTime().toString(DEF_UNQL_TS_FMT);
 }
