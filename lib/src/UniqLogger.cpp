@@ -1,7 +1,7 @@
 /********************************************************************************
  *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
- *              Francesco Lamonica		<f.lamonica@netresults.it>              *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
 #include "UniqLogger.h"
@@ -30,7 +30,7 @@
 //Define (and not simply declare) the static members (see C++ FAQ 10.12)
 QMutex UniqLogger::gmuxUniqLoggerInstance;
 QMap<QString,UniqLogger*> UniqLogger::gUniqLoggerInstanceMap;
-bool UniqLogger::DEFAULT_OK = true;
+int UniqLogger::DEFAULT_OK = UNQL::UnqlErrorNoError;
 
 extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
 /*!
@@ -52,12 +52,12 @@ UniqLogger::UniqLogger(int nthreads)
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,     "DEBUG");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL, "FULL DEBUG");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR, "MONITOR");
-
-    m_ConsoleLogger = new ConsoleWriter();
+/*
+    m_ConsoleLogger = new ConsoleWriter(WriterConfig());
     registerWriter(m_ConsoleLogger);
     m_pTPool->runObject(m_ConsoleLogger);
     m_ConsoleLogger->run();
-
+*/
     ULDBG << "Being here with app: " << QCoreApplication::instance();
 }
  
@@ -114,7 +114,8 @@ UniqLogger::instance(const QString &ulname, int nthreads)
     }
 
     if (nthreads != ulptr->threadsUsedForLogging()) {
-        qWarning() << "The UniqLogger instances was already configured with a different number of logging threads: " << ulptr->threadsUsedForLogging();
+        qWarning() << "The UniqLogger instance was already configured with a different number of logging threads: "
+                   << ulptr->threadsUsedForLogging() << " ignoring new value";
     }
 
     return ulptr;
@@ -131,10 +132,10 @@ UniqLogger::registerWriter(LogWriter *lw)
     muxDeviceCounter.lock();
     if (m_DevicesMap.contains(lw)) {
         int refcount = m_DevicesMap[lw];
-        m_DevicesMap[lw] = refcount+1;
+        m_DevicesMap[lw] = refcount + 1;
     }
     else {
-        m_DevicesMap.insert(lw,0);
+        m_DevicesMap.insert(lw, 0);
     }
     muxDeviceCounter.unlock();
 }
@@ -157,12 +158,12 @@ UniqLogger::unregisterWriter(LogWriter *lw)
             lw->deleteLater();
         }
         else {
-            m_DevicesMap[lw] = refcount-1;
+            m_DevicesMap[lw] = refcount - 1;
             Q_ASSERT(refcount >= 0);
         }
     }
     else {
-        qDebug() << " +++++++++++++++ ERROR  deregistering writer +++++++++++++";
+        ULDBG << " +++++++++++++++ ERROR  deregistering writer +++++++++++++";
     }
     muxDeviceCounter.unlock();
 }
@@ -190,9 +191,6 @@ UniqLogger::checkMatchingConfigForWriter(LogWriter &w, const WriterConfig &wc)
 {
     const WriterConfig &wc2 = w.getWriterConfig();
     if (wc2 != wc) {
-        QString msg = QString("Tried to open this writer with this configuration:\n%1\nbut it had been previously opened with this one:\n%2").arg(wc.toString()).arg(wc2.toString());
-        LogMessage lm("UNIQLOGGER", UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
-        w.appendMessage(lm);
         return false;
     }
 
@@ -249,6 +247,7 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &)
     return l;
 }
 
+
 #ifdef ULOG_ANDROIDLOGGING
 /*!
  * \brief creates an Android native logger and automatically connects a file writer with default values
@@ -267,20 +266,21 @@ Logger *UniqLogger::createAndroidLogger(const QString& _logname)
 
 /*!
   \brief creates a logger and automatically connects a file writer with default values
-  \param _logname the module name for this logger
-  \param _filename the filename where this logger will write messages by default
+  \param i_logname the module name for this logger
+  \param i_filename the filename where this logger will write messages by default
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 Logger*
-UniqLogger::createFileLogger(const QString & _logname, const QString &_filename, const WriterConfig &i_wconf, bool &ok)
+UniqLogger::createFileLogger(const QString & i_logname, const QString &i_filename, const WriterConfig &i_wconf, int &ok)
 {
-    Logger *l = createLogger(_logname);
-    LogWriter &fw = getFileWriter(_filename, i_wconf.rotationPolicy);
-    if (fw.isAlreadyConfigured())
-        ok = checkMatchingConfigForWriter(fw, i_wconf);
-    else {
-        fw.setWriterConfig(i_wconf);
-        ok = true;
+    Logger *l = createLogger(i_logname);
+    LogWriter &fw = getFileWriter(i_filename, i_wconf, ok);
+    if (ok != UNQL::UnqlErrorNoError) {
+        //FIXME - handle all the possible other errors
+        WriterConfig wc2 = fw.getWriterConfig();
+        QString msg = QString("Logger %3 tried to open this writer with this configuration:\n%1\nbut it had been previously opened with this one:\n%2").arg(i_wconf.toString()).arg(wc2.toString()).arg(i_logname);
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
+        fw.appendMessage(lm);
     }
     this->addWriterToLogger(l, fw);
     return l;
@@ -294,18 +294,19 @@ UniqLogger::createFileLogger(const QString & _logname, const QString &_filename,
   \param i_logname the module name for this logger
   \param i_ha the address where this logger will try to connect to write messages
   \param i_port the server port where this logger will try to connect to write messages
-  \return a reference to the logger class created
+  \return a pointer to the logger class created
   */
 Logger*
-UniqLogger::createNetworkLogger(const QString & i_logname, const QString &i_ha, int i_port, const WriterConfig &i_wconf, bool &ok)
+UniqLogger::createNetworkLogger(const QString & i_logname, const QString &i_ha, int i_port, const WriterConfig &i_wconf, int &ok)
 {
     Logger *l = createLogger(i_logname);
-    LogWriter &rw = getNetworkWriter(i_ha, i_port);
-    if (!rw.isAlreadyConfigured())
-        ok = checkMatchingConfigForWriter(rw, i_wconf);
-    else {
-        rw.setWriterConfig(i_wconf);
-        ok = true;
+    LogWriter &rw = getNetworkWriter(i_ha, i_port, i_wconf, ok);
+    if (ok != UNQL::UnqlErrorNoError) {
+        //FIXME - handle all the possible other errors
+        WriterConfig wc2 = rw.getWriterConfig();
+        QString msg = QString("Logger %3 tried to open this writer with this configuration:\n%1\nbut it had been previously opened with this one:\n%2").arg(i_wconf.toString()).arg(wc2.toString()).arg(i_logname);
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
+        rw.appendMessage(lm);
     }
     this->addWriterToLogger(l, rw);
     return l;
@@ -321,10 +322,10 @@ UniqLogger::createNetworkLogger(const QString & i_logname, const QString &i_ha, 
   \return a reference to the logger class created
   */
 Logger*
-UniqLogger::createDbLogger(const QString & _logname, const QString &aDbFileName, const WriterConfig &)
+UniqLogger::createDbLogger(const QString & i_logname, const QString &aDbFileName, const WriterConfig &wc, int &ok)
 {
-    Logger *l = createLogger(_logname);
-    LogWriter const &rlog = getDbWriter(aDbFileName);
+    Logger *l = createLogger(i_logname);
+    LogWriter &rlog = getDbWriter(aDbFileName, wc, ok);
     this->addWriterToLogger(l, rlog);
     return l;
 }
@@ -342,8 +343,7 @@ Logger*
 UniqLogger::createConsoleLogger(const QString &i_logname, ConsoleColorType c, const WriterConfig &wc)
 {
     Logger *l = createLogger(i_logname);
-    LogWriter &clog = getConsoleWriter(c);
-    clog.setWriterConfig(wc);
+    LogWriter &clog = getConsoleWriter(c, wc);
     this->addWriterToLogger(l, clog);
     return l;
 }
@@ -356,7 +356,7 @@ UniqLogger::createConsoleLogger(const QString &i_logname, ConsoleColorType c, co
   \param useStdConsoleLogger chooses whether we should use the existing console logger (with its color and timing) or if
   we should allocate a new thread where we can specify our desires. (NOTE: the default value is to reuse the existing Console)
   \return the pointer to the logger class created or a null pointer if something went wrong
-  */
+  * /
 Logger*
 UniqLogger::createConsoleLogger(const QString &logname, bool useStdConsoleLogger, const WriterConfig &wc)
 {
@@ -367,23 +367,24 @@ UniqLogger::createConsoleLogger(const QString &logname, bool useStdConsoleLogger
         this->addWriterToLogger(l, cl);
     }
     else {
-        LogWriter &cl = getConsoleWriter();
+        LogWriter &cl = getConsoleWriter(NONE, wc);
         cl.setWriterConfig(wc);
         this->addWriterToLogger(l, cl);
     }
     return l;
 }
+*/
 
 
 
 /*!
   \brief returns a file writer that can be added to other loggers
         If it fails it throw an exception
-  \param _filename the filename where this logger will write messages by default
+  \param i_filename the filename where this logger will write messages by default
   \param i_rotationPolicy the file rotation policy (by default StrictRotation is used)
   \return the reference to the logger class created
   */
-LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolicyType i_rotationPolicy)
+LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConfig &wc, int &ok)
 {
     FileWriter *fw;
     LogWriter *lw;
@@ -393,25 +394,25 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolic
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         fw = dynamic_cast<FileWriter*>(lw);
-        if (fw && fw->getBaseName() == _filename) {
-            if ( fw->getRotationPolicy() != i_rotationPolicy )
+        if (fw && fw->getBaseName() == i_filename) {
+            if ( !checkMatchingConfigForWriter(*fw, wc) )
             {
-                muxDeviceCounter.unlock();
-                throw std::runtime_error("Requested an existing FileWriter with same filename but different rotation policy!");
+                ULDBG << "WriterConfigs are incompatible";
+                ok = UNQL::UnqlErrorWriterConfigIncompatible;
             }
             ULDBG << "Existing Filewriter found! ------------------->><<-------" << fw;
             muxDeviceCounter.unlock();
             return *fw;
         }
-        fw = 0;
+        fw = nullptr;
     }
     muxDeviceCounter.unlock();
-    fw = new FileWriter(i_rotationPolicy);
+    fw = new FileWriter(wc);
 
-    ULDBG << "Filewriter for file "<< _filename <<" not found, creating one " << fw;
+    ULDBG << "Filewriter for file " << i_filename << " not found, creating one " << fw;
 
     registerWriter(fw);
-    fw->setOutputFile(_filename);
+    fw->setOutputFile(i_filename);
 
     m_pTPool->runObject(fw);
     fw->run();
@@ -428,9 +429,8 @@ LogWriter &UniqLogger::getFileWriter(const QString &_filename, FileRotationPolic
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 LogWriter&
-UniqLogger::getDbWriter(const QString &_filename)
+UniqLogger::getDbWriter(const QString &_filename, const WriterConfig &wc, int &ok)
 {
-
     DbWriter *dw;
     LogWriter *lw;
 
@@ -441,6 +441,11 @@ UniqLogger::getDbWriter(const QString &_filename)
         dw = dynamic_cast<DbWriter*>(lw);
         if (dw && dw->getBaseName() == _filename) {
             ULDBG << "Existing DbWriter found! ------------------->><<-------" << dw;
+            if ( !checkMatchingConfigForWriter(*dw, wc) )
+            {
+                ULDBG << "WriterConfigs are incompatible for DB writers";
+                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+            }
 
             muxDeviceCounter.unlock();
             return *dw;
@@ -448,7 +453,7 @@ UniqLogger::getDbWriter(const QString &_filename)
         dw = 0;
     }
     muxDeviceCounter.unlock();
-    dw = new DbWriter(_filename);
+    dw = new DbWriter(_filename, wc);
 
     ULDBG << "Dbwriter for file "<< _filename <<" not found, creating one " << dw;
 
@@ -468,9 +473,9 @@ UniqLogger::getDbWriter(const QString &_filename)
   \brief creates a logger and automatically connects a network writer with default values
   \param _ha the address where this logger will try to connect to write messages
   \param _port the server port where this logger will try to connect to write messages
-  \return the pointer to the logger class created or a null pointer if something went wrong
+  \return a reference to the logwriter class created
   */
-LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
+LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const WriterConfig &wc, int &ok)
 {
     RemoteWriter *rw = NULL;
     LogWriter *lw = NULL;
@@ -481,16 +486,19 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
         lw = it.key();
         rw = dynamic_cast<RemoteWriter*>(lw);
         if (rw && rw->getHost() == _ha && rw->getPort() == _port) {
-
             ULDBG << "Existing Networkwriter found! ------------------->><<-------";
-
+            if ( !checkMatchingConfigForWriter(*rw, wc) )
+            {
+                ULDBG << "WriterConfigs are incompatible for remote writers";
+                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+            }
             muxDeviceCounter.unlock();
             return *rw;
         }
     }
     muxDeviceCounter.unlock();
 
-    rw = new RemoteWriter(_ha, _port);
+    rw = new RemoteWriter(_ha, _port, wc);
     if (rw)
     {
         registerWriter(rw);
@@ -506,25 +514,49 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port)
 /*!
   \brief returns the standard console writer
   \return the pointer to the standard console logger
-  */
+  * /
 LogWriter &UniqLogger::getStdConsoleWriter()
 {
     return *m_ConsoleLogger;
-}
+}*/
 
 
 
 /*!
-  \brief creates a console writer
+  \brief creates a console writer with the specified color, if a console writer with the same color and writer config exists it will be reused
   \param c the color in which this logger will going to write messages
-  \return the pointer to the logger class created or a null pointer if something went wrong
+  \return a reference to the logwriter class created
+  \note if the
   */
-LogWriter &UniqLogger::getConsoleWriter(ConsoleColorType c)
+LogWriter &UniqLogger::getConsoleWriter(ConsoleColorType c, const WriterConfig &wc, int &ok)
 {
-    ConsoleWriter *cw = new ConsoleWriter();
+    LogWriter *lw;
+    ConsoleWriter *cw;
+
+    ok = UNQL::UnqlErrorNoError; //the search for ConsoleWriter cannot fail (we may create a new one if need be)
+
+    muxDeviceCounter.lock();
+    LogWriterUsageMapType::Iterator it;
+    for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
+        lw = it.key();
+        cw = dynamic_cast<ConsoleWriter*>(lw);
+        if (cw && cw->getColor() == c) {
+            if ( !checkMatchingConfigForWriter(*cw, wc) )
+            {
+                ULDBG << "WriterConfigs are incompatible for console writers";
+                continue; //there could be another consolewriter with same color but compatible config
+            }
+            ULDBG << "Existing matching ConsoleWriter found! ------------------->><<-------" << cw;
+            muxDeviceCounter.unlock();
+            return *cw;
+        }
+        cw = nullptr;
+    }
+    muxDeviceCounter.unlock();
+
+    cw = new ConsoleWriter(wc);
     registerWriter(cw);
     cw->setConsoleColor(c);
-    //cw->start();
     m_pTPool->runObject(cw);
     cw->run();
 
@@ -542,7 +574,8 @@ UniqLogger::getDummyWriter()
 {
     DummyWriter* dw = new DummyWriter();
     registerWriter(dw);
-    //dw->start();
+    m_pTPool->runObject(dw);
+    dw->run();
     return *dw;
 }
 
@@ -598,7 +631,7 @@ UniqLogger::addWriterToLogger(const Logger* _l, LogWriter &writer)
         this->registerWriter(const_cast<LogWriter*>(&writer));
     }
 
-    LogMessage lm ("UNIQLOGGER", UNQL::LOG_DBG, QString("Adding logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
+    LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Adding logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
     writer.appendMessage(lm);
     return res;
 }
@@ -626,14 +659,14 @@ UniqLogger::addMonitorVar(const QString &var, bool status)
 void
 UniqLogger::changeMonitorVarStatus(const QString &var, bool status)
 {
-	muxMonitorVarMap.lock();
-	if (m_VarMonitorMap.contains(var)) {
+    muxMonitorVarMap.lock();
+    if (m_VarMonitorMap.contains(var)) {
         m_VarMonitorMap[var] = status;
     }
     else {
         ULDBG << "The var is not monitored " << var;
-	}
-	muxMonitorVarMap.unlock();
+    }
+    muxMonitorVarMap.unlock();
 }
 
 
@@ -708,7 +741,7 @@ UniqLogger::setSpacingChar(const QChar &aSpaceChar)
     \param c the color that will be used from now on from the standard console logger
     \note this method will not affect other console logger obtained via getConsoleLogger() specifying a specific color
 but will indeed change those that were obtained passing true (default value) to the same getConsoleLogger method;
-  */
+  * /
 void
 UniqLogger::setStdConsoleColor(ConsoleColorType c)
 {
@@ -718,6 +751,7 @@ UniqLogger::setStdConsoleColor(ConsoleColorType c)
     }
     UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
+*/
 
 
 /*!

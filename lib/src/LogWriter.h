@@ -77,7 +77,6 @@ class LogWriter: public QObject
 
     QString m_lastMessage;
     volatile bool m_stillClosing;
-    bool m_alreadyConfigured;
 
 protected:
     QTimer *m_logTimer;
@@ -92,7 +91,7 @@ protected slots:
     void priv_startLogTimer(); // <-- BEWARE this method is called with invokeMethod do NOT change its name
 
 public:
-    LogWriter();
+    LogWriter(const WriterConfig &);
     virtual ~LogWriter();
 
     const WriterConfig& getWriterConfig() const;

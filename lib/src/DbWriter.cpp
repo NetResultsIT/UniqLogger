@@ -11,8 +11,8 @@
 #include <QFileInfo>
 #include "UnqlDbHandler.h"
 
-DbWriter::DbWriter(const QString &dbFileName)
-: LogWriter()
+DbWriter::DbWriter(const QString &dbFileName, const WriterConfig &wconf)
+    : LogWriter(wconf)
 {
     m_fileSizeExceeded = false;
     m_maxFileSizeMB = 1;
@@ -39,7 +39,7 @@ DbWriter::~DbWriter()
   */
 void
 DbWriter::setLogfileMaxSize(int filesize)
-{   m_maxFileSizeMB=filesize;   }
+{   m_maxFileSizeMB = filesize;   }
  
 
 /*!

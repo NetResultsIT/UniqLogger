@@ -5,8 +5,8 @@
 
 #include "DummyWriter.h"
 
-DummyWriter::DummyWriter() :
-    LogWriter()
+DummyWriter::DummyWriter()
+    : LogWriter(WriterConfig())
 {
 #ifdef ULOGDBG
     qDebug() << Q_FUNC_INFO << this;

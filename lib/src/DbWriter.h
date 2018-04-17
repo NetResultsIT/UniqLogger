@@ -24,7 +24,7 @@ class DbWriter: public LogWriter
     void writeToDevice();
 
 public:
-    DbWriter(const QString &);
+    DbWriter(const QString &, const WriterConfig &wconf);
     virtual ~DbWriter();
     void setOutputFile(QString filename="log.txt");
     void setLogfileMaxSize(int filesize);

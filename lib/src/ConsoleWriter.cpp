@@ -12,8 +12,8 @@
 
 QMutex ConsoleWriter::m_consoleMux;
 
-ConsoleWriter::ConsoleWriter()
-: LogWriter()
+ConsoleWriter::ConsoleWriter(const WriterConfig &wc)
+    : LogWriter(wc)
 {
     m_color = NONE; //default value
 }

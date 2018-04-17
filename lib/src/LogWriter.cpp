@@ -81,11 +81,11 @@ bool WriterConfig::operator !=(const WriterConfig &rhs) const
  ***************/
 
 
-LogWriter::LogWriter()
-    : m_alreadyConfigured(false)
+LogWriter::LogWriter(const WriterConfig &wc)
+    : m_Config(wc)
+    , m_logIsPaused(false)
 {
-    m_logIsPaused       = false;
-    LogMessage lm("UniqLogger", UNQL::LOG_INFO, "a Logger Started", LogMessage::getCurrentTstampString());
+    LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "a Logger Started", LogMessage::getCurrentTstampString());
     m_logMessageList.append(lm);
     m_logTimer = new QTimer(this);
 }
@@ -123,15 +123,6 @@ LogWriter::isLoggingPaused() const
 
 
 /*!
- * \brief LogWriter::isAlreadyConfigured
- * \return whether or not this writer has been configured once or is runnign with defaults
- */
-bool
-LogWriter::isAlreadyConfigured() const
-{ return m_alreadyConfigured; }
-
-
-/*!
   \brief this method forces the logwriter to write the messages it has stored on the underlying device before its timer
   This function is useful to call before exiting the program using UniqLogger.
   */
@@ -153,7 +144,7 @@ LogWriter::priv_writeToDevice()
     ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
 
     if (m_Config.writeIdleMark) {
-        LogMessage lm("UniqLogger", UNQL::LOG_INFO, " -- MARK -- ", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, " -- MARK -- ", LogMessage::getCurrentTstampString());
         mutex.lock();
         if ( m_logMessageList.empty() )
             m_logMessageList.append(lm);
@@ -179,13 +170,7 @@ LogWriter::priv_startLogTimer()
 void
 LogWriter::setWriterConfig(const WriterConfig &wconf)
 {
-    m_alreadyConfigured = true;
     m_Config = wconf;
-    /*
-    m_sleepingMilliSecs = wconf.writerFlushSecs * 1000;
-    m_writeIdleMark     = wconf.writeIdleMark;
-    m_maxMessages       = wconf.maxMessageNum;
-    */
 }
 
 

@@ -14,11 +14,11 @@
 
 #include "FileCompressor.h"
 
-FileWriter::FileWriter(FileRotationPolicyType i_rotationPolicy)
-: LogWriter()
+FileWriter::FileWriter(const WriterConfig &wc)
+    : LogWriter(wc)
+    , m_fileSizeExceeded(false)
 {
-    m_fileRotationPolicy = i_rotationPolicy;
-    m_fileSizeExceeded = false;
+    m_fileRotationPolicy = wc.rotationPolicy;
     m_maxFileSizeMB = 1.0;
     m_RotationCurFileNumber = 1;
     m_rotationMaxFileNumber = 2;
@@ -195,7 +195,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     if (m_logFile.isOpen()) //we were already logging to a file
     {
         //mutex.lock();
-        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Closing previously opened logfile", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Closing previously opened logfile", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
         //mutex.unlock();
@@ -208,7 +208,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     if (!m_logFile.isOpen()) //we were already logging to a file
     {
         //mutex.lock();
-        LogMessage lm("UniqLogger", UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
         //mutex.unlock();
@@ -218,7 +218,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     {
         m_streamIsOpen = true;
         //mutex.lock();
-        LogMessage lm("UniqLogger", UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         //mutex.unlock();
     }

@@ -48,13 +48,14 @@ protected slots:
     void writeToDevice();
 
 public:
-    ConsoleWriter();
+    ConsoleWriter(const WriterConfig &wc);
     virtual ~ConsoleWriter();
     /*!
         \brief sets a new color for this console writer
         \param c the new color to be used
     */
     void setConsoleColor(ConsoleColorType c) { m_color = c; }
+    ConsoleColorType getColor() const { return m_color; }
 };
 
 #endif

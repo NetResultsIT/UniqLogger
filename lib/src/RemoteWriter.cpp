@@ -8,13 +8,11 @@
 
 #include <QTime>
 
-RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort)
-: LogWriter()
+RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort, const WriterConfig &wconf)
+    : LogWriter(wconf)
 {
     m_serverAddress = aServerAddress;
     m_serverPort = aServerPort;
-
-    m_reconnectionTimeout = 5000;
 
     m_Socket = new QTcpSocket(this);
     m_reconnectionTimer = new QTimer(this);
@@ -69,7 +67,7 @@ RemoteWriter::connectToServer()
     appendMessage(msg);
 
     //now we restart the connection timer
-    m_reconnectionTimer->start(m_reconnectionTimeout);
+    m_reconnectionTimer->start(m_Config.reconnectionSecs * 1000);
 
     return -1;
 }
@@ -105,7 +103,7 @@ RemoteWriter::onDisconnectionFromServer()
     LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING, "Disconnected from server " + m_serverAddress + ":" + QString::number(m_serverPort),
                    LogMessage::getCurrentTstampString());
     appendMessage(msg);
-    m_reconnectionTimer->start(m_reconnectionTimeout);
+    m_reconnectionTimer->start(m_Config.reconnectionSecs * 1000);
 }
  
 
@@ -121,11 +119,4 @@ RemoteWriter::run()
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
     QMetaObject::invokeMethod(this, "connectToServer");
-}
-
-void
-RemoteWriter::setWriterConfig(const WriterConfig &wconf)
-{
-    LogWriter::setWriterConfig(wconf);
-    m_reconnectionTimeout = wconf.reconnectionSecs * 1000;
 }

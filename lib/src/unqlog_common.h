@@ -31,6 +31,16 @@ enum LogStreamManipType
 };
 
 
+enum ErrorType
+{
+    UnqlErrorNoError                    =  0,
+    UnqlErrorFileNotWritable            = -1,
+    UnqlErrorWriterConfigIncompatible   = -2,
+    UnqlErrorImpossibleToCreateLogger   = -3,
+    UnqlErrorImpossibleToCreateWriter   = -4
+};
+
+
 enum RotationPolicy
 {
     WeekDaysRotaion,
@@ -38,6 +48,7 @@ enum RotationPolicy
 };
 
 #define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"
+#define DEF_UNQL_LOG_STR "UniqLogger"
 
 }
 

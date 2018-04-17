@@ -42,7 +42,7 @@ private:
     const QString addCompressFileExtension(const QString& i_filename);
 
 public:
-    explicit FileWriter(FileRotationPolicyType i_rotationPolicy = StrictRotation);
+    explicit FileWriter(const WriterConfig &);
     virtual ~FileWriter();
 
     virtual void setWriterConfig(const WriterConfig &wconf);

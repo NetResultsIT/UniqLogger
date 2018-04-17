@@ -133,7 +133,10 @@ Logger::setSpacingString(const QString &spStr)
   */
 void
 Logger::setModuleName(const QString &s)
-{ m_moduleName = s; }
+{
+    log(UNQL::LOG_INFO, "Changing logger name from %s to %s", m_moduleName.toLatin1().constData(), s.toLatin1().constData());
+    m_moduleName = s;
+}
 
 
 
