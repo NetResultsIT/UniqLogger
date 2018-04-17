@@ -340,40 +340,13 @@ UniqLogger::createDbLogger(const QString & i_logname, const QString &aDbFileName
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 Logger*
-UniqLogger::createConsoleLogger(const QString &i_logname, ConsoleColorType c, const WriterConfig &wc)
+UniqLogger::createConsoleLogger(const QString &i_logname, UNQL::ConsoleColorType c, const WriterConfig &wc)
 {
     Logger *l = createLogger(i_logname);
     LogWriter &clog = getConsoleWriter(c, wc);
     this->addWriterToLogger(l, clog);
     return l;
 }
-
-
-
-/*!
-  \brief creates a logger and automatically connects a console writer with default values
-  \param logname the module name for this logger
-  \param useStdConsoleLogger chooses whether we should use the existing console logger (with its color and timing) or if
-  we should allocate a new thread where we can specify our desires. (NOTE: the default value is to reuse the existing Console)
-  \return the pointer to the logger class created or a null pointer if something went wrong
-  * /
-Logger*
-UniqLogger::createConsoleLogger(const QString &logname, bool useStdConsoleLogger, const WriterConfig &wc)
-{
-    Logger *l = createLogger(logname);
-    if (useStdConsoleLogger) {
-        LogWriter &cl = *m_ConsoleLogger;
-        cl.setWriterConfig(wc);
-        this->addWriterToLogger(l, cl);
-    }
-    else {
-        LogWriter &cl = getConsoleWriter(NONE, wc);
-        cl.setWriterConfig(wc);
-        this->addWriterToLogger(l, cl);
-    }
-    return l;
-}
-*/
 
 
 
@@ -404,7 +377,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
             muxDeviceCounter.unlock();
             return *fw;
         }
-        fw = nullptr;
+        fw = NULL;
     }
     muxDeviceCounter.unlock();
     fw = new FileWriter(wc);
@@ -512,23 +485,12 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
 
 
 /*!
-  \brief returns the standard console writer
-  \return the pointer to the standard console logger
-  * /
-LogWriter &UniqLogger::getStdConsoleWriter()
-{
-    return *m_ConsoleLogger;
-}*/
-
-
-
-/*!
   \brief creates a console writer with the specified color, if a console writer with the same color and writer config exists it will be reused
   \param c the color in which this logger will going to write messages
   \return a reference to the logwriter class created
   \note if the
   */
-LogWriter &UniqLogger::getConsoleWriter(ConsoleColorType c, const WriterConfig &wc, int &ok)
+LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorType c, const WriterConfig &wc, int &ok)
 {
     LogWriter *lw;
     ConsoleWriter *cw;
@@ -550,7 +512,7 @@ LogWriter &UniqLogger::getConsoleWriter(ConsoleColorType c, const WriterConfig &
             muxDeviceCounter.unlock();
             return *cw;
         }
-        cw = nullptr;
+        cw = NULL;
     }
     muxDeviceCounter.unlock();
 
@@ -608,6 +570,10 @@ UniqLogger::removeWriterFromLogger(const Logger* _l, const LogWriter& writer)
 
     this->unregisterWriter(const_cast<LogWriter*>(&writer));
     res = lptr->removeLogDevice(const_cast<LogWriter*>(&writer));
+
+    LogWriter* lw = const_cast<LogWriter*>(&writer);
+    LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Removing logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
+    lw->appendMessage(lm);
     return res;
 }
  
@@ -621,7 +587,7 @@ UniqLogger::removeWriterFromLogger(const Logger* _l, const LogWriter& writer)
   \note the only reason it might fail is if the writer was already connected
   */
 int
-UniqLogger::addWriterToLogger(const Logger* _l, LogWriter &writer)
+UniqLogger::addWriterToLogger(const Logger* _l, const LogWriter &writer)
 {
     int res = 0;
     Logger *lptr = const_cast<Logger*>(_l);
@@ -631,8 +597,9 @@ UniqLogger::addWriterToLogger(const Logger* _l, LogWriter &writer)
         this->registerWriter(const_cast<LogWriter*>(&writer));
     }
 
+    LogWriter* lw = const_cast<LogWriter*>(&writer);
     LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Adding logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
-    writer.appendMessage(lm);
+    lw->appendMessage(lm);
     return res;
 }
 
@@ -736,22 +703,6 @@ UniqLogger::setSpacingChar(const QChar &aSpaceChar)
     UniqLogger::gmuxUniqLoggerInstance.unlock();
 }
 
-/*!
-    \brief this method will change the color the standard console writer will log with
-    \param c the color that will be used from now on from the standard console logger
-    \note this method will not affect other console logger obtained via getConsoleLogger() specifying a specific color
-but will indeed change those that were obtained passing true (default value) to the same getConsoleLogger method;
-  * /
-void
-UniqLogger::setStdConsoleColor(ConsoleColorType c)
-{
-    UniqLogger::gmuxUniqLoggerInstance.lock();
-    {
-        m_ConsoleLogger->setConsoleColor(c);
-    }
-    UniqLogger::gmuxUniqLoggerInstance.unlock();
-}
-*/
 
 
 /*!

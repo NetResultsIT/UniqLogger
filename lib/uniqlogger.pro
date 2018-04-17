@@ -59,8 +59,7 @@ HEADERS += \
     src/LogMessage.h \
     src/ext/tpool/nrthreadpool.h \
     src/DummyWriter.h \
-    src/bufferofstrings.h \
-    src/CompressionAlgo.h
+    src/bufferofstrings.h
 
 SOURCES += \
     src/Logger.cpp \
@@ -71,8 +70,7 @@ SOURCES += \
     src/LogMessage.cpp \
     src/ext/tpool/nrthreadpool.cpp \
     src/DummyWriter.cpp \
-    src/bufferofstrings.cpp \
-    src/CompressionAlgo.cpp
+    src/bufferofstrings.cpp
 
 # ----- Headers to export -----
 INCLUDE_HEADERS += \
@@ -80,10 +78,8 @@ INCLUDE_HEADERS += \
     $$PWD/src/Logger.h \
     $$PWD/src/LogWriter.h \
     $$PWD/src/LogMessage.h \
-    $$PWD/src/ConsoleWriter.h \
     $$PWD/src/unqlog_common.h \
-    $$PWD/src/bufferofstrings.h \
-    $$PWD/src/CompressionAlgo.h
+    $$PWD/src/bufferofstrings.h
 
 
 INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool

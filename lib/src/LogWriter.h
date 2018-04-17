@@ -14,7 +14,6 @@
 #include <QDebug>
 
 #include "LogMessage.h"
-#include "CompressionAlgo.h"
 
 #ifdef WIN32
  #ifdef ULOG_LIB_EXPORTS

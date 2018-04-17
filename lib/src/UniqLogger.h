@@ -22,9 +22,7 @@ class WriterConfig;
 class NRThreadPool;
 
 #include "Logger.h"
-#if (1)
-#include "ConsoleWriter.h"
-#endif
+#include "LogWriter.h"
 
 
 /*!
@@ -92,7 +90,6 @@ protected slots:
 private:
         NRThreadPool *m_pTPool;
         LogWriterUsageMapType m_DevicesMap;
-        //ConsoleWriter *m_ConsoleLogger;
         VarMonitoringMap m_VarMonitorMap;
 
         void registerWriter(LogWriter*);
@@ -105,8 +102,7 @@ public:
         static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
 
         Logger* createDummyLogger   ( const QString &logName,                                   const WriterConfig &wc=WriterConfig() );
-        Logger* createConsoleLogger ( const QString &logName, ConsoleColorType c=NONE,          const WriterConfig &wc=WriterConfig() );
-        //Logger* createConsoleLogger ( const QString &logName, bool log2StdConsole=true,     const WriterConfig &wc=WriterConfig() );
+        Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorType c=UNQL::NONE,          const WriterConfig &wc=WriterConfig() );
         Logger* createFileLogger    ( const QString &logName, const QString &fileName,          const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createNetworkLogger ( const QString &logName, const QString &address, int port, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK  );
@@ -115,8 +111,7 @@ public:
         LogWriter& getDbWriter        ( const QString &aDbFileName,         const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getNetworkWriter   ( const QString &address, int port,   const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getFileWriter      ( const QString &fileName,            const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
-        LogWriter& getConsoleWriter   ( ConsoleColorType c,                 const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
-        //LogWriter& getStdConsoleWriter();
+        LogWriter& getConsoleWriter   ( UNQL::ConsoleColorType c,                 const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getDummyWriter     ();
         LogWriter& getAndroidWriter   ();
 
@@ -124,7 +119,7 @@ public:
         void changeMonitorVarStatus ( const QString &var, bool status );
         void delMonitorVar ( const QString &var );
 
-        int addWriterToLogger       (const Logger*, LogWriter &);
+        int addWriterToLogger       (const Logger*, const LogWriter &);
         int removeWriterFromLogger  (const Logger*, const LogWriter&);
 
         int threadsUsedForLogging() const;
@@ -132,7 +127,6 @@ public:
         void setEncasingChars       ( const QChar& aStartChar, const QChar &aEndChar        );
         void setSpacingChar         ( const QChar& aSpaceChar                               );
         void setTimeStampFormat     ( const QString&                                        );
-        //void setStdConsoleColor     ( ConsoleColorType c                                    );
 
         void flushAllWriters();
 };

@@ -15,7 +15,7 @@ QMutex ConsoleWriter::m_consoleMux;
 ConsoleWriter::ConsoleWriter(const WriterConfig &wc)
     : LogWriter(wc)
 {
-    m_color = NONE; //default value
+    m_color = UNQL::NONE; //default value
 }
  
 
@@ -48,7 +48,7 @@ ConsoleWriter::writeToDevice()
             ConsoleWriter::m_consoleMux.lock();
             //windows console does not support color codes
 #ifndef WIN32
-            if (m_color != NONE) {
+            if (m_color != UNQL::NONE) {
                 colorcode = "\033[22;" + QString::number((int)m_color) + "m";
                 std::cerr << colorcode.toLatin1().constData();
             }
@@ -57,7 +57,7 @@ ConsoleWriter::writeToDevice()
 
             //windows console does not support color codes
 #ifndef WIN32
-            if (m_color != NONE) {
+            if (m_color != UNQL::NONE) {
                 colorcode = "\033[0m";
                 std::cerr << colorcode.toLatin1().constData();
             }
