@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.5.0
+VERSION = 0.5.1
 
 # --- Please check that the config file reflects your desired build options
 !exists($$PWD/config.pri) {

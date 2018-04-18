@@ -18,10 +18,7 @@ FileWriter::FileWriter(const WriterConfig &wc)
     : LogWriter(wc)
     , m_fileSizeExceeded(false)
 {
-    m_fileRotationPolicy = wc.rotationPolicy;
-    m_maxFileSizeMB = 1.0;
     m_RotationCurFileNumber = 1;
-    m_rotationMaxFileNumber = 2;
     m_logfileBaseName = "uniqlogfile.txt";
     m_lastWrittenDateTime = QDateTime::currentDateTime();
 }
@@ -45,7 +42,7 @@ FileWriter::~FileWriter()
   */
 void
 FileWriter::setLogfileMaxSize(int filesize)
-{   m_maxFileSizeMB = filesize; }
+{   m_Config.maxFileSize = filesize; }
  
 
 /*!
@@ -54,7 +51,7 @@ FileWriter::setLogfileMaxSize(int filesize)
  */
 void
 FileWriter::setLogfileRotationRange(int maxfilenum)
-{   m_rotationMaxFileNumber = maxfilenum;   }
+{   m_Config.maxFileNum = maxfilenum;   }
  
 
 /*!
@@ -66,7 +63,7 @@ FileWriter::calculateOldLogFileName()
 {
     QString tmp="";
 
-    int i = m_RotationCurFileNumber - m_rotationMaxFileNumber;
+    int i = m_RotationCurFileNumber - m_Config.maxFileNum;
     if (i>0)
     {
         tmp = calculateCurrentFileName(i);
@@ -136,7 +133,7 @@ FileWriter::calculateCurrentFileName(int num)
      *  compression is enabled, because it is the file we are logging on
      */
     if (num == 0) {
-        if (m_fileRotationPolicy == StrictRotation) {
+        if (m_Config.rotationPolicy == StrictRotation) {
             return fullfilename;
         }
 
@@ -172,10 +169,10 @@ FileWriter::calculateCurrentFileName(int num)
     /*
      *  if we are compressing log files, the file will gave the extension .zip or .gz
      */
-    if ( m_compressionLevel > 0 )
+    if ( m_Config.compressionLevel > 0 )
     {
         filename += FileCompressor::filenameExtension(
-                    static_cast<FileCompressor::compressedFileFormatEnum>(m_compressionAlgo) );
+                    static_cast<FileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo) );
     }
 #endif
 
@@ -285,9 +282,9 @@ void
 FileWriter::rotateFilesIfNeeded()
 {
     //check if we need to change file
-    if ( (m_maxFileSizeMB > 0) && ( (m_logFile.size() / 1000000.0) > m_maxFileSizeMB) )
+    if ( (m_Config.maxFileSize > 0) && ( (m_logFile.size() / 1000000.0) > m_Config.maxFileSize) )
     {
-        switch (m_fileRotationPolicy)
+        switch (m_Config.rotationPolicy)
         {
         case IncrementalNumbers:
         {
@@ -297,13 +294,13 @@ FileWriter::rotateFilesIfNeeded()
             //check to see if we need to delete some files
             QString oldfile = calculateOldLogFileName();
             if (!oldfile.isEmpty()) {
-                if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
+                if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
                 {
                     oldfile = addCompressFileExtension(oldfile);
                 }
                 QFile::remove(oldfile);
             }
-            if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
+            if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
             {
                 QString previousFile = calculateCurrentFileName(m_RotationCurFileNumber - 1);
                 compressIfNeeded( previousFile );
@@ -316,10 +313,10 @@ FileWriter::rotateFilesIfNeeded()
             m_logFile.close();
 
             //remove the last file (if exists)
-            QString lastfile = calculateCurrentFileName(m_rotationMaxFileNumber-1);
+            QString lastfile = calculateCurrentFileName(m_Config.maxFileNum-1);
             //Q_ASSERT(lastfile == m_lastUsedFilenames.last());
             // if we are compressing the rotated log files, we need to add the extension to the filename (.zip|.gz)
-            if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
+            if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
             {
                 lastfile = addCompressFileExtension(lastfile);
             }
@@ -331,10 +328,10 @@ FileWriter::rotateFilesIfNeeded()
             }
 
             //now move the other files starting from the one b4 last
-            for (int i = m_rotationMaxFileNumber-2; i>=0; i--) {
+            for (int i = m_Config.maxFileNum-2; i>=0; i--) {
                 QString olderfile = calculateCurrentFileName(i);
                 QString newerfile = calculateCurrentFileName(i+1);
-                if ( m_compressionLevel > 0 && i != 0 ) {
+                if ( m_Config.compressionLevel > 0 && i != 0 ) {
                     olderfile = addCompressFileExtension(olderfile);
                     newerfile = addCompressFileExtension(newerfile);
                 }
@@ -350,7 +347,7 @@ FileWriter::rotateFilesIfNeeded()
             changeOutputFile( currFileName );
 
             /* If the rotation file count is 1 we don't need to compress old files */
-            if ( ( m_compressionLevel > 0 ) && ( m_rotationMaxFileNumber > 1) )
+            if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
             {
                 QString currFileName = calculateCurrentFileName(1);
                 compressIfNeeded( currFileName );
@@ -367,13 +364,13 @@ const QString
 FileWriter::addCompressFileExtension(const QString& i_filename)
 {
     return i_filename + QString(".") + FileCompressor::filenameExtension(
-                static_cast<FileCompressor::compressedFileFormatEnum>(m_compressionAlgo) );
+                static_cast<FileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo) );
 }
 
 void
 FileWriter::compressIfNeeded( const QString& i_toCompressFilename )
 {
-    if ( m_compressionLevel > 0 )
+    if ( m_Config.compressionLevel > 0 )
     {
         QString compressedfileName = addCompressFileExtension(i_toCompressFilename);
         qDebug() << "to compress filename: " << i_toCompressFilename;
@@ -381,8 +378,8 @@ FileWriter::compressIfNeeded( const QString& i_toCompressFilename )
         mutex.lock();
         bool b = FileCompressor::fileCompress(i_toCompressFilename,
                                      compressedfileName,
-                                     static_cast<FileCompressor::compressedFileFormatEnum>(m_compressionAlgo),
-                                     m_compressionLevel);
+                                     static_cast<FileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
+                                     m_Config.compressionLevel);
         if (!b) {
             qDebug() << "Error compressing file: " << i_toCompressFilename;
         }
@@ -399,16 +396,4 @@ FileWriter::compressIfNeeded( const QString& i_toCompressFilename )
         }
         mutex.unlock();
     }
-}
-
-void
-FileWriter::setWriterConfig(const WriterConfig &wconf)
-{
-    LogWriter::setWriterConfig(wconf);
-
-    m_maxFileSizeMB = wconf.maxFileSize;
-    m_rotationMaxFileNumber = wconf.maxFileNum;
-
-    m_compressionLevel = wconf.compressionLevel;
-    m_compressionAlgo  = wconf.compressionAlgo;
 }

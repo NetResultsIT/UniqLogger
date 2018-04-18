@@ -17,19 +17,14 @@ class FileWriter: public LogWriter
 
 private:
     QFile m_logFile;
-    double m_maxFileSizeMB;
-    int m_rotationMaxFileNumber, m_RotationCurFileNumber;
+    int m_RotationCurFileNumber;
     bool m_streamIsOpen, m_fileSizeExceeded;
     QString m_logfileBaseName;
-    FileRotationPolicyType m_fileRotationPolicy;
 
     TimeRotationPolicyType m_timeRotationPolicy;
     QDateTime m_lastWrittenDateTime;
     QString lastUsedLogfilePostfix;
     QStringList m_lastUsedFilenames;
-
-    int m_compressionLevel;
-    int m_compressionAlgo;
 
 
     QString calculateCurrentFileName(int num=0);
@@ -45,14 +40,12 @@ public:
     explicit FileWriter(const WriterConfig &);
     virtual ~FileWriter();
 
-    virtual void setWriterConfig(const WriterConfig &wconf);
-
     void setOutputFile(const QString& filename="log.txt");
     void setLogfileMaxSize(int filesize);
     void setLogfileRotationRange(int maxfilenum);
     void stopLogging(bool erasefile=false);
     QString getBaseName() const { return m_logfileBaseName; }
-    FileRotationPolicyType getRotationPolicy() const { return m_fileRotationPolicy; }
+    FileRotationPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
 };
 
 #endif
