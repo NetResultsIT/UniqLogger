@@ -49,7 +49,6 @@ class ULOG_LIB_API ConsoleColorScheme
 {
     QHash<UNQL::LogMessagePriorityType, UNQL::ConsoleColorType> m_colorMap;
     UNQL::ConsoleColorType m_defaultColor;
-    bool m_enabled;
 
 public:
     /*!
