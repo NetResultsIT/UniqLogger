@@ -8,14 +8,17 @@
 #define __CONSOLE_LOGGER_INCS__
 
 #include "LogWriter.h"
+#include "ConsoleColorScheme.h"
 
 
 class ConsoleWriter: public LogWriter
 {
     Q_OBJECT
 
-    UNQL::ConsoleColorType m_color;
+    UNQL::ConsoleColorScheme m_colorScheme;
     static QMutex m_consoleMux;
+
+    QString getColorCode(const LogMessage& i_message);
 
 protected slots:
     void writeToDevice();
@@ -23,12 +26,13 @@ protected slots:
 public:
     ConsoleWriter(const WriterConfig &wc);
     virtual ~ConsoleWriter();
+
     /*!
         \brief sets a new color for this console writer
         \param c the new color to be used
     */
-    void setConsoleColor(UNQL::ConsoleColorType c) { m_color = c; }
-    UNQL::ConsoleColorType getColor() const { return m_color; }
+    void setColorScheme(UNQL::ConsoleColorScheme c) { m_colorScheme = c; }
+    UNQL::ConsoleColorScheme getColorScheme() const { return m_colorScheme; }
 };
 
 #endif

@@ -331,15 +331,15 @@ UniqLogger::createDbLogger(const QString & i_logname, const QString &aDbFileName
 
 /*!
   \brief creates a logger and automatically connects a console writer with default values
-  \param _logname the module name for this logger
-  \param c the color in which this logger will going to write messages with
+  \param logName the module name for this logger
+  \param scheme the color scheme in which this logger will going to write messages with
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 Logger*
-UniqLogger::createConsoleLogger(const QString &i_logname, UNQL::ConsoleColorType c, const WriterConfig &wc)
+UniqLogger::createConsoleLogger(const QString &logName, UNQL::ConsoleColorScheme scheme, const WriterConfig &wc)
 {
-    Logger *l = createLogger(i_logname);
-    LogWriter &clog = getConsoleWriter(c, wc);
+    Logger *l = createLogger(logName);
+    LogWriter &clog = getConsoleWriter(scheme, wc);
     this->addWriterToLogger(l, clog);
     return l;
 }
@@ -481,12 +481,14 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
 
 
 /*!
-  \brief creates a console writer with the specified color, if a console writer with the same color and writer config exists it will be reused
-  \param c the color in which this logger will going to write messages
-  \return a reference to the logwriter class created
-  \note if the
+  \brief creates a ConsoleWriter with the specified color scheme.
+
+  If a console writer with the same color scheme and writer config exists it will be reused.
+
+  \param i_colorScheme The color scheme which this logger will use to write messages.
+  \return A reference to the LogWriter class.
   */
-LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorType c, const WriterConfig &wc, int &ok)
+LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorScheme i_colorScheme, const WriterConfig &wc, int &ok)
 {
     LogWriter *lw;
     ConsoleWriter *cw;
@@ -498,7 +500,7 @@ LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorType c, const WriterCo
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         cw = dynamic_cast<ConsoleWriter*>(lw);
-        if (cw && cw->getColor() == c) {
+        if (cw && cw->getColorScheme() == i_colorScheme) {
             if ( !checkMatchingConfigForWriter(*cw, wc) )
             {
                 ULDBG << "WriterConfigs are incompatible for console writers";
@@ -514,7 +516,7 @@ LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorType c, const WriterCo
 
     cw = new ConsoleWriter(wc);
     registerWriter(cw);
-    cw->setConsoleColor(c);
+    cw->setColorScheme(i_colorScheme);
     m_pTPool->runObject(cw);
     cw->run();
 

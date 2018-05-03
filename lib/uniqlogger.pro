@@ -59,7 +59,8 @@ HEADERS += \
     src/LogMessage.h \
     src/ext/tpool/nrthreadpool.h \
     src/DummyWriter.h \
-    src/bufferofstrings.h
+    src/bufferofstrings.h \
+    src/ConsoleColorScheme.h
 
 SOURCES += \
     src/Logger.cpp \
@@ -70,7 +71,8 @@ SOURCES += \
     src/LogMessage.cpp \
     src/ext/tpool/nrthreadpool.cpp \
     src/DummyWriter.cpp \
-    src/bufferofstrings.cpp
+    src/bufferofstrings.cpp \
+    src/ConsoleColorScheme.cpp
 
 # ----- Headers to export -----
 INCLUDE_HEADERS += \
@@ -79,7 +81,8 @@ INCLUDE_HEADERS += \
     $$PWD/src/LogWriter.h \
     $$PWD/src/LogMessage.h \
     $$PWD/src/unqlog_common.h \
-    $$PWD/src/bufferofstrings.h
+    $$PWD/src/bufferofstrings.h \
+    $$PWD/src/ConsoleColorScheme.h
 
 
 INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool

@@ -23,16 +23,6 @@ class UniqLogger;
 class Logger;
 class LogWriter;
 
-#ifdef WIN32
- #ifdef ULOG_LIB_EXPORTS
-   #define ULOG_LIB_API __declspec(dllexport)
- #else
-   #define ULOG_LIB_API __declspec(dllimport)
- #endif
-#else
- #define ULOG_LIB_API
-#endif
-
 class ULOG_LIB_API Logger: public QObject
 {
     Q_OBJECT

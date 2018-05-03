@@ -7,6 +7,16 @@
     #define ULDBG if (true) {} else qDebug()
 #endif
 
+#ifdef WIN32
+ #ifdef ULOG_LIB_EXPORTS
+   #define ULOG_LIB_API __declspec(dllexport)
+ #else
+   #define ULOG_LIB_API __declspec(dllimport)
+ #endif
+#else
+ #define ULOG_LIB_API
+#endif
+
 namespace UNQL {
 
 enum LogMessagePriorityType
@@ -49,31 +59,6 @@ enum RotationPolicy
 };
 
 
-/*!
-  \enum ConsoleColorType
-  \brief this enumeration defines the color that can be used on the console writer
-  */
-enum ConsoleColorType {
-                        NONE        =   -999,
-                        black       =   30,
-                        red         =   31,
-                        green       =   32,
-                        yellow       =   33,
-                        blue        =   34,
-                        magenta     =   35,
-                        cyan        =   36,
-                        gray        =   37,
-                        grey        =   37,
-                        white       =   37/*,
-                        darkgray    =   30,
-                        lightred    =   31,
-                        lightgreen  =   32,
-                        yellow      =   33,
-                        lightblue   =   34,
-                        lightmagenta=   35,
-                        lightcyan   =   36,
-                        white       =   37*/
-                      };
 
 
 #define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"

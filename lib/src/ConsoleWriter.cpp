@@ -14,9 +14,7 @@ QMutex ConsoleWriter::m_consoleMux;
 
 ConsoleWriter::ConsoleWriter(const WriterConfig &wc)
     : LogWriter(wc)
-{
-    m_color = UNQL::NONE; //default value
-}
+{}
  
 
 /*!
@@ -30,38 +28,49 @@ ConsoleWriter::~ConsoleWriter()
 
 
 /*!
+ * \brief Get the color code for this message, according to m_colorScheme.
+ *
+ * The returned string will be empty if no color was selected for this message level. <br/>
+ * On Windows platforms this functions does nothing and returns an empty string.
+ *
+ * \param i_message The message to be colored.
+ * \return The color code (eg. '\033[0;37m') to write to the console.
+ */
+QString ConsoleWriter::getColorCode(const LogMessage &i_message)
+{
+    UNQL::ConsoleColorType color = m_colorScheme.getColorForLevel(i_message.level());
+    if (color == UNQL::NO_COLOR)
+    {
+        return QString();
+    }
+
+    return QString("\033[22;%1m").arg((int) color);
+}
+
+/*!
   \brief writes the messages in the queue on the console with the specified color
   */
 void
 ConsoleWriter::writeToDevice()
 {
-    QString s;
     if (!m_logIsPaused)
     {
         mutex.lock();
         int msgcount = m_logMessageList.count();
         for (int i=0; i<msgcount; i++) {
-            s = m_logMessageList.takeFirst().message();
-            //qDebug() << this <<  " the color code is " << m_color;
-            QString colorcode;
+            LogMessage log = m_logMessageList.takeFirst();
 
             ConsoleWriter::m_consoleMux.lock();
-            //windows console does not support color codes
-#ifndef WIN32
-            if (m_color != UNQL::NONE) {
-                colorcode = "\033[22;" + QString::number((int)m_color) + "m";
-                std::cerr << colorcode.toLatin1().constData();
-            }
+#ifndef  WIN32
+            std::cerr << getColorCode(log).toLatin1().constData();
 #endif
-            std::cerr << s.toLatin1().constData() << std::endl;
+            std::cerr << log.message().toLatin1().constData();
 
             //windows console does not support color codes
 #ifndef WIN32
-            if (m_color != UNQL::NONE) {
-                colorcode = "\033[0m";
-                std::cerr << colorcode.toLatin1().constData();
-            }
+            std::cerr << "\033[0m";
 #endif            
+            std::cerr << std::endl;
             ConsoleWriter::m_consoleMux.unlock();
         }
         mutex.unlock();

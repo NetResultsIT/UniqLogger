@@ -23,6 +23,7 @@ class NRThreadPool;
 
 #include "Logger.h"
 #include "LogWriter.h"
+#include "ConsoleColorScheme.h"
 
 
 /*!
@@ -47,16 +48,6 @@ of variables (identified by a keyword that must be unique per logger) that can b
 and off by the UniQLogger monitorVar() method.
 */
 
-
-#ifdef WIN32
- #ifdef ULOG_LIB_EXPORTS
-   #define ULOG_LIB_API __declspec(dllexport)
- #else
-   #define ULOG_LIB_API __declspec(dllimport)
- #endif
-#else
- #define ULOG_LIB_API
-#endif
 
 typedef QMap<QString, bool> VarMonitoringMap;
 typedef QMap<LogWriter*,int> LogWriterUsageMapType;
@@ -102,16 +93,16 @@ public:
         static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
 
         Logger* createDummyLogger   ( const QString &logName,                                   const WriterConfig &wc=WriterConfig() );
-        Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorType c=UNQL::NONE,          const WriterConfig &wc=WriterConfig() );
+        Logger* createConsoleLogger (const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
         Logger* createFileLogger    ( const QString &logName, const QString &fileName,          const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createNetworkLogger ( const QString &logName, const QString &address, int port, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK  );
         Logger* createAndroidLogger ( const QString &logName                                                                      );
 
-        LogWriter& getDbWriter        ( const QString &aDbFileName,         const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
-        LogWriter& getNetworkWriter   ( const QString &address, int port,   const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
-        LogWriter& getFileWriter      ( const QString &fileName,            const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
-        LogWriter& getConsoleWriter   ( UNQL::ConsoleColorType c,                 const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
+        LogWriter& getDbWriter        ( const QString &aDbFileName,             const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
+        LogWriter& getNetworkWriter   ( const QString &address, int port,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
+        LogWriter& getFileWriter      ( const QString &fileName,                const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
+        LogWriter& getConsoleWriter   ( UNQL::ConsoleColorScheme i_colorScheme, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getDummyWriter     ();
         LogWriter& getAndroidWriter   ();
 
