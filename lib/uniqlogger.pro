@@ -159,7 +159,7 @@ win32-msvc2017 {
 message("COMPILER: $$COMPILER")
 
 DSTDIR = $$PWD/last_build/
-FINALDIR = $$join(COMPILER,,,_qt-$$QT_VERSION)
+FINALDIR = $$join(COMPILER,,$${VERSION}_,_qt-$$QT_VERSION)
 INCLUDE_DIR = $$DSTDIR/include/
 DLLPATH = bin/
 
@@ -205,14 +205,14 @@ win32 {
         QMAKE_POST_LINK="$$QMAKE_MKDIR_CMD \"$$FINALDIR\" $$escape_expand(\\n\\t)" # Does not work as expected with Visual Studio 2010
     } else {
         QMAKE_POST_LINK="$$QMAKE_CHK_DIR_EXISTS \"$$FINALDIR\" $$QMAKE_MKDIR \"$$FINALDIR\" $$escape_expand(\\n\\t)"
-        QMAKE_POST_LINK="$$QMAKE_CHK_DIR_EXISTS \"$$DSTDIR\" $$QMAKE_MKDIR \"$$DSTDIR\" $$escape_expand(\\n\\t)"
-        QMAKE_POST_LINK="$$QMAKE_CHK_DIR_EXISTS \"$$INCLUDE_DIR\" $$QMAKE_MKDIR \"$$INCLUDE_DIR\" $$escape_expand(\\n\\t)"
+        QMAKE_POST_LINK+="$$QMAKE_CHK_DIR_EXISTS \"$$DSTDIR\" $$QMAKE_MKDIR \"$$DSTDIR\" $$escape_expand(\\n\\t)"
+        QMAKE_POST_LINK+="$$QMAKE_CHK_DIR_EXISTS \"$$INCLUDE_DIR\" $$QMAKE_MKDIR \"$$INCLUDE_DIR\" $$escape_expand(\\n\\t)"
     }
 
     #QMAKE_POST_LINK="$$WINCMD ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)exit$$escape_expand(\\n\\t)"
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,d)
-        DLL = $$join(TARGET,,debug\\,$$MYVER)
+        DLL = $$join(TARGET,,$$OUT_PWD\debug\\,$$MYVER)
         WINEXT += pdb
     }
     CONFIG(release, debug|release) {
@@ -225,12 +225,19 @@ win32 {
         QMAKE_LFLAGS_RELEASE += /OPT:ICF
         QMAKE_LIBDIR += $$WINDOWS_SDK
 
-        DLL = $$join(TARGET,,release\\,$$MYVER)
+        DLL = $$join(TARGET,,$$OUT_PWD\release\\,$$MYVER)
+
+        DLL = $$replace(DLL,"/","\\")
     }
 
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$FINALDIR\" $$escape_expand(\\n\\t)"
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$DSTDIR\" $$escape_expand(\\n\\t)"
-    for(inc, INCLUDE_HEADERS):QMAKE_POST_LINK+="$$QMAKE_COPY $${inc} \"$$INCLUDE_DIR\" $$escape_expand(\\n\\t)"
+    #for(inc, INCLUDE_HEADERS):QMAKE_POST_LINK+="$$QMAKE_COPY \"$${inc}\" \"$$INCLUDE_DIR\" $$escape_expand(\\n\\t)"
+
+    INCLUDE_HEADERS = $$replace(INCLUDE_HEADERS,"/","\\")
+    INCLUDE_DIR = $$replace(INCLUDE_DIR,"/","\\")
+    #QMAKE_POST_LINK+="$$QMAKE_COPY \"$$INCLUDE_HEADERS\" \"$$INCLUDE_DIR\" $$escape_expand(\\n\\t)"
+    for(inc, INCLUDE_HEADERS):QMAKE_POST_LINK+="$$QMAKE_COPY \"$${inc}\" \"$$INCLUDE_DIR\" $$escape_expand(\\n\\t)"
 }
 
 
