@@ -27,9 +27,8 @@ Logger::Logger()
 
 Logger::~Logger()
 {
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << "Deleting logger " << m_moduleName;
-#endif
+    ULDBG << Q_FUNC_INFO << "Deleting logger " << m_moduleName;
+
     //before emptying the list, notify it to uniqlogger
     emit writersToDelete(m_logDeviceList);
     m_logDeviceList.clear();
@@ -100,7 +99,6 @@ Logger::setVerbosityDefaultLevel(const int &v)
 void
 Logger::setTimeStampFormat(const QString &s)
 { m_timeStampFormat = s; }
- 
 
 
 /*!
@@ -110,7 +108,7 @@ Logger::setTimeStampFormat(const QString &s)
   */
 void
 Logger::setEncasingChars(const QChar &startChar, const QChar &endChar)
-{ 
+{
     m_startEncasingChar = startChar;
     m_endEncasingChar = endChar;
 }
@@ -206,18 +204,12 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 
     muxMonitorVar->lock();
     if (m_varMonitorMap->contains(key)) {
-#ifdef ULOGDBG
-       qDebug()  << key << " is in the map, checking its status...";
-#endif
-       status = (*m_varMonitorMap)[key];
-#ifdef ULOGDBG
-       qDebug() << key << " monitor status is " << status;
-#endif
+        ULDBG  << key << " is in the map, checking its status...";
+        status = (*m_varMonitorMap)[key];
+        ULDBG << key << " monitor status is " << status;
     }
     else {
-#ifdef ULOGDBG
-        qDebug() << key << " is not in the map... adding it";
-#endif
+        ULDBG << key << " is not in the map... adding it";
         m_varMonitorMap->insert(key, false);
     }
 
@@ -231,9 +223,7 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
         dispatchMessage(lm);
     }
     else {
-#ifdef ULOGDBG
-        qDebug() << "not monitoring " << key << " is not enabled in the map";
-#endif
+        ULDBG << "not monitoring " << key << " is not enabled in the map";
     }
     muxMonitorVar->unlock();
 }
@@ -287,7 +277,7 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
 void
 Logger::log(int priority, const char* mess, ...)
 {
-    if (priority <= m_logVerbosityAcceptedLevel)
+    if (priority <= m_logVerbosityAcceptedLevel || priority == UNQL::LOG_FORCED)
     {
         char buffer[UNQL_ERRMSG_SIZE];
 
@@ -304,6 +294,10 @@ Logger::log(int priority, const char* mess, ...)
         priv_log(priority, msg);
 
         va_end(args);
+    }
+    else {
+        ULDBG << "Won't log message " << mess << "because it's priority ("
+              << priority << ") was not high enough for this logger (" << m_logVerbosityAcceptedLevel << ")";
     }
 }
 

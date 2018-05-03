@@ -6,15 +6,15 @@
 
 #include "UniqLogger.h"
 
-#ifdef ULOG_NETLOGGING
+#ifdef ENABLE_UNQL_NETLOG
  #include "RemoteWriter.h"
 #endif
 
-#ifdef ULOG_DBLOGGING
+#ifdef ENABLE_UNQL_DBLOG
  #include "DbWriter.h"
 #endif
 
-#ifdef ULOG_ANDROIDLOGGING
+#ifdef ENABLE_UNQL_ANDROIDLOG
  #include "AndroidWriter.h"
 #endif
 
@@ -52,12 +52,8 @@ UniqLogger::UniqLogger(int nthreads)
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,     "DEBUG");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL, "FULL DEBUG");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR, "MONITOR");
-/*
-    m_ConsoleLogger = new ConsoleWriter(WriterConfig());
-    registerWriter(m_ConsoleLogger);
-    m_pTPool->runObject(m_ConsoleLogger);
-    m_ConsoleLogger->run();
-*/
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FORCED,  "FORCED");
+
     ULDBG << "Being here with app: " << QCoreApplication::instance();
 }
  
@@ -248,7 +244,7 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &)
 }
 
 
-#ifdef ULOG_ANDROIDLOGGING
+#ifdef ENABLE_UNQL_ANDROIDLOG
 /*!
  * \brief creates an Android native logger and automatically connects a file writer with default values
  * \param _logname the module name for this logger
@@ -288,7 +284,7 @@ UniqLogger::createFileLogger(const QString & i_logname, const QString &i_filenam
  
 
 
-#ifdef ULOG_NETLOGGING
+#ifdef ENABLE_UNQL_NETLOG
 /*!
   \brief creates a logger and automatically connects a network writer with default values
   \param i_logname the module name for this logger
@@ -314,7 +310,7 @@ UniqLogger::createNetworkLogger(const QString & i_logname, const QString &i_ha, 
 #endif 
  
  
-#ifdef ULOG_DBLOGGING
+#ifdef ENABLE_UNQL_DBLOG
 /*!
   \brief creates a logger and automatically connects a DB writer with default values
   \param _logname the module name for this logger
@@ -395,7 +391,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
 
 
 
-#ifdef ULOG_DBLOGGING
+#ifdef ENABLE_UNQL_DBLOG
 /*!
   \brief returns a file writer that can be added to other loggers
   \param _filename the filename where this logger will write messages by default
@@ -441,7 +437,7 @@ UniqLogger::getDbWriter(const QString &_filename, const WriterConfig &wc, int &o
 
 
 
-#ifdef ULOG_NETLOGGING
+#ifdef ENABLE_UNQL_NETLOG
 /*!
   \brief creates a logger and automatically connects a network writer with default values
   \param _ha the address where this logger will try to connect to write messages
@@ -542,7 +538,7 @@ UniqLogger::getDummyWriter()
 }
 
 
-#ifdef ULOG_ANDROIDLOGGING
+#ifdef ENABLE_UNQL_ANDROIDLOG
 LogWriter &UniqLogger::getAndroidWriter()
 {
 

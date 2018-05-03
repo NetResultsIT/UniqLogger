@@ -63,17 +63,17 @@ signals:
 
 protected:
     Logger();
-    int addLogDevice	( LogWriter * );
-    int removeLogDevice	( LogWriter * );
+    int addLogDevice    ( LogWriter * );
+    int removeLogDevice ( LogWriter * );
 
 public:
     virtual ~Logger();
 
     //SETTERS
-    void setVerbosityAcceptedLevel  ( const int&		);
-    void setVerbosityDefaultLevel	( const int&		);
-    void setModuleName				( const QString&	);
-    void setTimeStampFormat			( const QString&	);
+    void setVerbosityAcceptedLevel  ( const int&        );
+    void setVerbosityDefaultLevel   ( const int&        );
+    void setModuleName              ( const QString&    );
+    void setTimeStampFormat         ( const QString&    );
     void setSpacingString           ( const QString &   );
     void setEncasingChars           ( const QChar&, const QChar& );
 
@@ -86,18 +86,18 @@ public:
     QString getSpacingString() const    { return m_spacingString;   }
 
     //LOGGING
-    void log	( int, const char*, ... );
-    void log	( const char*, ...		);
+    void log( int, const char*, ... );
+    void log( const char*, ...      );
     void flush();
     void monitor( const QVariant &data, const QString &key, const QString &desc="");
 
-    Logger& operator<< ( const UNQL::LogMessagePriorityType& d		);
+    Logger& operator<< ( const UNQL::LogMessagePriorityType& d      );
     Logger& operator<< ( const UNQL::LogStreamManipType& d          );
-    Logger& operator<< ( const double& d				);
+    Logger& operator<< ( const double& d                );
     Logger& operator<< ( const QStringList& sl          );
     Logger& operator<< ( const QList<int>& vl           );
     Logger& operator<< ( const QMap<int, QList<int> >&  );
-    Logger& operator<< ( const QVariant& v				);
+    Logger& operator<< ( const QVariant& v              );
 };
 
 #endif

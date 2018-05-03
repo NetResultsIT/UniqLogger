@@ -70,6 +70,7 @@ win32 {
     }
 }
 
+
 unix:!macx,!ios {
     CONFIG(debug, debug|release) {
         LIBNAME = UniqLogger_d
@@ -98,8 +99,8 @@ ios{
     }
 }
 
-android {
 
+android {
     message("Building testlogger for Android")
     equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
         message("Android Arch: armv7a")

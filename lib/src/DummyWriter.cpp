@@ -8,16 +8,12 @@
 DummyWriter::DummyWriter()
     : LogWriter(WriterConfig())
 {
-#ifdef ULOGDBG
-    qDebug() << Q_FUNC_INFO << this;
-#endif
+    ULDBG << Q_FUNC_INFO << this;
 }
 
 DummyWriter::~DummyWriter()
 {
-#ifdef ULOGDBG
-   qDebug() << Q_FUNC_INFO << this;
-#endif
+    ULDBG << Q_FUNC_INFO << this;
    this->flush();
 }
 

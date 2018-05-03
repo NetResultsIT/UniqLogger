@@ -263,7 +263,7 @@ FileWriter::writeToDevice()
                 LogMessage lm = m_logMessageList.takeFirst();
                 QString m = lm.message();
                 QString s = m + terminator;
-#ifdef ULOGDBG
+#ifdef ENABLE_UNQL_DBG
                 int dddd = m_logFile.write(s.toLatin1());
                 qDebug() << "wrote " << dddd << " on " << m_logFile.fileName();
 #else

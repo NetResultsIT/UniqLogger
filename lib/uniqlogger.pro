@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.5.1
+VERSION = 0.6.0
 
 # --- Please check that the config file reflects your desired build options
 !exists($$PWD/config.pri) {
@@ -42,7 +42,7 @@ message ("QT_VERSION $$QT_VERSION")
 
 # --- Printing messages on building options
 contains ( IDE, 'VS' ) {
-    message("A Visual studio project file will be generated")
+    message("A Visual studio project file will be generated for UniqLogger")
 }
 else {
     message("Makefile(s) will be generated")
@@ -85,14 +85,13 @@ INCLUDE_HEADERS += \
 INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool
 
 # --- UniqLogger Modules
-contains ( DEFINES, ULOGDBG ) {
+contains ( DEFINES, ENABLE_UNQL_DBG ) {
     message ( "WARNING - The library will be built in DEBUG mode!!!" )
-    #enable debug
-    DEFINES += ENABLE_ULOG_DBG
+    #enable debug of tpool
     DEFINES += ENABLE_TPOOL_DBG
 }
 
-contains ( DEFINES, 'ULOG_NETLOGGING' ) {
+contains ( DEFINES, 'ENABLE_UNQL_NETLOG' ) {
     message("[*] Network Logging: ENABLED")
     QT += network
     HEADERS +=  src/RemoteWriter.h
@@ -102,7 +101,7 @@ else {
     message("[ ] Network Logging: DISABLED")
 }
 
-contains ( DEFINES, 'ULOG_DBLOGGING' ) {
+contains ( DEFINES, 'ENABLE_UNQL_DBLOG' ) {
     message("[*] Db Logging:      ENABLED")
     QT += sql
 
@@ -265,7 +264,7 @@ unix:!macx:!ios:!android  {
     #message ("unix!macx!ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET")
 
     android {
-        message("Building for android")
+        message("Building UniqLogger for android")
     }
 }
 
@@ -343,6 +342,7 @@ macx {
 # iOS specific
 ios {
     message("Building UniqLogger library for iOS")
+    IOSSUFFIX=_iOS
 
     lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
     lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
@@ -391,8 +391,3 @@ QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR $$INCLUDE_DIR
 
 message(" ==== End of UniqLogger QMake build process ==== ")
 
-DISTFILES += \
-    $$FILECOMPRESSOR_ROOT/fileCompressor.pri
-
-SUBDIRS += \
-    configs/buildbot-uniqlogger.pro

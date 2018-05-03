@@ -80,9 +80,8 @@ void
 RemoteWriter::onConnectionToServer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
-#ifdef ULOGDBG
-    qDebug() << "Connected to server";
-#endif
+    ULDBG << "Connected to server " << m_serverAddress << " : " << m_serverPort;
+
     LogMessage msg("Remote Logwriter", UNQL::LOG_INFO, "Connected to server " + m_serverAddress + ":" + QString::number(m_serverPort),
                    LogMessage::getCurrentTstampString());
     appendMessage(msg);
@@ -97,9 +96,8 @@ void
 RemoteWriter::onDisconnectionFromServer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
-#ifdef ULOGDBG
-    qDebug() << "Disconnected from server";
-#endif
+    ULDBG << "Disconnected from server " << m_serverAddress << " : " << m_serverPort;
+
     LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING, "Disconnected from server " + m_serverAddress + ":" + QString::number(m_serverPort),
                    LogMessage::getCurrentTstampString());
     appendMessage(msg);

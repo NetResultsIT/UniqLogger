@@ -11,6 +11,8 @@
 #include <unistd.h>
 #endif
 
+using namespace UNQL;
+
 static void test_logger_leak()
 {
     UniqLogger *ul = UniqLogger::instance("LOGGER_LEAK_TEST");
@@ -71,14 +73,14 @@ int main(int argc, char *argv[])
     w.show();
 #endif
 
-#if (0)
+#if (1)
     testlogger_cli w;
 #endif
 
-#if (1)
+#if (0)
     TestloggerZip w;
 #endif
 
-	return a.exec();
+    return a.exec();
 }
 

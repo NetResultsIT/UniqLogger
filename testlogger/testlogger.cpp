@@ -3,10 +3,10 @@
 #include <QDebug>
 #include <QTimer>
 
-#define TESTNET 1
+//#define TESTNET 1
 //#define TESTDB 1
 
-
+using namespace UNQL;
 
 testlogger_gui::testlogger_gui(QWidget *parent)
     : QMainWindow(parent)
@@ -161,7 +161,7 @@ void testlogger_gui::test_strangeString(UniqLogger *ul)
     qDebug() << s2 << "\n---\n" << s3;
     qDebug() << v2 << "\n---\n" << v3;
     qDebug() << v2.toString() << "\n---\n" << v3.toString();
-    const LogWriter &lw = ul->getConsoleWriter(white);
+    LogWriter &lw = ul->getConsoleWriter(white);
 
     ul->addWriterToLogger(loggerFile,lw);
     *loggerFile << s << UNQL::LOG_CRITICAL << s1 << UNQL::LOG_FATAL << 1.0 << "hello" << UNQL::eom;

@@ -13,10 +13,8 @@
 UnqlDbHandler::UnqlDbHandler(const DbhConfig dbconf)
     : NrBaseDbHandler(dbconf)
 {
-#ifdef ULOGDBG
-    qDebug() << "connecting to " << _M_DbHost << " user: " << _M_DbUsername << " ( " << _M_DbPasswd << ")"
+    ULDBG << "connecting to " << _M_DbHost << " user: " << _M_DbUsername << " ( " << _M_DbPasswd << ")"
              << " on db " << _M_DbName;
-#endif
 }
 
 
@@ -74,19 +72,21 @@ UnqlDbHandler::createLoggerDb(QString qeventdbname)
 
 
     QVariantList vals,names;
-    names << "FATAL"
-         << "CRITICAL"
-         << "WARNING"
-         << "INFO"
-         << "DEBUG"
-         << "FULL DEBUG";
+    names   << "FATAL"
+            << "CRITICAL"
+            << "WARNING"
+            << "INFO"
+            << "DEBUG"
+            << "FULL DEBUG"
+            << "FORCED";
 
     vals << UNQL::LOG_FATAL
          << UNQL::LOG_CRITICAL
          << UNQL::LOG_WARNING
          << UNQL::LOG_INFO
          << UNQL::LOG_DBG
-         << UNQL::LOG_DBG_ALL;
+         << UNQL::LOG_DBG_ALL
+         << UNQL::LOG_FORCED;
 
     q.prepare("INSERT INTO ul_level (level_name, level_value) VALUES (?,?)");
     q.addBindValue(names);

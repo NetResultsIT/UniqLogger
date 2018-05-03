@@ -49,7 +49,7 @@ class testlogger_cli : public QObject
 {
     Q_OBJECT
     Logger  *loggerF1, *loggerF2, *loggerN2, *loggerN1, *loggerD;
-    Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm;
+    Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm, *dummy;
 
 public:
     testlogger_cli(QObject *parent = 0);

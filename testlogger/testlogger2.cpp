@@ -4,7 +4,7 @@
 #include <QTimer>
 #include <QDateTime>
 
-#define TEST_FILE_ROTATION 1
+#define TEST_FILE_ROTATION 0
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
 #define TEST_NET 0
@@ -12,7 +12,11 @@
 #define TEST_DB 0
 #define TEST_MONITOR 0
 #define TEST_THREADSAFETY 0
-#define TEST_BENCHMARK 1
+#define TEST_BENCHMARK 0
+#define TEST_CRASH 0
+#define TEST_SIGSEGV 0
+#define TEST_DUMMY 1
+
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
@@ -26,18 +30,24 @@ testlogger_cli::testlogger_cli(QObject *parent)
     loggerCg = NULL; //This will be green console
     loggerCm = NULL; //This will be magenta console
     loggerD  = NULL; //This will be db logger
+    dummy    = NULL; //This will be a dummy logger;
 
     QTimer *timer = new QTimer();
     int millis = 2000;
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
 
-    UniqLogger *ul = UniqLogger::instance("TESTER", 2);
+    UniqLogger *ul = UniqLogger::instance("TESTER", 1);
 
 #if(TEST_FORMATTING)
     ul->setEncasingChars( '(' , ')' );
     ul->setSpacingChar( '.' );
     ul->setTimeStampFormat("hh.mm.ss.zzz");
+#endif
+
+
+#if(TEST_DUMMY)
+    dummy = ul->createDummyLogger("DUMMY");
 #endif
 
 
@@ -93,8 +103,14 @@ testlogger_cli::testlogger_cli(QObject *parent)
     testThreadedConsoleLogger();
 #endif
 
+
 #if(TEST_BENCHMARK)
     testBenchmark();
+#endif
+
+
+#if(TEST_CRASH)
+    ul->enableCrashHandler();
 #endif
 
     //Start timed logging
@@ -173,6 +189,24 @@ testlogger_cli::timedLog()
     static int i=0;
 
     i++;
+
+#if(TEST_CRASH)
+    qDebug() << "About to perform a crashing op...";
+    char arr[10];
+    arr[1998] = 'aaaaaaaaaaaa';
+    qDebug() << "arr" << &(arr)+2000;
+    /**/
+    short b;
+    b += 1234;
+    printf("%sd",b);/**/
+    qDebug() << "done";
+#endif
+
+
+#if(TEST_DUMMY)
+    *dummy << UNQL::LOG_CRITICAL << "Dummy" << UNQL::EOM;
+#endif
+
 
 #if(TEST_FILE_ROTATION)
     qDebug() << "written " << i * 2 << "KB to file...";
