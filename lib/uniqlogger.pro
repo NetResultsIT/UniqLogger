@@ -341,6 +341,8 @@ macx {
     CONFIG(release, debug|release) {
         TARGET = $$join(TARGET,,,)
         BLDTYPE=release
+        # FIXME - ASAP hardcoded major version
+        QMAKE_POST_LINK += "install_name_tool -id @rpath/libUniqLogger.0.dylib release/bin/libUniqLogger.dylib $$escape_expand(\\n\\t)"
     }
 
     DLL = $$join(TARGET,,lib,.*dylib)
@@ -361,11 +363,16 @@ ios {
     lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
     CONFIG += staticlib
 
-    # armv7s is superset of armv7 and is ok since iOS6 on iphone 5 (we do not plan to support anything lower than iOS 10 and that's not going on iPhone 4)
-    QMAKE_APPLE_DEVICE_ARCHS = armv7s arm64
+    # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
+    # code optimization on those machines but limited and so was deprecaetd since Xcode 6.x
+    # all newer iDevices (we do not plan to support anything lower than iOS 10 due to callkit) run arm64
+    # so armv7s is not needed, armv7 is needed by app store, i386 is probably scrappable too if we run simulator on a new machine
+    QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
 
-    CONFIG -= bitcode
+    #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
+    #CONFIG -= bitcode
+    contains(CONFIG, bitcode) : message("Building UniqLogger with BITCODE support")
 
     CONFIG(debug, debug|release) {
         IOSSUFFIX = $$join(IOSSUFFIX,,,_debug)
@@ -390,8 +397,13 @@ unix {
     QMAKE_POST_LINK += "mkdir -p $$FINALDIR $$escape_expand(\\n\\t)"
     QMAKE_POST_LINK += "mkdir -p $$INCLUDE_DIR $$escape_expand(\\n\\t)"
 
-    QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
-    QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
+    ios {
+        message("Not copying UniqLogger library in last_build and final dir because we need to perferm FAT lib creation")
+        message("You will find the built lib in the creation dir")
+    } else {
+        QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
+        QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
+    }
     QMAKE_POST_LINK += "cp -aP $$INCLUDE_HEADERS $$INCLUDE_DIR $$escape_expand(\\n\\t)"
 }
 
