@@ -61,13 +61,13 @@ ConsoleWriter::writeToDevice()
             LogMessage log = m_logMessageList.takeFirst();
 
             ConsoleWriter::m_consoleMux.lock();
-#ifndef  WIN32
+#if !defined(WIN32) && !defined(Q_OS_IOS)
             std::cerr << getColorCode(log).toLatin1().constData();
 #endif
             std::cerr << log.message().toLatin1().constData();
 
             //windows console does not support color codes
-#ifndef WIN32
+#if !defined(WIN32) && !defined(Q_OS_IOS)
             std::cerr << "\033[0m";
 #endif            
             std::cerr << std::endl;
