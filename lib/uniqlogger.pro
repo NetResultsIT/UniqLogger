@@ -226,9 +226,8 @@ win32 {
         QMAKE_LIBDIR += $$WINDOWS_SDK
 
         DLL = $$join(TARGET,,$$OUT_PWD\release\\,$$MYVER)
-
-        DLL = $$replace(DLL,"/","\\")
     }
+    DLL = $$replace(DLL,"/","\\")
 
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$FINALDIR\" $$escape_expand(\\n\\t)"
     for(ext, WINEXT):QMAKE_POST_LINK+="$$QMAKE_COPY $$join(DLL,,,.$${ext}) \"$$DSTDIR\" $$escape_expand(\\n\\t)"
