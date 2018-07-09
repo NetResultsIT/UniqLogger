@@ -53,7 +53,7 @@ void TestloggerZip::test_SingleFile(const QString& i_fileName, FileRotationPolic
     wconf.rotationPolicy = i_rotationPolicy;
     Logger* flogPtr = m_unqloggerPtr->createFileLogger("ZIPTEST", i_fileName, wconf);
 
-    qDebug() << "starting uniqlogger zip test...";
+    qDebug() << "starting uniqlogger zip test..." << Q_FUNC_INFO;
 
     /* Write 3MB to log */
     writeLog(flogPtr, 3);
@@ -89,7 +89,7 @@ void TestloggerZip::test_3FilesStrictRotation(const QString& i_fileName, int i_c
     wconf.rotationPolicy = StrictRotation;
     Logger* flogPtr = m_unqloggerPtr->createFileLogger("ZIPTEST", i_fileName, wconf);
 
-    qDebug() << "starting uniqlogger zip test...";
+    qDebug() << "starting uniqlogger zip test..." << Q_FUNC_INFO;
 
     /* Write 6MB to log */
     writeLog(flogPtr, 6);
@@ -135,7 +135,7 @@ void TestloggerZip::test_3FilesIncrementalRotation(const QString& i_fileName, in
     wconf.rotationPolicy = IncrementalNumbers;
     Logger* flogPtr = m_unqloggerPtr->createFileLogger("ZIPTEST", i_fileName, wconf);
 
-    qDebug() << "starting uniqlogger zip test...";
+    qDebug() << "starting uniqlogger zip test..." << Q_FUNC_INFO;
 
     /* Write 6MB to log */
     writeLog(flogPtr, 6);
@@ -216,13 +216,24 @@ void TestloggerZip::test_noCompress3FilesIncrementalRotation()
 
 void TestloggerZip::run_all_tests()
 {
+    int max_test = 8;
+    int curr_test = 0;
+
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_compressSingleFileStrictRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_compressSingleFileIncrementalRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_noCompressSingleFileStrictRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_noCompressSingleFileIncrementalRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_compress3FilesStrictRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_noCompress3FilesStrictRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_compress3FilesIncrementalRotation();
+    qDebug() << "Running test " << ++curr_test << "/" << max_test;
     test_noCompress3FilesIncrementalRotation();
 
     qDebug() << "#### All logger tests are terminated ####";

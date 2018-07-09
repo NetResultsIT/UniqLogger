@@ -53,14 +53,14 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
 #if(TEST_FILE_ROTATION)
     millis = 20;
-    WriterConfig wc2;
+    WriterConfig wc2,wc4;
     wc2.maxFileNum      = 3; //we're going to use 3 files
     wc2.maxFileSize     = 1; //up to 1MB each
     wc2.writerFlushSecs = 1; //flush contents to disk every second
 
     loggerF1 = ul->createFileLogger("test", "log.txt", wc2);
     loggerF1->setModuleName("FILE1");
-    loggerF2 = ul->createFileLogger("test", "log.txt", wc2);
+    loggerF2 = ul->createFileLogger("test", "log.txt", wc4);
     loggerF2->setModuleName("FILE2");
 #endif
 
