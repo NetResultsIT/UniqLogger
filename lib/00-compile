@@ -1,10 +1,11 @@
 # 00-compile
 # project: uniqlogger
 
-- clone the repository using a valid git <user>:
+- clone the repository using (optionally) a valid git <user>:
   > git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/uniqlogger.git
       i.e. git clone https://s.borghese@gitlab.netresults.it:10443/netresults/utils/uniqlogger.git
 - insert the password for the <user>
+- if no <user> is specified on the git URL both username and password will be asked on teh cli
 
 > cd uniqlogger/lib
 - [optional] chechout the branch/tag to build:
