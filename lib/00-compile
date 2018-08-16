@@ -1,18 +1,35 @@
-00-compile
-proj: uniqlogger
+# 00-compile
+# project: uniqlogger
 
-pre-requisites
-- qt4 or qt5 (builds against both versions)
+- clone the repository using a valid git <user>:
+  > git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/uniqlogger.git
+      i.e. git clone https://s.borghese@gitlab.netresults.it:10443/netresults/utils/uniqlogger.git
+- insert the password for the <user>
 
-> cp depspath-pri.sample depspath.pri
-> cp config-<config-that-fits> config.pri
-- configure the file according to your dev environment paths
-> cd src/ext/filecompressor/
+> cd uniqlogger/lib
+- [optional] chechout the branch/tag to build:
+  > git checkout tags/<version_no>
+      i.e. git checkout tags/0.6.0
+> cd lib
+> export UNQLPATH=${PWD}
+> cp depspath.pri.sample depspath.pri
+- edit depspath.pri to suits your needs
 > cp config.pri.sample config.pri
->  edit config.pri according to your need (please read the comments in the config.pri file)
-> cd src/ext/filecompressor/third_party/zlib/lib
-> ln -s <your-os> linux-[32|64]
-  i.e. ln -s ub1204-64b linux-64
-> qmake
-> make
+
+> cd src/ext
+> git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/filecompressor.git filecompressor
+> git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/dbhandler.git dbh
+> git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/tpool tpool
+
+> cd filecompressor
+> cp config.pri.sample config.pri
+> git clone https://gitlab.netresults.it:10443/netresults/third-party/zlib.git third-party/zlib
+> git clone https://gitlab.netresults.it:10443/netresults/third-party/minizip.git third-party/minizip
+> cd third-party/zlib/lib
+> ln -s <os>/ linux-64
+- if you are building on Ubuntu 16.04 please check the ub1604-64b/README file 
+> cd ${UNQLPATH}
+> qmake-qt4 OR qmake-qt5
+> make [debug|release]
+
 

@@ -3,4 +3,9 @@
 moc_*
 config.pri
 depspath.pri
+Makefile*
+last_build
+release
+debug
+src/ext
 
