@@ -2,8 +2,9 @@
 # project: uniqlogger
 
 - clone the repository using (optionally) a valid git <user>:
-  > git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/uniqlogger.git
-      i.e. git clone https://s.borghese@gitlab.netresults.it:10443/netresults/utils/uniqlogger.git
+  > git clone https://<user>@gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
+      i.e. git clone https://s.borghese@gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
+      i.e. git clone https://gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
 - insert the password for the <user>
 - if no <user> is specified on the git URL both username and password will be asked on the cli
 
@@ -18,14 +19,14 @@
 > cp config.pri.sample config.pri
 
 > cd src/ext
-> git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/filecompressor.git filecompressor
-> git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/dbhandler.git dbh
-> git clone https://<user>@gitlab.netresults.it:10443/netresults/utils/tpool tpool
+> git clone https://gitlab.netresults.intranet:10443/netresults/utils/filecompressor.git filecompressor
+> git clone https://gitlab.netresults.intranet:10443/netresults/utils/dbhandler.git dbh
+> git clone https://gitlab.netresults.intranet:10443/netresults/utils/tpool tpool
 
 > cd filecompressor
 > cp config.pri.sample config.pri
-> git clone https://gitlab.netresults.it:10443/netresults/third-party/zlib.git third-party/zlib
-> git clone https://gitlab.netresults.it:10443/netresults/third-party/minizip.git third-party/minizip
+> git clone https://gitlab.netresults.intranet:10443/netresults/third-party/zlib.git third-party/zlib
+> git clone https://gitlab.netresults.intranet:10443/netresults/third-party/minizip.git third-party/minizip
 > cd third-party/zlib/lib
 > ln -s <os>/ linux-64
 - if you are building on Ubuntu 16.04 please check the ub1604-64b/README file 
