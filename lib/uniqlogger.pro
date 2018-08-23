@@ -57,7 +57,7 @@ HEADERS += \
     src/ConsoleWriter.h \
     src/UniqLogger.h \
     src/LogMessage.h \
-    src/ext/tpool/nrthreadpool.h \
+    src/ext/tpool/src/nrthreadpool.h \
     src/DummyWriter.h \
     src/bufferofstrings.h \
     src/ConsoleColorScheme.h
@@ -69,7 +69,7 @@ SOURCES += \
     src/ConsoleWriter.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
-    src/ext/tpool/nrthreadpool.cpp \
+    src/ext/tpool/src/nrthreadpool.cpp \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp \
     src/ConsoleColorScheme.cpp
@@ -85,7 +85,7 @@ INCLUDE_HEADERS += \
     $$PWD/src/ConsoleColorScheme.h
 
 
-INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool
+INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool/src
 
 # --- UniqLogger Modules
 contains ( DEFINES, ENABLE_UNQL_DBG ) {
