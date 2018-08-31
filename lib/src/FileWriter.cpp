@@ -12,7 +12,7 @@
 #include <QDir>
 #include <QQueue>
 
-#include "FileCompressor.h"
+#include "NrFileCompressor.h"
 
 FileWriter::FileWriter(const WriterConfig &wc)
     : LogWriter(wc)
@@ -360,11 +360,13 @@ FileWriter::rotateFilesIfNeeded()
     }
 }
 
+
 const QString
 FileWriter::addCompressFileExtension(const QString& i_filename)
 {
-    return i_filename + QString(".") + FileCompressor::filenameExtension(
-                static_cast<FileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo) );
+    return "";
+//    return i_filename + QString(".") + FileCompressor::filenameExtension(
+//                static_cast<FileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo) );
 }
 
 void
@@ -376,9 +378,8 @@ FileWriter::compressIfNeeded( const QString& i_toCompressFilename )
         qDebug() << "to compress filename: " << i_toCompressFilename;
         qDebug() << "compressed filename:  " << compressedfileName;
         mutex.lock();
-        bool b = FileCompressor::fileCompress(i_toCompressFilename,
-                                     compressedfileName,
-                                     static_cast<FileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
+        bool b = NrFileCompressor::fileCompress(i_toCompressFilename,
+                                     static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
                                      m_Config.compressionLevel);
         if (!b) {
             qDebug() << "Error compressing file: " << i_toCompressFilename;

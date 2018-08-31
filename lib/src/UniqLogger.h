@@ -29,23 +29,23 @@ class NRThreadPool;
 /*!
   \mainpage
 
-  The UniQLogger library is a Qt based library that allows the logging and monitoring
-  functionalities for Qt-based projects. You can create various loggers (with different
-  module names and logging times) and associate them to different logwriters so that the
-  same messages can be dispatched to various devices (Console, Network or File).
+    The UniQLogger library is a Qt based library that allows the logging and monitoring
+    functionalities for Qt-based projects. You can create various loggers (with different
+    module names and logging times) and associate them to different logwriters so that the
+    same messages can be dispatched to various devices (Console, Network or File).
 
-Network writers are clients and (will) support either TCP or UDP connections
-Console writers can have different colors
-File writers have the ability to use log-rotation
+    Network writers are clients over TCP connections
+    Console writers can have different colors
+    File writers have the ability to use log-rotation
 
-Loggers have different levels of logging and you can be set so that a minimum level has to be achieved
-before the actual message gets dispatched to the writers.
+    Loggers have different levels of logging and you can be set so that a minimum level has to be achieved
+    before the actual message gets dispatched to the writers.
 
-It's also possible to define the timestamp format in order to show milliseconds.
+    It's also possible to define the timestamp format in order to show milliseconds.
 
-Monitoring is another cool feature of the UniQLogger library, it allows to define a map
-of variables (identified by a keyword that must be unique per logger) that can be \i turned on
-and off by the UniQLogger monitorVar() method.
+    Monitoring is another cool feature of the UniQLogger library, it allows to define a map
+    of variables (identified by a keyword that must be unique per logger) that can be \i turned on
+    and off by the UniQLogger monitorVar() method.
 */
 
 
@@ -93,7 +93,7 @@ public:
         static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
 
         Logger* createDummyLogger   ( const QString &logName,                                   const WriterConfig &wc=WriterConfig() );
-        Logger* createConsoleLogger (const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
+        Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
         Logger* createFileLogger    ( const QString &logName, const QString &fileName,          const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createNetworkLogger ( const QString &logName, const QString &address, int port, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK  );

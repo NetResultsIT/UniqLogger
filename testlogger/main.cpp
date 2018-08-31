@@ -21,18 +21,18 @@ static void test_logger_leak()
     QSharedPointer<Logger> m_clog;
     QSharedPointer<Logger> m_flog;
 
-    Logger* m_clogPtr = NULL;
-    Logger* m_clogPtr2 = NULL;
-    Logger* m_flogPtr = NULL;
-    Logger* m_flogPtr2 = NULL;
+    Logger* m_clogPtr = nullptr;
+    Logger* m_clogPtr2 = nullptr;
+    Logger* m_flogPtr = nullptr;
+    Logger* m_flogPtr2 = nullptr;
 
-    Logger* m_dummyLoggerPtr = NULL;
+    Logger* m_dummyLoggerPtr = nullptr;
 
     while (1)
     {
         qDebug() << "creating loggers";
-        m_clogPtr = ul->createConsoleLogger("LEAK_TEST", blue);
-        m_clogPtr2 = ul->createConsoleLogger("LEAK_TEST1", green);
+        m_clogPtr = ul->createConsoleLogger("LEAK_TEST");
+        m_clogPtr2 = ul->createConsoleLogger("LEAK_TEST1");
         m_flogPtr = ul->createFileLogger("FLEAK_TEST", "lt.txt");
         m_flogPtr2 = ul->createFileLogger("FLEAK_TEST1", "lt.txt");
 

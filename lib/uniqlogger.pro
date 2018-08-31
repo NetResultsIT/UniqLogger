@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.6.0
+VERSION = 0.7.0
 
 # --- Please check that the config file reflects your desired build options
 !exists($$PWD/config.pri) {
@@ -14,9 +14,15 @@ VERSION = 0.6.0
 } else: include ($$PWD/depspath.pri)
 
 
-!exists($$FILECOMPRESSOR_ROOT/fileCompressor.pri) {
-    error("Cannot find fileCompressor.pri: giving up")
-} else: include ($$FILECOMPRESSOR_ROOT/fileCompressor.pri)
+!exists($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri) {
+    message("Cannot find nrFileCompressor.pri...")
+    message("Please set the var FILECOMPRESSOR_ROOT to the directory where you have a copy of NrFileCompressor")
+    message("You can get a copy on GitHub at https://www.github.com/netresults/nrfilecompressor")
+    error("--- Missing nrFileCompressor.pri: giving up ---")
+} else: include ($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri)
+
+INCLUDEPATH += $$THREADPOOL_ROOT
+
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
@@ -57,7 +63,7 @@ HEADERS += \
     src/ConsoleWriter.h \
     src/UniqLogger.h \
     src/LogMessage.h \
-    src/ext/tpool/src/nrthreadpool.h \
+    $$THREADPOOL_ROOT/nrthreadpool.h \
     src/DummyWriter.h \
     src/bufferofstrings.h \
     src/ConsoleColorScheme.h
@@ -69,7 +75,7 @@ SOURCES += \
     src/ConsoleWriter.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
-    src/ext/tpool/src/nrthreadpool.cpp \
+    $$THREADPOOL_ROOT/nrthreadpool.cpp \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp \
     src/ConsoleColorScheme.cpp

@@ -1,5 +1,5 @@
-#ifndef _CLI_TESTLOGGER_H_
-#define _CLI_TESTLOGGER_H_
+#ifndef CLI_TESTLOGGER_H
+#define CLI_TESTLOGGER_H
 
 #include <QObject>
 
@@ -20,13 +20,13 @@ public:
     Logger *l;
 
 public:
-    explicit TestThreadObject2(int msecs, UNQL::LogMessagePriorityType prio=UNQL::LOG_INFO, const QString msg="", QObject *parent=0)
+    explicit TestThreadObject2(int msecs, UNQL::LogMessagePriorityType prio=UNQL::LOG_INFO, const QString msg="", QObject *parent=nullptr)
         : QObject(parent),
           m_timeout_msecs(msecs),
           m_logPriority(prio),
           m_msg(msg)
     {
-        l = NULL;
+        l = nullptr;
         m_timer = new QTimer(this);
         m_counter = 0;
         connect(m_timer, SIGNAL(timeout()), this, SLOT(logwthread()));
@@ -52,7 +52,7 @@ class testlogger_cli : public QObject
     Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm, *dummy;
 
 public:
-    testlogger_cli(QObject *parent = 0);
+    testlogger_cli(QObject *parent = nullptr);
     ~testlogger_cli() {}
 
     void testThreadedNetLogger(const QString &ip, int port);

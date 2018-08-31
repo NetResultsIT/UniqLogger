@@ -5,7 +5,7 @@
  ********************************************************************************/
 
 #include "LogWriter.h"
-#include "FileCompressor.h"
+#include "NrFileCompressor.h"
 
 #include <QStringList>
 #include <QDateTime>
@@ -25,7 +25,7 @@ WriterConfig::WriterConfig()
     , maxFileNum       ( 1 )                        // log on just one file by default
     , rotationPolicy   ( StrictRotation )           // We use the strict rotation policy by default
     , compressionLevel ( 0 )
-    , compressionAlgo  ( FileCompressor::ZIP_FILE )
+    , compressionAlgo  ( NrFileCompressor::ZIP_FILE )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
 {
 /* empty ctor */

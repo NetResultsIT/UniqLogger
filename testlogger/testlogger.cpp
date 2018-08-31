@@ -13,12 +13,12 @@ testlogger_gui::testlogger_gui(QWidget *parent)
 {
     ui.setupUi(this);
 
-    loggerFile = 0;
-    loggerNet2 = 0;
-    loggerConsole = 0;
-    loggerNet1 = 0;
-    logger5 = 0;
-    m_dummyLoggerPtr = 0;
+    loggerFile = nullptr;
+    loggerNet2 = nullptr;
+    loggerConsole = nullptr;
+    loggerNet1 = nullptr;
+    logger5 = nullptr;
+    m_dummyLoggerPtr = nullptr;
 
     timer = new QTimer();
 
@@ -32,7 +32,9 @@ testlogger_gui::testlogger_gui(QWidget *parent)
     ul->setEncasingChars('(',')');
     ul->setSpacingChar('.');
     loggerFile = ul->createFileLogger("test", "log.txt", wc2);
-    loggerConsole = ul->createConsoleLogger("CONSOLE",red);
+    ConsoleColorScheme cs;
+    cs.setDefaultColor(red);
+    loggerConsole = ul->createConsoleLogger("CONSOLE", cs);
 
 #ifdef TESTNET
     WriterConfig wconf;
@@ -54,14 +56,14 @@ testlogger_gui::testlogger_gui(QWidget *parent)
     /* SET LOGGER NAMES */
     if (!loggerNet2) {
         qDebug() << "Error creating logger net2";
-	}
-	else
+    }
+    else
         loggerNet2->setModuleName("NET2");
 
     if (!loggerNet1) {
         qDebug() << "Error creating logger net1";
-	}
-	else
+    }
+    else
         loggerNet1->setModuleName("NET1");
 
     loggerFile->setModuleName("FILE");
@@ -161,7 +163,9 @@ void testlogger_gui::test_strangeString(UniqLogger *ul)
     qDebug() << s2 << "\n---\n" << s3;
     qDebug() << v2 << "\n---\n" << v3;
     qDebug() << v2.toString() << "\n---\n" << v3.toString();
-    LogWriter &lw = ul->getConsoleWriter(white);
+    ConsoleColorScheme cs;
+    cs.setDefaultColor(white);
+    LogWriter &lw = ul->getConsoleWriter(cs);
 
     ul->addWriterToLogger(loggerFile,lw);
     *loggerFile << s << UNQL::LOG_CRITICAL << s1 << UNQL::LOG_FATAL << 1.0 << "hello" << UNQL::eom;
