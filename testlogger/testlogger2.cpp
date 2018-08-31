@@ -4,7 +4,7 @@
 #include <QTimer>
 #include <QDateTime>
 
-#define TEST_FILE_ROTATION 0
+#define TEST_FILE_ROTATION 1
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
 #define TEST_NET 0
@@ -15,22 +15,22 @@
 #define TEST_BENCHMARK 0
 #define TEST_CRASH 0
 #define TEST_SIGSEGV 0
-#define TEST_DUMMY 1
+#define TEST_DUMMY 0
 
 
 testlogger_cli::testlogger_cli(QObject *parent)
     : QObject(parent)
 {
-    loggerF1 = NULL; //This will be a file logger
-    loggerF2 = NULL; //This will be a file logger
-    loggerN1 = NULL; //This will be a net logger to localhost:1674
-    loggerN2 = NULL; //This will be a net logger to localhost:1675
-    loggerCr = NULL; //This will be red console
-    loggerCy = NULL; //This will be yellow console
-    loggerCg = NULL; //This will be green console
-    loggerCm = NULL; //This will be magenta console
-    loggerD  = NULL; //This will be db logger
-    dummy    = NULL; //This will be a dummy logger;
+    loggerF1 = nullptr; //This will be a file logger
+    loggerF2 = nullptr; //This will be a file logger
+    loggerN1 = nullptr; //This will be a net logger to localhost:1674
+    loggerN2 = nullptr; //This will be a net logger to localhost:1675
+    loggerCr = nullptr; //This will be red console
+    loggerCy = nullptr; //This will be yellow console
+    loggerCg = nullptr; //This will be green console
+    loggerCm = nullptr; //This will be magenta console
+    loggerD  = nullptr; //This will be db logger
+    dummy    = nullptr; //This will be a dummy logger;
 
     QTimer *timer = new QTimer();
     int millis = 2000;
@@ -53,7 +53,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
 #if(TEST_FILE_ROTATION)
     millis = 20;
-    WriterConfig wc2,wc4;
+    WriterConfig wc2, wc4;
     wc2.maxFileNum      = 3; //we're going to use 3 files
     wc2.maxFileSize     = 1; //up to 1MB each
     wc2.writerFlushSecs = 1; //flush contents to disk every second

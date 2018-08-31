@@ -2,4 +2,5 @@
 # Uniqlogger depspath.pri
 #
 
-FILECOMPRESSOR_ROOT = $$PWD/src/ext/filecompressor
+FILECOMPRESSOR_ROOT = $$PWD/../../filecompressor/src
+THREADPOOL_ROOT = $$PWD/../../tpool_test/src
