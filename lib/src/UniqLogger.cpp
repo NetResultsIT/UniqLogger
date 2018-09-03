@@ -238,7 +238,6 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &)
 {
     Logger *l = createLogger(_logname);
     LogWriter &dw = getDummyWriter();
-    //dw.setWriterConfig(i_wconf); // this is useless for dummy
     this->addWriterToLogger(l, dw);
     return l;
 }
@@ -358,6 +357,11 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
     FileWriter *fw;
     LogWriter *lw;
 
+    if (wc.neededSanitizing()) {
+         ok = UNQL::UnqlErrorWriterConfigNotSane;
+         return nullptr;
+    }
+
     muxDeviceCounter.lock();
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
@@ -373,7 +377,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
             muxDeviceCounter.unlock();
             return *fw;
         }
-        fw = NULL;
+        fw = nullptr;
     }
     muxDeviceCounter.unlock();
     fw = new FileWriter(wc);
@@ -446,8 +450,8 @@ UniqLogger::getDbWriter(const QString &_filename, const WriterConfig &wc, int &o
   */
 LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const WriterConfig &wc, int &ok)
 {
-    RemoteWriter *rw = NULL;
-    LogWriter *lw = NULL;
+    RemoteWriter *rw = nullptr;
+    LogWriter *lw = nullptr;
 
     muxDeviceCounter.lock();
     LogWriterUsageMapType::Iterator it;
@@ -510,7 +514,7 @@ LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorScheme i_colorScheme, 
             muxDeviceCounter.unlock();
             return *cw;
         }
-        cw = NULL;
+        cw = nullptr;
     }
     muxDeviceCounter.unlock();
 

@@ -36,29 +36,33 @@ class ULOG_LIB_API WriterConfig
 public:
     explicit WriterConfig();
     QString toString() const;
+    bool neededSanitizing() const;
     bool operator ==(const WriterConfig &rhs) const;
     bool operator !=(const WriterConfig &rhs) const;
 
     //Common
-    int maxMessageNum;      /// Maximum number of still unwritten messages that the writer will hold before discarding, 0 means infinite
-    int writerFlushSecs;    /// The number of seconds between a write operation from the LogWriter
-    bool writeIdleMark;     /// Whether the LogWriter should add a MARK string to show it's alive in case nothing is being logged
+    int maxMessageNum;      /*!< Maximum number of still unwritten messages that the writer will hold before discarding, 0 means infinite */
+    int writerFlushSecs;    /*!< The number of seconds between a write operation from the LogWriter */
+    bool writeIdleMark;     /*!< Whether the LogWriter should add a MARK string to show it's alive in case nothing is being logged */
 
     //Makes sense just for FileWriter
-    int maxFileSize;        /// The maximum file size (in MB) of a file written by the FileWriter
-    int maxFileNum;         /// The number of files that FileWriter should use during rotation, 0 disables it
-    FileRotationPolicyType rotationPolicy;     /// The rotation policy enum (StrictRotation or IncrementalNumbers)
+    int maxFileSize;        /*!< The maximum file size (in MB) of a file written by the FileWriter */
+    int maxFileNum;         /*!< The number of files that FileWriter should use during rotation, 0 disables it */
+    FileRotationPolicyType rotationPolicy;     /// The rotation policy enum (StrictRotation or IncrementalNumbers) */
     /* file log compression specific vars */
-    int compressionLevel;   /// The compression level used to compress the rotated log files
-                            /// 0: do not compress
-                            /// 1: min compression level (faster)
-                            /// 9: max compression level (slower)
-                            /// default: 0 - do not compress
-    int compressionAlgo;    /// Algorithm used to compress (gz or zip): default value is zip
+    int compressionLevel;   /*!< The compression level used to compress the rotated log files ranges from 0 to 9
+                                0: simple storage
+                                1: min compression level (faster)
+                                9: max compression level (slower)
+                                default: 0 - do not compress */
+    int compressionAlgo;    /*!< Algorithm used to compress (gzip or zip):
+                                0: No compression (default)
+                                1: Creates a zip archive
+                                2: Creates a gzip archive */
 
 
     //Makes sense just for RemoteWriter
-    int reconnectionSecs;   /// The number of seconds a RemoteWriter will wait before trying to reconnect to its server
+    int reconnectionSecs;   /*!< The number of seconds a RemoteWriter will wait before trying to reconnect to its server */
 };
 
 class LogWriter: public QObject

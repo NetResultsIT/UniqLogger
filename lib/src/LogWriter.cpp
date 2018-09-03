@@ -32,6 +32,26 @@ WriterConfig::WriterConfig()
 }
 
 
+/*!
+ * \brief WriterConfig::neededSanitizing Checks whether the WriterConfig instance was mis-configured
+ * \return true if the WriterConfig instance holds some unacceptable values
+ */
+bool
+WriterConfig::neededSanitizing() const
+{
+    //check that compressionLevel and compressionAlgo were populated with good values
+    if (compressionAlgo < 0 || compressionAlgo > 2) {
+        return true;
+    }
+    
+    if (compressionLevel < 0 || compressionLevel > 9) {
+        return true;
+    }
+
+    return false;
+}
+
+
 QString
 WriterConfig::toString() const
 {

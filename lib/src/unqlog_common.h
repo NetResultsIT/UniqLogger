@@ -46,9 +46,10 @@ enum ErrorType
 {
     UnqlErrorNoError                    =  0,
     UnqlErrorFileNotWritable            = -1,
-    UnqlErrorWriterConfigIncompatible   = -2,
-    UnqlErrorImpossibleToCreateLogger   = -3,
-    UnqlErrorImpossibleToCreateWriter   = -4
+    UnqlErrorWriterConfigIncompatible   = -10,
+    UnqlErrorWriterConfigNotSane        = -11,
+    UnqlErrorImpossibleToCreateLogger   = -20,
+    UnqlErrorImpossibleToCreateWriter   = -21
 };
 
 

@@ -43,6 +43,8 @@ private:
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();
 
+    void renameOldLogFiles();
+
 public:
     explicit FileWriter(const WriterConfig &);
     virtual ~FileWriter();

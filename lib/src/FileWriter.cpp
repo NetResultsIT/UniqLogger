@@ -178,6 +178,10 @@ void
 FileWriter::changeOutputFile(const QString &aFilename)
 {
     QMutexLocker ml(&mutex);
+    if ( !m_logFile.fileName().isEmpty() &&
+         m_logFile.fileName() != aFilename &&
+         !m_lastUsedFilenames.contains(m_logFile.fileName()))
+        m_lastUsedFilenames.append(m_logFile.fileName());
 
     if (m_logFile.isOpen()) //we were already logging to a file so we close it
     {
@@ -185,7 +189,6 @@ FileWriter::changeOutputFile(const QString &aFilename)
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
         m_logFile.close();
-        m_lastUsedFilenames.append(m_logFile.fileName());
     }
 
     m_logFile.setFileName(aFilename);
@@ -269,24 +272,24 @@ FileWriter::writeToDevice()
  */
 void FileWriter::rotateFileForIncrementalNumbers()
 {
-    {
-        m_rotationCurFileNumber++;
-        QString currFileName = calculateCurrentFileName();
-        changeOutputFile( currFileName );
-        //check to see if we need to delete some files
-        QString oldfile = calculateOldLogFileName();
-        if (!oldfile.isEmpty()) {
-            if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
-            {
-                oldfile = addCompressFileExtension(oldfile);
-            }
-            QFile::remove(oldfile);
-        }
-        if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
+    m_rotationCurFileNumber++;
+    QString currFileName = calculateCurrentFileName();
+    changeOutputFile( currFileName );
+    //check to see if we need to delete some files
+    QString oldfile = calculateOldLogFileName();
+
+    if (!oldfile.isEmpty()) {
+        if ( isCompressionActive() )
         {
-            QString previousFile = calculateCurrentFileName(m_rotationCurFileNumber - 1);
-            compressIfNeeded( previousFile );
+            oldfile = NrFileCompressor::getCompressedFilename(oldfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         }
+        QFile::remove(oldfile);
+    }
+
+    if ( isCompressionActive() )
+    {
+        QString previousFile = calculateCurrentFileName(m_rotationCurFileNumber - 1);
+        compressIfNeeded( previousFile );
     }
 }
 
@@ -310,6 +313,9 @@ void FileWriter::removeOldestFile()
 //    {
 //        lastfile = addCompressFileExtension(lastfile);
 //    }
+    if (m_lastUsedFilenames.size() == 0)
+        return;
+
     QString lastfile = m_lastUsedFilenames.dequeue();
     if (QFile::exists(lastfile)) {
         QFile::remove(lastfile);
@@ -319,15 +325,9 @@ void FileWriter::removeOldestFile()
     }
 }
 
-void FileWriter::rotateFileForStrictRotation()
+
+void FileWriter::renameOldLogFiles()
 {
-    m_logFile.flush();
-    m_logFile.close();
-
-    //remove the last file (if exists)
-    removeOldestFile();
-
-    //now move the other files starting from the one b4 last
     for (int i = m_Config.maxFileNum-2; i>=0; i--) {
         QString olderfile = calculateCurrentFileName(i);
         QString newerfile = calculateCurrentFileName(i+1);
@@ -335,19 +335,43 @@ void FileWriter::rotateFileForStrictRotation()
             olderfile = addCompressFileExtension(olderfile);
             newerfile = addCompressFileExtension(newerfile);
         }
+
         if (QFile::exists(olderfile)) {
-            QFile::rename(olderfile,newerfile);
+            if (QFile::exists(newerfile)) {
+                if (!QFile::remove(newerfile)) {
+                    qCritical() << Q_FUNC_INFO << "Unable to remove older log file " << newerfile;
+                    //TODO - log this message to writer
+                }
+            }
+            qDebug() << "renaming " << olderfile << " to " << newerfile;
+            if (!QFile::rename(olderfile, newerfile)) {
+                qCritical() << Q_FUNC_INFO << "Unable to move log file " << olderfile << " to " << newerfile;
+                //TODO - log this message to writer
+            }
         }
         else {
-            ULDBG << olderfile << " does not exists cannot rename into " << newerfile;
+            ULDBG << olderfile << " does not exists: cannot rename it into " << newerfile;
         }
-    } /* loop to rename old rotated files */
+    }
+}
+
+
+void FileWriter::rotateFileForStrictRotation()
+{
+    m_logFile.flush();
+    m_logFile.close();
+
+    //remove the last file (if exists)
+    //removeOldestFile();
+
+    //now move the other files starting from the one b4 last
+    renameOldLogFiles(); /* loop to rename old rotated files */
 
     QString currFileName = calculateCurrentFileName();
     changeOutputFile( currFileName );
 
     /* If the rotation file count is 1 we don't need to compress old files */
-    if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
+    if ( isCompressionActive() )
     {
         QString currFileName = calculateCurrentFileName(1);
         compressIfNeeded( currFileName );
@@ -387,29 +411,31 @@ FileWriter::addCompressFileExtension(const QString& i_filename)
 }
 
 void
-FileWriter::compressIfNeeded( const QString& i_toCompressFilename )
+FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
 {
     if ( m_Config.compressionLevel > 0 )
     {
-        QString compressedfileName = addCompressFileExtension(i_toCompressFilename);
-        qDebug() << "to compress filename: " << i_toCompressFilename;
+        QString compressedfileName = addCompressFileExtension(i_fileToBeCompressed);
+        qDebug() << "to compress filename: " << i_fileToBeCompressed;
         qDebug() << "compressed filename:  " << compressedfileName;
         mutex.lock();
-        bool b = NrFileCompressor::fileCompress(i_toCompressFilename,
+        int ret = NrFileCompressor::fileCompress(i_fileToBeCompressed,
                                      static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
                                      m_Config.compressionLevel);
-        if (!b) {
-            qDebug() << "Error compressing file: " << i_toCompressFilename;
+        if (ret != 0) {
+            qCritical() << Q_FUNC_INFO << "Error compressing file: " << i_fileToBeCompressed;
+            //TODO - here we should log to file as well the error
         }
         else {
             /* remove original (uncompressed) file */
-            QFile toRemove(i_toCompressFilename);
-            b = toRemove.remove();
+            QFile toRemove(i_fileToBeCompressed);
+            bool b = toRemove.remove();
             if (!b) {
-                qDebug() << "Error removing file to compress: " << i_toCompressFilename;
+                qCritical() << Q_FUNC_INFO << "Error removing file to compress: " << i_fileToBeCompressed;
+                //TODO - here we should log to file as well the error
             }
             else {
-                qDebug() << "Removing file to compress (already compressed): " << i_toCompressFilename;
+                ULDBG << "Removing file to compress (already compressed): " << i_fileToBeCompressed;
             }
         }
         mutex.unlock();
