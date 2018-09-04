@@ -4,8 +4,8 @@
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
-#ifndef __EXTERNAL_LOGGER_INCS__
-#define __EXTERNAL_LOGGER_INCS__
+#ifndef UNQL_EXTERNAL_LOGGER_INCS
+#define UNQL_EXTERNAL_LOGGER_INCS
 
 #include <QThread>
 #include <QStringList>
@@ -14,8 +14,6 @@
 #include <QDebug>
 
 #include "LogMessage.h"
-
-
 
 
 enum FileRotationPolicyType {

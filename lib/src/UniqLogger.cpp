@@ -268,6 +268,11 @@ Logger *UniqLogger::createAndroidLogger(const QString& _logname)
 Logger*
 UniqLogger::createFileLogger(const QString & i_logname, const QString &i_filename, const WriterConfig &i_wconf, int &ok)
 {
+    if (i_wconf.neededSanitizing()) {
+         ok = UNQL::UnqlErrorWriterConfigNotSane;
+         return nullptr;
+    }
+
     Logger *l = createLogger(i_logname);
     LogWriter &fw = getFileWriter(i_filename, i_wconf, ok);
     if (ok != UNQL::UnqlErrorNoError) {
@@ -356,11 +361,6 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
 {
     FileWriter *fw;
     LogWriter *lw;
-
-    if (wc.neededSanitizing()) {
-         ok = UNQL::UnqlErrorWriterConfigNotSane;
-         return nullptr;
-    }
 
     muxDeviceCounter.lock();
     LogWriterUsageMapType::Iterator it;

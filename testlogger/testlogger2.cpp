@@ -58,6 +58,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
     wc2.maxFileSize     = 1; //up to 1MB each
     wc2.writerFlushSecs = 1; //flush contents to disk every second
     wc2.compressionLevel = 1;
+    wc2.rotationPolicy = IncrementalNumbers;
 
     loggerF1 = ul->createFileLogger("test", "log.txt", wc2);
     loggerF1->setModuleName("FILE1");

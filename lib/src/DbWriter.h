@@ -4,8 +4,8 @@
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
-#ifndef __DB_LOGGER_INCS__
-#define __DB_LOGGER_INCS__
+#ifndef UNQL_DB_LOGGER_INCS
+#define UNQL_DB_LOGGER_INCS
 
 #include "LogWriter.h"
 #include <QFile>
@@ -28,7 +28,7 @@ public:
     virtual ~DbWriter();
     void setOutputFile(QString filename="log.txt");
     void setLogfileMaxSize(int filesize);
-    QString getBaseName() {return m_logfileBaseName;}
+    QString getBaseName() { return m_logfileBaseName; }
 };
 
 #endif
