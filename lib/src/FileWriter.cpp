@@ -42,7 +42,7 @@ FileWriter::~FileWriter()
   */
 void
 FileWriter::setLogfileMaxSize(int filesize)
-{   m_Config.maxFileSize = filesize; }
+{ m_Config.maxFileSize = filesize; }
  
 
 /*!
@@ -51,7 +51,7 @@ FileWriter::setLogfileMaxSize(int filesize)
  */
 void
 FileWriter::setLogfileRotationRange(int maxfilenum)
-{   m_Config.maxFileNum = maxfilenum;   }
+{ m_Config.maxFileNum = maxfilenum; }
  
 
 
@@ -93,14 +93,9 @@ void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
 }
 
 
-/*!
-  \brief calculates the log file that is going to be used for the logging
-  \param num the number of the current file name
-  */
-QString
-FileWriter::calculateCurrentFileName(int num)
+void FileWriter::calculateLogFilePattern(const QString &i_filename, QString &o_rPath, QString &o_rPattern)
 {
-    QString fullfilename = QDir::fromNativeSeparators(m_logfileBaseName);
+    QString fullfilename = QDir::fromNativeSeparators(i_filename);
     QString filename = fullfilename.split("/").takeLast();
     QString filepath;
 
@@ -109,48 +104,64 @@ FileWriter::calculateCurrentFileName(int num)
         filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
     }
 
+    //find how many dots are there
+    QStringList sl = filename.split(".");
+
+    if (sl.count() == 1) //no dots
+    {
+        filename.append("-%1");
+    }
+    else if (sl.count() == 2) //one dot
+    {
+        filename = sl[0];
+        filename.append("-%1");
+        filename += ".";
+        filename += sl[1];
+    }
+    else //more than one dot
+    {
+        sl[0] += "%1";
+        filename = sl.join(".");
+    }
+
+    o_rPath = filepath;
+    o_rPattern = filename;
+}
+
+
+/*!
+  \brief calculates the log file that is going to be used for the logging
+  \param i_fileOffset the offset from which we should start calculating (default = 0)
+  */
+QString
+FileWriter::calculateNextLogFileName(int i_fileOffset)
+{
+    QString filepath, filepattern;
+    calculateLogFilePattern(m_logfileBaseName, filepath, filepattern);
+
     int filenum;
 
     /*
      *  The file with num == 0 --> no number, will not have any special extension if
      *  compression is enabled, because it is the file we are logging on
      */
-    if (num == 0) {
+    if (i_fileOffset == 0) {
         if (m_Config.rotationPolicy == StrictRotation) {
-            return fullfilename;
+            return m_logfileBaseName;
         }
 
         filenum = m_rotationCurFileNumber;
     }
     else {
-        filenum = num;
+        filenum = i_fileOffset;
     }
 
-    //find how many dots are there
-    QStringList sl = filename.split(".");
-
-    if (sl.count() == 1) //no dots
-    {
-        filename.append("-");
-        filename += QString::number(filenum);
-    }
-    else if (sl.count() == 2) //one dot
-    {
-        filename = sl[0];
-        filename.append("-");
-        filename += QString::number(filenum);
-        filename += ".";
-        filename += sl[1];
-    }
-    else //more than one dot
-    {
-        sl[0] += QString::number(filenum);
-        filename = sl.join(".");
-    }
+    QString filename = filepattern.arg(filenum);
 
     return filepath + filename;
 }
- 
+
+
 
 /*!
   \brief this method changes the logfile that is used for the log file
@@ -197,7 +208,7 @@ void
 FileWriter::setOutputFile(const QString& aFilename)
 {
     m_logfileBaseName = aFilename;
-    QString fname = calculateCurrentFileName();
+    QString fname = calculateNextLogFileName();
     changeOutputFile(fname);
 }
  
@@ -250,10 +261,10 @@ FileWriter::writeToDevice()
 void FileWriter::rotateFileForIncrementalNumbers()
 {
     m_rotationCurFileNumber++;
-    QString currFileName = calculateCurrentFileName();
+    QString currFileName = calculateNextLogFileName();
     changeOutputFile( currFileName );
 
-    QString previousFile = calculateCurrentFileName(m_rotationCurFileNumber - 1);
+    QString previousFile = calculateNextLogFileName(m_rotationCurFileNumber - 1);
     if ( isCompressionActive() )
     {
         previousFile = compressIfNeeded( previousFile );
@@ -266,7 +277,7 @@ void FileWriter::rotateFileForIncrementalNumbers()
 
 bool FileWriter::isCompressionActive() const
 {
-    if ( ( m_Config.compressionLevel > 0 ) && ( m_Config.maxFileNum > 1) )
+    if ( ( m_Config.compressionAlgo > 0 ) && ( m_Config.maxFileNum > 1) )
         return true;
 
     return false;
@@ -293,8 +304,9 @@ void FileWriter::removeOldestFile()
 void FileWriter::renameOldLogFiles()
 {
     for (int i = m_Config.maxFileNum-2; i>=0; i--) {
-        QString olderfile = calculateCurrentFileName(i);
-        QString newerfile = calculateCurrentFileName(i+1);
+        QString olderfile = calculateNextLogFileName(i);
+        QString newerfile = calculateNextLogFileName(i+1);
+
         if ( isCompressionActive() && i != 0) {
             olderfile = NrFileCompressor::getCompressedFilename(olderfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
             newerfile = NrFileCompressor::getCompressedFilename(newerfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
@@ -336,9 +348,10 @@ void FileWriter::rotateFileForStrictRotation()
     renameOldLogFiles(); /* loop to rename old rotated files */
 
     //Set the new file to log to.
-    QString currFileName = calculateCurrentFileName();
+    QString currFileName = calculateNextLogFileName();
     changeOutputFile( currFileName );
 }
+
 
 
 void
@@ -369,7 +382,7 @@ FileWriter::rotateFilesIfNeeded()
 QString
 FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
 {
-    if ( m_Config.compressionLevel > 0 &&
+    if ( m_Config.compressionAlgo > 0 &&
          !i_fileToBeCompressed.endsWith(".gz") &&
          !i_fileToBeCompressed.endsWith(".zip") )
     {

@@ -13,7 +13,7 @@ class AndroidWriter : public LogWriter
     QMap<UNQL::LogMessagePriorityType, android_LogPriority> androidPriorityMap;
 
 public:
-    AndroidWriter();
+    AndroidWriter(const WriterConfig &wc);
 
     virtual ~AndroidWriter();
 

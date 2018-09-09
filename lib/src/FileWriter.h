@@ -29,7 +29,9 @@ private:
     QQueue<QString> m_lastUsedFilenames;
 
 
-    QString calculateCurrentFileName(int num=0);
+    //QString calculateCurrentFileName(int num=0);
+    void calculateLogFilePattern(const QString &filename, QString &path, QString &pattern);
+    QString calculateNextLogFileName(int offset=0);
     void changeOutputFile(const QString&);
     void writeToDevice();
     void rotateFilesIfNeeded();

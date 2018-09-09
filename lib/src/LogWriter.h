@@ -55,8 +55,8 @@ public:
                                 default: 0 - do not compress */
     int compressionAlgo;    /*!< Algorithm used to compress (gzip or zip):
                                 0: No compression (default)
-                                1: Creates a zip archive
-                                2: Creates a gzip archive */
+                                1: Creates a gzip archive
+                                2: Creates a zip archive */
 
 
     //Makes sense just for RemoteWriter

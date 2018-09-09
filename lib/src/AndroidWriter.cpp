@@ -1,8 +1,8 @@
 #include "AndroidWriter.h"
 
 
-AndroidWriter::AndroidWriter()
-    : LogWriter()
+AndroidWriter::AndroidWriter(const WriterConfig &wc)
+    : LogWriter(wc)
 {
     androidPriorityMap.insert(UNQL::LOG_FATAL, ANDROID_LOG_FATAL);
     androidPriorityMap.insert(UNQL::LOG_CRITICAL, ANDROID_LOG_ERROR);

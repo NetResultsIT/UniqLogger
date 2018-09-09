@@ -24,8 +24,8 @@ WriterConfig::WriterConfig()
     , maxFileSize      ( 0 )                        // unlimited MB size of logfile
     , maxFileNum       ( 1 )                        // log on just one file by default
     , rotationPolicy   ( StrictRotation )           // We use the strict rotation policy by default
-    , compressionLevel ( 0 )
-    , compressionAlgo  ( NrFileCompressor::ZIP_FILE )
+    , compressionLevel ( 6 )                        // Use default compression level
+    , compressionAlgo  ( NrFileCompressor::NO_COMPRESSION )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
 {
 /* empty ctor */
