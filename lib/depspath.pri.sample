@@ -3,4 +3,4 @@
 #
 
 FILECOMPRESSOR_ROOT = $$PWD/../../filecompressor/src
-THREADPOOL_ROOT = $$PWD/../../tpool_test/src
+THREADPOOL_ROOT = $$PWD/../../tpool.git/src

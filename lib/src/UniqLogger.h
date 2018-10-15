@@ -97,14 +97,14 @@ public:
         Logger* createFileLogger    ( const QString &logName, const QString &fileName,          const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createNetworkLogger ( const QString &logName, const QString &address, int port, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK  );
-        Logger* createAndroidLogger ( const QString &logName                                                                      );
+        Logger* createAndroidLogger ( const QString &logName, const WriterConfig &wc=WriterConfig()                                                        );
 
         LogWriter& getDbWriter        ( const QString &aDbFileName,             const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getNetworkWriter   ( const QString &address, int port,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getFileWriter      ( const QString &fileName,                const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getConsoleWriter   ( UNQL::ConsoleColorScheme i_colorScheme, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getDummyWriter     ();
-        LogWriter& getAndroidWriter   ();
+        LogWriter& getAndroidWriter   (const WriterConfig &wc=WriterConfig());
 
         void addMonitorVar ( const QString &var, bool initialStatus=false );
         void changeMonitorVarStatus ( const QString &var, bool status );

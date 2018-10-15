@@ -47,6 +47,7 @@ QString ConsoleWriter::getColorCode(const LogMessage &i_message)
     return QString("\033[22;%1m").arg((int) color);
 }
 
+
 /*!
   \brief writes the messages in the queue on the console with the specified color
   */

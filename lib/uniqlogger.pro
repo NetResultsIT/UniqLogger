@@ -6,11 +6,11 @@ VERSION = 0.7.0
 
 # --- Please check that the config file reflects your desired build options
 !exists($$PWD/config.pri) {
-    message("No config.pri found, building with default options: no NETWORK and no DB support")
+    message("No UNIQLOGGER config.pri found, building with default options: no NETWORK and no DB support")
 } else: include ($$PWD/config.pri)
 
 !exists($$PWD/depspath.pri) {
-    error("No depspath.pri found, giving up")
+    error("No UNIQLOGGER depspath.pri found, giving up")
 } else: include ($$PWD/depspath.pri)
 
 
@@ -18,7 +18,7 @@ VERSION = 0.7.0
     message("Cannot find nrFileCompressor.pri...")
     message("Please set the var FILECOMPRESSOR_ROOT to the directory where you have a copy of NrFileCompressor")
     message("You can get a copy on GitHub at https://www.github.com/netresults/nrfilecompressor")
-    error("--- Missing nrFileCompressor.pri: giving up ---")
+    error("--- Missing nrFileCompressor.pri: giving up uniqlogger build ---")
 } else: include ($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri)
 
 INCLUDEPATH += $$THREADPOOL_ROOT
@@ -328,6 +328,8 @@ android {
 
     HEADERS += src/AndroidWriter.h
     SOURCES += src/AndroidWriter.cpp
+
+    DEFINES += ENABLE_UNQL_ANDROIDLOG
 
     # Android doesn't support fopen64 & C.
     DEFINES += IOAPI_NO_64

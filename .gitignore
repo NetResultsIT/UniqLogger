@@ -9,5 +9,5 @@ last_build
 release
 debug
 src/ext
-../build-uniqlogger*
+build-*
 *.pro.user

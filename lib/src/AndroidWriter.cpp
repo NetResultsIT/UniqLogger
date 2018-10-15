@@ -12,15 +12,16 @@ AndroidWriter::AndroidWriter(const WriterConfig &wc)
     androidPriorityMap.insert(UNQL::LOG_DBG_ALL, ANDROID_LOG_VERBOSE);
     androidPriorityMap.insert(UNQL::LOG_OFF, ANDROID_LOG_UNKNOWN);
     androidPriorityMap.insert(UNQL::LOG_MONITOR, ANDROID_LOG_UNKNOWN);
-
 }
 
 
 AndroidWriter::~AndroidWriter()
-{
-}
+{ /* empty dtor */ }
 
 
+/*!
+ * \brief AndroidWriter::writeToDevice this will write to logcat
+ */
 void AndroidWriter::writeToDevice()
 {
     mutex.lock();
