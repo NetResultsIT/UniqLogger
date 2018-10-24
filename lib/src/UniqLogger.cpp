@@ -230,13 +230,13 @@ UniqLogger::createLogger(const QString &logname)
 /*!
  * \brief creates a dummy logger: it will drop all the data sent to the logger
  *  you could consider as redirecting logs to /dev/null
- * \param _logname  the modulename for this logger
+ * \param logname  the modulename for this logger
  * \return the pointer to the logger class created or a null pointer if something went wrong
  */
 Logger*
-UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &)
+UniqLogger::createDummyLogger( const QString& logname, const WriterConfig &)
 {
-    Logger *l = createLogger(_logname);
+    Logger *l = createLogger(logname);
     LogWriter &dw = getDummyWriter();
     this->addWriterToLogger(l, dw);
     return l;
@@ -246,13 +246,14 @@ UniqLogger::createDummyLogger( const QString& _logname, const WriterConfig &)
 #ifdef ENABLE_UNQL_ANDROIDLOG
 /*!
  * \brief creates an Android native logger and automatically connects a file writer with default values
- * \param _logname the module name for this logger
+ * \param logname the module name for this logger
+ * \param wc the configuration to be used (only some params will be honoured) with this logger
  * \return the pointer to the logger class created or a null pointer if something went wrong
  */
-Logger *UniqLogger::createAndroidLogger(const QString& _logname)
+Logger *UniqLogger::createAndroidLogger(const QString& logname, const WriterConfig &wc)
 {
-    Logger *l = createLogger(_logname);
-    LogWriter &dw = getAndroidWriter();
+    Logger *l = createLogger(logname);
+    LogWriter &dw = getAndroidWriter(wc);
     this->addWriterToLogger(l, dw);
     return l;
 }
@@ -545,10 +546,15 @@ UniqLogger::getDummyWriter()
 
 
 #ifdef ENABLE_UNQL_ANDROIDLOG
-LogWriter &UniqLogger::getAndroidWriter()
+/*!
+ * \brief UniqLogger::getAndroidWriter Creates a writer that will log to logcat on Android devices
+ * \param wc the configuration for this writer
+ * \note: only \em "common" part of WriterConfig will be taken into accoutn
+ * \return the reference to the newly created logger
+ */
+LogWriter &UniqLogger::getAndroidWriter(const WriterConfig &wc)
 {
-
-    AndroidWriter* aw = new AndroidWriter();
+    AndroidWriter* aw = new AndroidWriter(wc);
     registerWriter(aw);
     m_pTPool->runObject(aw);
     aw->run();

@@ -11,7 +11,7 @@ VERSION = 0.7.0
 } else: include ($$PWD/config.pri)
 
 !exists($$PWD/depspath.pri) {
-    message("No depspath.pri found, trying to see if dependencies are in default folder: $$PWD/src/ext")
+    message("No depspath.pri found, trying to see if UniqLogger dependencies are in default folder: $$PWD/src/ext")
 } else: include ($$PWD/depspath.pri)
 
 isEmpty($$FILECOMPRESSOR_ROOT) {
@@ -31,7 +31,6 @@ isEmpty($$DBH_ROOT) {
     message("Cannot find nrFileCompressor.pri...")
     message("Please set in depspath.pri the var FILECOMPRESSOR_ROOT to the directory where you have a copy of NrFileCompressor")
     message("You can get a copy on GitHub at https://www.github.com/netresultsit/filecompressor")
-error($$FILECOMPRESSOR_ROOT)
     error("--- Missing nrFileCompressor.pri: giving up UniqLogger build ---")
 } else: include ($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri)
 
@@ -81,7 +80,6 @@ HEADERS += \
     src/ConsoleWriter.h \
     src/UniqLogger.h \
     src/LogMessage.h \
-    #$$THREADPOOL_ROOT/nrthreadpool.h \
     src/DummyWriter.h \
     src/bufferofstrings.h \
     src/ConsoleColorScheme.h
@@ -93,7 +91,6 @@ SOURCES += \
     src/ConsoleWriter.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
-    #$$THREADPOOL_ROOT/nrthreadpool.cpp \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp \
     src/ConsoleColorScheme.cpp
@@ -109,7 +106,7 @@ INCLUDE_HEADERS += \
     $$PWD/src/ConsoleColorScheme.h
 
 
-INCLUDEPATH += $$PWD/src $$PWD/src/ext/tpool/src
+INCLUDEPATH += $$PWD/src
 
 # --- UniqLogger Modules
 contains ( DEFINES, ENABLE_UNQL_DBG ) {
@@ -350,6 +347,8 @@ android {
 
     HEADERS += src/AndroidWriter.h
     SOURCES += src/AndroidWriter.cpp
+
+    DEFINES += ENABLE_UNQL_ANDROIDLOG
 
     # Android doesn't support fopen64 & C.
     DEFINES += IOAPI_NO_64

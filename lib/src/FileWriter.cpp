@@ -93,6 +93,12 @@ void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
 }
 
 
+/*!
+ * \brief FileWriter::calculateLogFilePattern calculates the pattern (i.e. the logfilename with a placeholder for file numbering) for the logfile
+ * \param i_filename the log basefilename
+ * \param o_rPath the output variable containing the path where the new logfile will be
+ * \param o_rPattern the pattern (i.e. containing the placeholder that will be replaced with log file number) of the logfile
+ */
 void FileWriter::calculateLogFilePattern(const QString &i_filename, QString &o_rPath, QString &o_rPattern)
 {
     QString fullfilename = QDir::fromNativeSeparators(i_filename);
@@ -284,6 +290,9 @@ bool FileWriter::isCompressionActive() const
 }
 
 
+/*!
+ * \brief FileWriter::removeOldestFile removes the files that should no longer be used for logging
+ */
 void FileWriter::removeOldestFile()
 {
     if (m_Config.maxFileNum == 0)
@@ -301,6 +310,10 @@ void FileWriter::removeOldestFile()
 }
 
 
+/*!
+ * \brief FileWriter::renameOldLogFiles
+ * In case of strict rotation this method will rename all involved files accordingly (i.e. log-2 -> log-3, log-1 -> log-2 and log -> log-1)
+ */
 void FileWriter::renameOldLogFiles()
 {
     for (int i = m_Config.maxFileNum-2; i>=0; i--) {
@@ -338,6 +351,10 @@ void FileWriter::renameOldLogFiles()
 }
 
 
+/*!
+ * \brief FileWriter::rotateFileForStrictRotation
+ * rotate logfiles when we're logging always in the same set of files (i.e. log-1.txt -> log-2.txt and log.txt -> log-1.txt)
+ */
 void FileWriter::rotateFileForStrictRotation()
 {
     //Close current logfile
@@ -353,7 +370,10 @@ void FileWriter::rotateFileForStrictRotation()
 }
 
 
-
+/*!
+ * \brief FileWriter::rotateFilesIfNeeded
+ * check whether the current log file needs to be rotated (i.e. size or time) and rotates alllog files involved
+ */
 void
 FileWriter::rotateFilesIfNeeded()
 {
@@ -378,7 +398,11 @@ FileWriter::rotateFilesIfNeeded()
 }
 
 
-
+/*!
+ * \brief FileWriter::compressIfNeeded if the passed file is not already compressed (checks the filename extension) and compression algorithm is set then compresses the file
+ * \param i_fileToBeCompressed the file that possibly will be compressed
+ * \return name of compressed file
+ */
 QString
 FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
 {
