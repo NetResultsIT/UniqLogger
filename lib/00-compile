@@ -3,7 +3,6 @@
 
 - clone the repository using (optionally) a valid git <user>:
   > git clone https://<user>@gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
-      i.e. git clone https://s.borghese@gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
       i.e. git clone https://gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
 - insert the password for the <user>
 - if no <user> is specified on the git URL both username and password will be asked on the cli
@@ -14,24 +13,23 @@
       i.e. git checkout tags/0.6.0
 > cd lib
 > export UNQLPATH=${PWD}
-> cp depspath.pri.sample depspath.pri
-- edit depspath.pri to suits your needs
-> cp config.pri.sample config.pri
 
 > cd src/ext
-> git clone https://gitlab.netresults.intranet:10443/netresults/utils/filecompressor.git filecompressor
-> git clone https://gitlab.netresults.intranet:10443/netresults/utils/dbhandler.git dbh
-> git clone https://gitlab.netresults.intranet:10443/netresults/utils/tpool tpool
+> git clone https://github.com/netresultsit/filecompressor.git filecompressor
+> git clone https://github.com/netresultsit/qt-threadpool threadpool
+(below step is optional, only if you need db logging)
+> git clone https://github.com/netresultsit/qt-dbhandler.git dbhandler
 
-> cd filecompressor
+NOTE: if you downloaded the above repositories in different folders 
+      you must execute the following line (otherwise you can skip it)
+> cp depspath.pri.sample depspath.pri
+- edit depspath.pri to set the paths for the dependencies
+
+- if you need to enable network or dblogging (optional):
 > cp config.pri.sample config.pri
-> git clone https://gitlab.netresults.intranet:10443/netresults/third-party/zlib.git third-party/zlib
-> git clone https://gitlab.netresults.intranet:10443/netresults/third-party/minizip.git third-party/minizip
-> cd third-party/zlib/lib
-> ln -s <os>/ linux-64
-- if you are building on Ubuntu 16.04 please check the ub1604-64b/README file 
-> cd ${UNQLPATH}
-> qmake-qt4 OR qmake-qt5
-> make [debug|release]
+- edit config.pri to enable the desired features
 
+> cd ${UNQLPATH}
+> qmake
+> make [debug|release]
 

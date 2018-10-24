@@ -1,7 +1,7 @@
 ############################################################################### 
 # UniqLogger build configuration
 
-# Uncomment if you plan to use VS as your IDE
+# Uncomment if you plan to use VisualStudio as your IDE and need to generate a project file
 #IDE = VS
 
 # If you want to enable network logging uncomment the following line

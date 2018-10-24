@@ -13,8 +13,8 @@
 UnqlDbHandler::UnqlDbHandler(const DbhConfig dbconf)
     : NrBaseDbHandler(dbconf)
 {
-    ULDBG << "connecting to " << _M_DbHost << " user: " << _M_DbUsername << " ( " << _M_DbPasswd << ")"
-             << " on db " << _M_DbName;
+    ULDBG << "connecting to " << dbconf.dbHost << " user: " << dbconf.dbName << " ( " << dbconf.dbPass << ")"
+             << " on db " << dbconf.dbName;
 }
 
 

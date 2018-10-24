@@ -1,6 +1,7 @@
-#
 # Uniqlogger depspath.pri
-#
+# - Set the variable below to where you cloned the github repositories
+#   for uniqlogger dependencies
 
+DBH_ROOT = $$PWD/../../dbhandler/src
 FILECOMPRESSOR_ROOT = $$PWD/../../filecompressor/src
 THREADPOOL_ROOT = $$PWD/../../tpool_test/src

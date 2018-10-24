@@ -4,27 +4,45 @@
 
 VERSION = 0.7.0
 
-# --- Please check that the config file reflects your desired build options
+# ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
+
 !exists($$PWD/config.pri) {
-    message("No config.pri found, building with default options: no NETWORK and no DB support")
+    message("No config.pri found, building UniqLogger with default options: no NETWORK and no DB support")
 } else: include ($$PWD/config.pri)
 
 !exists($$PWD/depspath.pri) {
-    error("No depspath.pri found, giving up")
+    message("No depspath.pri found, trying to see if dependencies are in default folder: $$PWD/src/ext")
 } else: include ($$PWD/depspath.pri)
 
+isEmpty($$FILECOMPRESSOR_ROOT) {
+    FILECOMPRESSOR_ROOT = $$PWD/src/ext/filecompressor/src
+}
 
+isEmpty($$THREADPOOL_ROOT) {
+    THREADPOOL_ROOT = $$PWD/src/ext/threadpool/src
+}
+
+isEmpty($$DBH_ROOT) {
+    DBH_ROOT = $$PWD/src/ext/dbhandler/src
+}
+
+# Chek dependencies
 !exists($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri) {
     message("Cannot find nrFileCompressor.pri...")
-    message("Please set the var FILECOMPRESSOR_ROOT to the directory where you have a copy of NrFileCompressor")
-    message("You can get a copy on GitHub at https://www.github.com/netresults/nrfilecompressor")
-    error("--- Missing nrFileCompressor.pri: giving up ---")
+    message("Please set in depspath.pri the var FILECOMPRESSOR_ROOT to the directory where you have a copy of NrFileCompressor")
+    message("You can get a copy on GitHub at https://www.github.com/netresultsit/filecompressor")
+error($$FILECOMPRESSOR_ROOT)
+    error("--- Missing nrFileCompressor.pri: giving up UniqLogger build ---")
 } else: include ($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri)
 
-INCLUDEPATH += $$THREADPOOL_ROOT
 
+!exists($$THREADPOOL_ROOT/nrThreadPool.pri) {
+    message("Cannot find nrThreadPool.pri...")
+    message("Please set in depspath.pri the var THREADPOOL_ROOT to the directory where you have a copy of nrThreadPool")
+    message("You can get a copy on GitHub at https://www.github.com/netresultsit/qt-threadpool")
+    error("--- Missing nrThreadPool.pri: giving up UniqLogger build ---")
+} else: include ($$THREADPOOL_ROOT/nrThreadPool.pri)
 
-# ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 QT -= gui
 
@@ -63,7 +81,7 @@ HEADERS += \
     src/ConsoleWriter.h \
     src/UniqLogger.h \
     src/LogMessage.h \
-    $$THREADPOOL_ROOT/nrthreadpool.h \
+    #$$THREADPOOL_ROOT/nrthreadpool.h \
     src/DummyWriter.h \
     src/bufferofstrings.h \
     src/ConsoleColorScheme.h
@@ -75,7 +93,7 @@ SOURCES += \
     src/ConsoleWriter.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
-    $$THREADPOOL_ROOT/nrthreadpool.cpp \
+    #$$THREADPOOL_ROOT/nrthreadpool.cpp \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp \
     src/ConsoleColorScheme.cpp
@@ -114,14 +132,18 @@ contains ( DEFINES, 'ENABLE_UNQL_DBLOG' ) {
     message("[*] Db Logging:      ENABLED")
     QT += sql
 
-    INCLUDEPATH += $$PWD/src/ext/dbh
+!exists($$DBH_ROOT/nrDbHandler.pri) {
+    message("Cannot find nrDbHandler.pri...")
+    message("Please set in depspath.pri the var DBH_ROOT to the directory where you have a copy of nrDbHandler")
+    message("You can get a copy on GitHub at https://www.github.com/netresultsit/qt-dbhandler")
+    error("--- Missing nrDbHandler.pri: giving up UniqLogger build ---")
+} else: include ($$DBH_ROOT/nrDbHandler.pri)
+
 
     HEADERS +=  src/DbWriter.h \
-                src/ext/dbh/nrdbhandler.h \
                 src/UnqlDbHandler.h
 
     SOURCES +=  src/DbWriter.cpp \
-                src/ext/dbh/nrdbhandler.cpp \
                 src/UnqlDbHandler.cpp
 }
 else {

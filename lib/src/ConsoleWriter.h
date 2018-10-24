@@ -4,8 +4,8 @@
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
-#ifndef __CONSOLE_LOGGER_INCS__
-#define __CONSOLE_LOGGER_INCS__
+#ifndef CONSOLE_LOGGER_INCS_H
+#define CONSOLE_LOGGER_INCS_H
 
 #include "LogWriter.h"
 #include "ConsoleColorScheme.h"
