@@ -26,3 +26,5 @@ There is also a Dbviewer tool to search through db-logged messages and a python 
 logs into a db.
 
 Refer to 00-Compile file for compilation instructions
+
+Contributors are welcome :)
