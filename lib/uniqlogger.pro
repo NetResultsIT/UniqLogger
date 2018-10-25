@@ -22,7 +22,7 @@ isEmpty(FILECOMPRESSOR_ROOT) {
 
 isEmpty(THREADPOOL_ROOT) {
     THREADPOOL_ROOT = $$PWD/src/ext/threadpool/src
-    message("Using default folder for UniqLogger filecompressor root: $$THREADPOOL_ROOT")
+    message("Using default folder for UniqLogger threadpool root: $$THREADPOOL_ROOT")
 }
 
 isEmpty(DBH_ROOT) {
