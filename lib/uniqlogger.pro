@@ -14,21 +14,25 @@ VERSION = 0.7.0
     message("No depspath.pri found, trying to see if UniqLogger dependencies are in default folder: $$PWD/src/ext")
 } else: include ($$PWD/depspath.pri)
 
-isEmpty($$FILECOMPRESSOR_ROOT) {
+
+isEmpty(FILECOMPRESSOR_ROOT) {
     FILECOMPRESSOR_ROOT = $$PWD/src/ext/filecompressor/src
+    message("Using default folder for filecompressor root: $$FILECOMPRESSOR_ROOT")
 }
 
-isEmpty($$THREADPOOL_ROOT) {
+isEmpty(THREADPOOL_ROOT) {
     THREADPOOL_ROOT = $$PWD/src/ext/threadpool/src
+    message("Using default folder for UniqLogger filecompressor root: $$THREADPOOL_ROOT")
 }
 
-isEmpty($$DBH_ROOT) {
+isEmpty(DBH_ROOT) {
     DBH_ROOT = $$PWD/src/ext/dbhandler/src
+    message("Using default folder for UniqLogger dbhandler root: $$DBH_ROOT")
 }
 
 # Chek dependencies
 !exists($$FILECOMPRESSOR_ROOT/nrFileCompressor.pri) {
-    message("Cannot find nrFileCompressor.pri...")
+    message("Cannot find nrFileCompressor.pri in folder $$FILECOMPRESSOR_ROOT")
     message("Please set in depspath.pri the var FILECOMPRESSOR_ROOT to the directory where you have a copy of NrFileCompressor")
     message("You can get a copy on GitHub at https://www.github.com/netresultsit/filecompressor")
     error("--- Missing nrFileCompressor.pri: giving up UniqLogger build ---")
