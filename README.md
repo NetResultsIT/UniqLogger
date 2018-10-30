@@ -27,4 +27,6 @@ logs into a db.
 
 Refer to 00-Compile file for compilation instructions
 
+License is LGPL-2, if you need a commercial license, feel free to contact us.
+
 Contributors are welcome :)
