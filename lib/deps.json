@@ -1,0 +1,19 @@
+{
+    "deps": [
+        {
+            "name": "FileCompressor",
+            "rel_dest_dir": "src/ext/filecompressor",
+            "url": "https://github.com/netresultsit/filecompressor"
+        },
+        {
+            "name": "DbHandler",
+            "rel_dest_dir": "src/ext/dbhandler",
+            "url": "https://github.com/netresultsit/qt-dbhandler"
+        },
+        {
+            "name": "Threadpool",
+            "rel_dest_dir": "src/ext/threadpool",
+            "url": "https://github.com/netresultsit/qt-threadpool"
+        }
+    ]
+}
