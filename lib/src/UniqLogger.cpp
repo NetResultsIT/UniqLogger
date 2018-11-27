@@ -279,7 +279,7 @@ UniqLogger::createFileLogger(const QString & i_logname, const QString &i_filenam
     if (ok != UNQL::UnqlErrorNoError) {
         //FIXME - handle all the possible other errors
         WriterConfig wc2 = fw.getWriterConfig();
-        QString msg = QString("Logger %3 tried to open this writer with this configuration:\n%1\nbut it had been previously opened with this one:\n%2").arg(i_wconf.toString()).arg(wc2.toString()).arg(i_logname);
+        QString msg = QString("Logger %3 failed to open file %4 (errcode %5) with this configuration:\n%1\nbut it had been previously opened with this one:\n%2").arg(i_wconf.toString()).arg(wc2.toString()).arg(i_logname).arg(i_filename).arg(ok);
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
         fw.appendMessage(lm);
     }
@@ -364,6 +364,10 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
     LogWriter *lw;
 
     muxDeviceCounter.lock();
+
+    //Assume we are successful
+    ok = UNQL::UnqlErrorNoError;
+
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();

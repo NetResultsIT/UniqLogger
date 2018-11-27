@@ -51,7 +51,7 @@ QT -= gui
 
 TARGET = UniqLogger
 
-CONFIG += warn_on dll 
+CONFIG += warn_on dll
 CONFIG += debug_and_release
 CONFIG -= flat
 
