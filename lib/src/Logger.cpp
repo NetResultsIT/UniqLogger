@@ -444,10 +444,24 @@ Logger::operator<< ( const QMap<int, QList<int> >& amap )
 
 
 Logger&
-Logger::operator<< ( const double& d )
+Logger::operator<< ( double d )
 {
+#ifdef Q_OS_ANDROID
+    QString s = "%1.%2";
+
+    quint64 integral = static_cast<quint64>(d);
+    quint16 decimal = static_cast<quint16>((d - integral)*1000);
+    s = s.arg(integral).arg(decimal);
+
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(s);
+    muxMessages.unlock();
+#else
     muxMessages.lock();
         m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
     muxMessages.unlock();
+#endif
     return *this;
 }
+
+
