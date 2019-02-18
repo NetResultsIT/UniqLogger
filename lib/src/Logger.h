@@ -83,7 +83,7 @@ public:
 
     Logger& operator<< ( const UNQL::LogMessagePriorityType& d      );
     Logger& operator<< ( const UNQL::LogStreamManipType& d          );
-    Logger& operator<< ( const double& d                );
+    Logger& operator<< ( double d                       );
     Logger& operator<< ( const QStringList& sl          );
     Logger& operator<< ( const QList<int>& vl           );
     Logger& operator<< ( const QMap<int, QList<int> >&  );
