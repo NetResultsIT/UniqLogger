@@ -313,8 +313,8 @@ unix:!macx:!ios:!android  {
 
 android {
     message("Building UniqLogger library for Android")
-    equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
-        message("Android Arch: armv7a")
+    if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
+        message("Android Arch: armv7a or arm64")
         CONFIG(debug, debug|release) {
             LIBSUFFIX += _android_arm_debug
         }
@@ -335,6 +335,16 @@ android {
             LIBSUFFIX += _android_x86
         }
     }
+    equals(ANDROID_TARGET_ARCH, x86_64)  {
+        message("Android Arch: x86_64")
+        CONFIG(debug, debug|release) {
+            LIBSUFFIX += _android_x86_64_debug
+        }
+        else {
+            LIBSUFFIX += _android_x86_64
+        }
+    }
+
 
     CONFIG(debug, debug|release) {
         BLDTYPE=debug
