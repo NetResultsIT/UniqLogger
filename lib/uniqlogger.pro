@@ -394,11 +394,18 @@ ios {
     CONFIG += staticlib
 
     # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
-    # code optimization on those machines but limited and so was deprecaetd since Xcode 6.x
+    # code optimization on those machines but limited and so was deprecated since Xcode 6.x
     # all newer iDevices (we do not plan to support anything lower than iOS 10 due to callkit) run arm64
     # so armv7s is not needed, armv7 is needed by app store, i386 is probably scrappable too if we run simulator on a new machine
     QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
+
+    # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
+    greaterThan(QT_MINOR_VERSION, 11){
+        message("The Qt version selected ($$QT_VERSION) for this Uniqlogger build is too high for 32bit builds on iOS: building only 64bit")
+        QMAKE_APPLE_DEVICE_ARCHS = arm64
+        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+    }
 
     #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
     #CONFIG -= bitcode
