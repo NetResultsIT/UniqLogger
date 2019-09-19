@@ -1,3 +1,9 @@
+/********************************************************************************
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
+ ********************************************************************************/
+
 #include "UnqlDbHandler.h"
 
 #include <QSqlQuery>

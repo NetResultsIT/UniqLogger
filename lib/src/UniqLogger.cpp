@@ -45,14 +45,18 @@ UniqLogger::UniqLogger(int nthreads)
 
     m_pTPool = new NRThreadPool(nthreads, "UNQL_WPool", this);
 
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,   "FATAL");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL,"CRITICAL");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_WARNING, "WARNING");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,    "INFO");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,     "DEBUG");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL, "FULL DEBUG");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR, "MONITOR");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FORCED,  "FORCED");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,    "FATAL");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_EMERGENCY,"EMERGENCY");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_ALARM,    "ALARM");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL, "CRITICAL");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_ERROR,    "ERROR");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_WARNING,  "WARNING");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_NOTICE,   "NOTICE");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,     "INFO");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,      "DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL,  "FULL DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR,  "MONITOR");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FORCED,   "FORCED");
 
     ULDBG << "Being here with app: " << QCoreApplication::instance();
 }
@@ -220,7 +224,7 @@ UniqLogger::createLogger(const QString &logname)
 
         bool b = connect(l, SIGNAL(writersToDelete(const QList<LogWriter*>)), this, SLOT(writerFinished(const QList<LogWriter*>)), Qt::DirectConnection);
         Q_ASSERT(b);
-        Q_UNUSED(b);
+        Q_UNUSED(b)
     }
     return l;
 }
@@ -449,11 +453,11 @@ UniqLogger::getDbWriter(const QString &_filename, const WriterConfig &wc, int &o
 #ifdef ENABLE_UNQL_NETLOG
 /*!
   \brief creates a logger and automatically connects a network writer with default values
-  \param _ha the address where this logger will try to connect to write messages
-  \param _port the server port where this logger will try to connect to write messages
+  \param i_ha the address where this logger will try to connect to write messages
+  \param i_port the server port where this logger will try to connect to write messages
   \return a reference to the logwriter class created
   */
-LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const WriterConfig &wc, int &ok)
+LogWriter &UniqLogger::getNetworkWriter(const QString & i_ha, int i_port, const WriterConfig &wc, int &ok)
 {
     RemoteWriter *rw = nullptr;
     LogWriter *lw = nullptr;
@@ -463,7 +467,7 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         rw = dynamic_cast<RemoteWriter*>(lw);
-        if (rw && rw->getHost() == _ha && rw->getPort() == _port) {
+        if (rw && rw->getHost() == i_ha && rw->getPort() == i_port) {
             ULDBG << "Existing Networkwriter found! ------------------->><<-------";
             if ( !checkMatchingConfigForWriter(*rw, wc) )
             {
@@ -476,7 +480,7 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
     }
     muxDeviceCounter.unlock();
 
-    rw = new RemoteWriter(_ha, _port, wc);
+    rw = new RemoteWriter(i_ha, static_cast<quint16>(i_port), wc);
     if (rw)
     {
         registerWriter(rw);

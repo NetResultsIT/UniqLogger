@@ -1,11 +1,11 @@
-/********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
- ********************************************************************************/
+/*******************************************************************************
+ *  Copyright (C) 2010-2019 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *  Author(s):                                                                 *
+ *              Francesco Lamonica   <f.lamonica@netresults.it>                *
+ *******************************************************************************/
 
-#ifndef __REMOTE_LOGGER_INCS__
-#define __REMOTE_LOGGER_INCS__
+#ifndef UNQL_REMOTE_LOGGER_INCS
+#define UNQL_REMOTE_LOGGER_INCS
 
 #include "LogWriter.h"
 #include <QTcpSocket>
@@ -19,7 +19,7 @@ class RemoteWriter: public LogWriter
     QTcpSocket *m_Socket;
     QTimer *m_reconnectionTimer;
     QString m_serverAddress;
-    int m_serverPort;
+    quint16 m_serverPort;
 
 protected slots:
     void writeToDevice();
@@ -29,7 +29,7 @@ protected slots:
     int connectToServer(); // <-- BEWARE, this is also called via invokeMethod, do NOT change its name
 
 public:
-    explicit RemoteWriter(const QString &aServerAddress, int aServerPort, const WriterConfig &wconf);
+    explicit RemoteWriter(const QString &aServerAddress, quint16 aServerPort, const WriterConfig &wconf);
     virtual ~RemoteWriter();
 
     virtual void run();

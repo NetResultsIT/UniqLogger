@@ -1,14 +1,14 @@
-/********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
- *   Author(s):																	*
- *				Francesco Lamonica		<f.lamonica@netresults.it>				*
- ********************************************************************************/
+/*******************************************************************************
+ *  Copyright (C) 2010-2019 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *  Author(s):                                                                 *
+ *              Francesco Lamonica   <f.lamonica@netresults.it>                *
+ *******************************************************************************/
 
 #include "RemoteWriter.h"
 
 #include <QTime>
 
-RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort, const WriterConfig &wconf)
+RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, const WriterConfig &wconf)
     : LogWriter(wconf)
 {
     m_serverAddress = aServerAddress;
@@ -17,7 +17,8 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, int aServerPort, const
     m_Socket = new QTcpSocket(this);
     m_reconnectionTimer = new QTimer(this);
 }
- 
+
+
 /*!
   \brief In the class dtor we want to flush whatever we might have got that is not written
   */
@@ -26,6 +27,7 @@ RemoteWriter::~RemoteWriter()
     //on exit, write all we've got
     this->flush();
 }
+
 
 /*!
   \brief writes the messages in the queue on the socket
@@ -47,7 +49,8 @@ RemoteWriter::writeToDevice()
     }
     mutex.unlock();
 }
- 
+
+
 /*!
   \brief connects the logwriter to the specified server
   \return a negative code if the connection fails, 0 otherwise
@@ -62,7 +65,8 @@ RemoteWriter::connectToServer()
     if (b)
         return 0;
 
-    LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING, "Connection fail to server " + m_serverAddress+":" + QString::number(m_serverPort),
+    LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING,
+                   "Connection fail to server " + m_serverAddress + ":" + QString::number(m_serverPort),
                    LogMessage::getCurrentTstampString());
     appendMessage(msg);
 
@@ -71,6 +75,7 @@ RemoteWriter::connectToServer()
 
     return -1;
 }
+
 
 /*!
  \brief this slot is invoked whenever the RemoteWriter connects to the logging server
@@ -88,6 +93,7 @@ RemoteWriter::onConnectionToServer()
     m_reconnectionTimer->stop();
 }
 
+
 /*!
  \brief this slot is invoked whenever the RemoteWriter loses connection to the logging server
  It starts a timer that will keep trying to reconnect to the server
@@ -103,7 +109,7 @@ RemoteWriter::onDisconnectionFromServer()
     appendMessage(msg);
     m_reconnectionTimer->start(m_Config.reconnectionSecs * 1000);
 }
- 
+
 
 //FIXME - protect from multiple calls
 void
