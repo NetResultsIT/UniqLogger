@@ -29,6 +29,13 @@ enum TimeRotationPolicyType {
     DayOfMonthRotation  /*!< Rotates over day of the month with suffixes like: d01, d12, d23, etc. */
 };
 
+enum NetworkProtocolType {
+    TCP,
+    UDP,
+    TLS
+};
+
+
 class ULOG_LIB_API WriterConfig
 {
 public:
@@ -61,6 +68,8 @@ public:
 
     //Makes sense just for RemoteWriter
     int reconnectionSecs;   /*!< The number of seconds a RemoteWriter will wait before trying to reconnect to its server */
+    NetworkProtocolType netProtocol; /*!< The protocol used to connect to remote log server
+                                       */
 };
 
 class LogWriter: public QObject

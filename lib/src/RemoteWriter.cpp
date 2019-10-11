@@ -15,7 +15,8 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, c
     m_serverPort = aServerPort;
 
     m_Socket = new QTcpSocket(this);
-    m_reconnectionTimer = new QTimer(this);
+    m_pUdpSocket = new QUdpSocket(this);
+    m_pReconnectionTimer = new QTimer(this);
 }
 
 
@@ -39,6 +40,13 @@ RemoteWriter::writeToDevice()
 
     QString s;
     mutex.lock();
+    if (m_Config.netProtocol == UDP) {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            s = m_logMessageList.takeFirst().message();
+            m_pUdpSocket->writeDatagram(s.toLatin1()+"\r\n", QHostAddress(m_serverAddress), m_serverPort);
+        }
+    }
     if (!m_logIsPaused && m_Socket->state() == QAbstractSocket::ConnectedState)
     {
         int msgcount = m_logMessageList.count();
@@ -59,7 +67,8 @@ RemoteWriter::writeToDevice()
 int
 RemoteWriter::connectToServer()
 {
-    ULDBG << Q_FUNC_INFO << QDateTime::currentDateTime().toString("hh.mm.ss.zzz") << "executed in thread" << QThread::currentThread();
+    ULDBG << Q_FUNC_INFO << QDateTime::currentDateTime().toString("hh.mm.ss.zzz")
+          << "executed in thread" << QThread::currentThread();
     m_Socket->connectToHost(m_serverAddress, m_serverPort);
     bool b = m_Socket->waitForConnected(10000);
     if (b)
@@ -71,7 +80,7 @@ RemoteWriter::connectToServer()
     appendMessage(msg);
 
     //now we restart the connection timer
-    m_reconnectionTimer->start(m_Config.reconnectionSecs * 1000);
+    m_pReconnectionTimer->start(m_Config.reconnectionSecs * 1000);
 
     return -1;
 }
@@ -87,10 +96,11 @@ RemoteWriter::onConnectionToServer()
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
     ULDBG << "Connected to server " << m_serverAddress << " : " << m_serverPort;
 
-    LogMessage msg("Remote Logwriter", UNQL::LOG_INFO, "Connected to server " + m_serverAddress + ":" + QString::number(m_serverPort),
+    LogMessage msg("Remote Logwriter", UNQL::LOG_INFO,
+                   "Connected to server " + m_serverAddress + ":" + QString::number(m_serverPort),
                    LogMessage::getCurrentTstampString());
     appendMessage(msg);
-    m_reconnectionTimer->stop();
+    m_pReconnectionTimer->stop();
 }
 
 
@@ -104,10 +114,11 @@ RemoteWriter::onDisconnectionFromServer()
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
     ULDBG << "Disconnected from server " << m_serverAddress << " : " << m_serverPort;
 
-    LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING, "Disconnected from server " + m_serverAddress + ":" + QString::number(m_serverPort),
+    LogMessage msg("Remote Logwriter", UNQL::LOG_WARNING,
+                   "Disconnected from server " + m_serverAddress + ":" + QString::number(m_serverPort),
                    LogMessage::getCurrentTstampString());
     appendMessage(msg);
-    m_reconnectionTimer->start(m_Config.reconnectionSecs * 1000);
+    m_pReconnectionTimer->start(m_Config.reconnectionSecs * 1000);
 }
 
 
@@ -118,9 +129,13 @@ RemoteWriter::run()
     ULDBG << Q_FUNC_INFO;
     LogWriter::run();
 
-    connect (m_reconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
+    connect (m_pReconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
     connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
+    if (m_Config.netProtocol != UDP) {
     QMetaObject::invokeMethod(this, "connectToServer");
+    } else {
+        qDebug() << "NOT CONNECTING since we're using UDP";
+    }
 }

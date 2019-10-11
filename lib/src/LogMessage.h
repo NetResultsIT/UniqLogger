@@ -16,7 +16,7 @@
 class LogMessageFormatting
 {
     QString m_spacingString;
-    QPair<QChar,QChar> m_encasingChars;
+    QPair<QChar, QChar> m_encasingChars;
 public:
     LogMessageFormatting(const QString &aSpace=" ", const QPair<QChar,QChar> aEncasingCharPair = qMakePair(QChar('['),QChar(']'))) :
         m_spacingString(aSpace),

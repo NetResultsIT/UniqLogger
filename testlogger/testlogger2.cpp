@@ -4,10 +4,10 @@
 #include <QTimer>
 #include <QDateTime>
 
-#define TEST_FILE_ROTATION 1
+#define TEST_FILE_ROTATION 0
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
-#define TEST_NET 0
+#define TEST_NET 1
 #define TEST_NET_MULTISRC 0
 #define TEST_DB 0
 #define TEST_MONITOR 0
@@ -85,7 +85,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
     qDebug() << "writing to network...";
     loggerN1 = ul->createNetworkLogger("netlog to localhost:1674", "127.0.0.1", 1674, wconf);
-    loggerN2 = ul->createNetworkLogger("netlog to localhost:1675", "127.0.0.1", 1675);
+    loggerN2 = ul->createNetworkLogger("netlog to localhost:1675", "127.0.0.1", 2345);
 
     //testThreadedNetLogger("127.0.0.1", 1674);
 #endif
@@ -124,8 +124,8 @@ testlogger_cli::testlogger_cli(QObject *parent)
 void
 testlogger_cli::testThreadedNetLogger(const QString &ip, int port)
 {
-    Q_UNUSED(ip);
-    Q_UNUSED(port);
+    Q_UNUSED(ip)
+    Q_UNUSED(port)
 
     TestThreadObject2 *tobj1 = new TestThreadObject2(2000);
     tobj1->l = loggerN1;

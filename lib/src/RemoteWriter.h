@@ -8,7 +8,9 @@
 #define UNQL_REMOTE_LOGGER_INCS
 
 #include "LogWriter.h"
+
 #include <QTcpSocket>
+#include <QUdpSocket>
 #include <QHostAddress>
 #include <QTimer>
 
@@ -17,7 +19,8 @@ class RemoteWriter: public LogWriter
     Q_OBJECT
 
     QTcpSocket *m_Socket;
-    QTimer *m_reconnectionTimer;
+    QUdpSocket *m_pUdpSocket;
+    QTimer *m_pReconnectionTimer;
     QString m_serverAddress;
     quint16 m_serverPort;
 

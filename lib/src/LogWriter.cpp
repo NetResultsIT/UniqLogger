@@ -27,6 +27,7 @@ WriterConfig::WriterConfig()
     , compressionLevel ( 6 )                        // Use default compression level
     , compressionAlgo  ( NrFileCompressor::NO_COMPRESSION )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
+    , netProtocol      ( UDP )
 {
 /* empty ctor */
 }
@@ -65,6 +66,7 @@ WriterConfig::toString() const
        << "\nRotationPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
        << "\nNETWORK PARAMS"
        << "\nReconnection seconds: " << QString::number(reconnectionSecs)
+       << "\nTransport Protocol: " << QString::number(netProtocol)
        << "\n----------";
 
     return s = sl.join("");
@@ -81,7 +83,8 @@ WriterConfig::operator ==(const WriterConfig& rhs) const
          maxFileSize        == rhs.maxFileSize      &&
          rotationPolicy     == rhs.rotationPolicy   &&
          compressionLevel   == rhs.compressionLevel &&
-         reconnectionSecs   == rhs.reconnectionSecs
+         reconnectionSecs   == rhs.reconnectionSecs &&
+         netProtocol        == rhs.netProtocol
         )
     {
         return true;
