@@ -24,6 +24,11 @@ def get_platform_name():
     p = sys.platform
     if p == 'darwin':
         p = 'macos'
+    elif p == 'linux2':
+        if platform.machine() == 'x86_64':
+            p = 'linux64'
+        else:
+            p = 'linux32'
     return p
 
 
