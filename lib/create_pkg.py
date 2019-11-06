@@ -63,7 +63,7 @@ def test_platform():
 
 def get_pkg_name():
     platform = get_platform_name()
-    if platform == 'windows':
+    if platform == 'windows' or platform == 'win32':
         ext = "zip"
     else:
         ext = "tgz"
