@@ -52,7 +52,7 @@ def get_vs_string_from_cl(cl_version):
 
 
 def parse_cl_version():
-    cl_out = subprocess.run('cl', stderr=subprocess.STDOUT)
+    cl_out = subprocess.check_output('cl', stderr=subprocess.STDOUT)
     m = re.search('ersion[e]{0,1} (\\d+)', cl_out)
     cl_num = m.group(1)
     return get_vs_string_from_cl(cl_num)
