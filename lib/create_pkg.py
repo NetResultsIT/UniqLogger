@@ -4,6 +4,7 @@ import platform
 import re
 import fileinput
 import zipfile
+import subprocess
 
 version = "x.y.z"
 hash = "abcdef"
@@ -30,6 +31,31 @@ def get_platform_name():
         else:
             p = 'linux32'
     return p
+
+
+def get_vs_string_from_cl(cl_version):
+    if cl_version == '15':
+        return 'vs2008'
+    if cl_version == '16':
+        return 'vs2010'
+    if cl_version == '17':
+        return 'vs2012'
+    if cl_version == '18':
+        return 'vs2013'
+    if cl_version == '19':
+        return 'vs2015'
+    if cl_version == '20':
+        return 'vs2017'
+    if cl_version == '21':
+        return 'vs2019'
+    return 'unknown_VS'
+
+
+def parse_cl_version():
+    cl_out = subprocess.run('cl', stderr=subprocess.STDOUT)
+    m = re.search('ersion[e]{0,1} (\\d+)', cl_out)
+    cl_num = m.group(1)
+    return get_vs_string_from_cl(cl_num)
 
 
 def test_platform():
@@ -65,6 +91,7 @@ def get_pkg_name():
     platform = get_platform_name()
     if platform == 'windows' or platform == 'win32':
         ext = "zip"
+        platform = parse_cl_version()
     else:
         ext = "tgz"
     name = "uniqlogger-" + version + "-" + platform + "-r" + hash + "." + ext
