@@ -51,11 +51,22 @@ def get_vs_string_from_cl(cl_version):
     return 'unknown_VS'
 
 
-def parse_cl_version():
-    cl_out = subprocess.check_output('cl', stderr=subprocess.STDOUT)
+def parse_cl_version(cl_out):
     m = re.search('ersion[e]{0,1} (\\d+)', cl_out)
     cl_num = m.group(1)
     return get_vs_string_from_cl(cl_num)
+
+
+def parse_cl_version_from_process():
+    cl_out = subprocess.check_output('cl', stderr=subprocess.STDOUT)
+    return parse_cl_version(cl_out)
+
+
+def parse_cl_version_from_file(filename):
+    f = open(filename, "r")
+    cl_out = f.read()
+    f.close()
+    return parse_cl_version(cl_out)
 
 
 def test_platform():
@@ -91,7 +102,7 @@ def get_pkg_name():
     platform = get_platform_name()
     if platform == 'windows' or platform == 'win32':
         ext = "zip"
-        platform = parse_cl_version()
+        platform = parse_cl_version_from_file('vs_used.txt')
     else:
         ext = "tgz"
     name = "uniqlogger-" + version + "-" + platform + "-r" + hash + "." + ext
