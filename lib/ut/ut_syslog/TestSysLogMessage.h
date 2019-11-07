@@ -10,6 +10,7 @@ public:
     TestSysLogMessage();
 private slots:
     void test_case1();
+    void test_case2();
 };
 
 #endif // TESTSYSLOGMESSAGE_H
