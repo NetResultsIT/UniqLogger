@@ -134,7 +134,7 @@ RemoteWriter::run()
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
     if (m_Config.netProtocol != UDP) {
-    QMetaObject::invokeMethod(this, "connectToServer");
+        QMetaObject::invokeMethod(this, "connectToServer");
     } else {
         qDebug() << "NOT CONNECTING since we're using UDP";
     }

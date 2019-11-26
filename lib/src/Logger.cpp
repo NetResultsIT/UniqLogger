@@ -44,7 +44,7 @@ int
 Logger::getVerbosityLevel() const
 {
     if (m_bufferedStreamMessages.contains(QThread::currentThread())) {
-        return (int) m_bufferedStreamMessages[QThread::currentThread()].priority();
+        return static_cast<int>(m_bufferedStreamMessages[QThread::currentThread()].priority());
     }
     return m_logVerbosityDefaultLevel;
 }
@@ -174,7 +174,7 @@ Logger::dispatchMessage(const LogMessage &m)
     QMutexLocker lock(&muxDevices);
     for (int i=0; i<m_logDeviceList.count(); i++)
     {
-        if (m_logDeviceList.at(i) == 0)
+        if (m_logDeviceList.at(i) == nullptr)
             qWarning() << "NULL WRITER";
         else
             m_logDeviceList.at(i)->appendMessage(m);
@@ -386,7 +386,7 @@ Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
         break;
     }
 
-	return *this;
+    return *this;
 }
 
 
