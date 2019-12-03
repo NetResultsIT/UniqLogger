@@ -1,0 +1,4 @@
+# Ignore everything in this directory
+*
+# Except this file so the folder will not be thrown away by git checkouts
+!.gitignore
