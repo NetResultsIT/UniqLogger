@@ -4,6 +4,9 @@
 
 VERSION = 0.7.1
 
+# UNcomment line below to disallow moving binary in last_build folder on iOS (due to large size)
+#IOS_NOT_MOVE = true
+
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 !exists($$PWD/config.pri) {
@@ -445,8 +448,12 @@ unix {
     QMAKE_POST_LINK += "mkdir -p $$INCLUDE_DIR $$escape_expand(\\n\\t)"
 
     ios {
-        message("Not copying UniqLogger library in last_build and final dir because we need to perferm FAT lib creation")
-        message("You will find the built lib in the creation dir")
+        !isEmpty(IOS_NOT_MOVE) {
+            message("Not copying UniqLogger library in last_build and final dir because we need to perferm FAT lib creation")
+            message("You will find the built lib in the creation dir")
+        } else {
+            message("UNQL normal deploy behaviour enabled on iOS")
+        }
     } else {
         QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
         QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
