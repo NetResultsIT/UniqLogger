@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.7.1
+VERSION = 0.7.2
 
 # UNcomment line below to disallow moving binary in last_build folder on iOS (due to large size)
 #IOS_NOT_MOVE = true
