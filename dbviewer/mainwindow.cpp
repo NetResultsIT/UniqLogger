@@ -12,7 +12,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    m_model(NULL),
+    m_model(nullptr),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -37,7 +37,7 @@ MainWindow::~MainWindow()
 void
 MainWindow::chooseDbFile()
 {
-    QString filename = QFileDialog::getOpenFileName(0, "DbViewer");
+    QString filename = QFileDialog::getOpenFileName(nullptr, "DbViewer");
     loadFile(filename);
 }
 
