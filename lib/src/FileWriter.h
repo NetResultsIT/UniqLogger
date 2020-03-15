@@ -23,7 +23,7 @@ private:
     QString m_logfileBaseName;
     QString m_currentLogfileName;
 
-    TimeRotationPolicyType m_timeRotationPolicy;
+    UNQL::TimeRotationPolicyType m_timeRotationPolicy;
     QDateTime m_lastWrittenDateTime;
     QString lastUsedLogfilePostfix;
     QQueue<QString> m_lastUsedFilenames;
@@ -54,7 +54,7 @@ public:
     void setLogfileRotationRange(int maxfilenum);
     void stopLogging(bool erasefile=false);
     QString getBaseName() const { return m_logfileBaseName; }
-    FileRotationPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
+    UNQL::FileRotationPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
 };
 
 #endif

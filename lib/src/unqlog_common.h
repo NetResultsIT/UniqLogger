@@ -1,5 +1,5 @@
-#ifndef _UNQL_GLOBAL_
-#define _UNQL_GLOBAL_
+#ifndef UNQL_GLOBAL_INCS
+#define UNQL_GLOBAL_INCS
 
 #ifdef ENABLE_UNQL_DBG
     #define ULDBG qDebug()

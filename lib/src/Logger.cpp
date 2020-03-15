@@ -256,10 +256,18 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
         loglevel = UNQL::LOG_DBG;
     else if (chosenPriority >= UNQL::LOG_INFO)
         loglevel = UNQL::LOG_INFO;
+    else if (chosenPriority >= UNQL::LOG_NOTICE)
+        loglevel = UNQL::LOG_NOTICE;
     else if (chosenPriority >= UNQL::LOG_WARNING)
         loglevel = UNQL::LOG_WARNING;
+    else if (chosenPriority >= UNQL::LOG_ERROR)
+        loglevel = UNQL::LOG_ERROR;
     else if (chosenPriority >= UNQL::LOG_CRITICAL)
         loglevel = UNQL::LOG_CRITICAL;
+    else if (chosenPriority >= UNQL::LOG_ALARM)
+        loglevel = UNQL::LOG_ALARM;
+    else if (chosenPriority >= UNQL::LOG_EMERGENCY)
+        loglevel = UNQL::LOG_EMERGENCY;
     else if (chosenPriority >= UNQL::LOG_FATAL)
         loglevel = UNQL::LOG_FATAL;
 

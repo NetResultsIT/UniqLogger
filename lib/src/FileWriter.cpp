@@ -68,7 +68,7 @@ void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
     QDateTime now = QDateTime::currentDateTime();
 
     if (
-        m_timeRotationPolicy == HourlyRotation
+        m_timeRotationPolicy == UNQL::HourlyRotation
         && m_lastWrittenDateTime.secsTo(now) > 3600
        )
     {
@@ -77,14 +77,14 @@ void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
     }
     else if (
              (
-                 m_timeRotationPolicy == DayOfWeekRotation
-              || m_timeRotationPolicy == DayOfMonthRotation
+                 m_timeRotationPolicy == UNQL::DayOfWeekRotation
+              || m_timeRotationPolicy == UNQL::DayOfMonthRotation
              )
              && m_lastWrittenDateTime.addDays(1) >= now
             )
     {
         QString dayPartFormat = "ddd"; //By default set as day of week
-        if (m_timeRotationPolicy == DayOfMonthRotation)
+        if (m_timeRotationPolicy == UNQL::DayOfMonthRotation)
             dayPartFormat = "dd";
 
         s += "-" + now.toString(dayPartFormat);
@@ -152,7 +152,7 @@ FileWriter::calculateNextLogFileName(int i_fileOffset)
      *  compression is enabled, because it is the file we are logging on
      */
     if (i_fileOffset == 0) {
-        if (m_Config.rotationPolicy == StrictRotation) {
+        if (m_Config.rotationPolicy == UNQL::StrictRotation) {
             return m_logfileBaseName;
         }
 
@@ -382,10 +382,10 @@ FileWriter::rotateFilesIfNeeded()
     {
         switch (m_Config.rotationPolicy)
         {
-        case IncrementalNumbers:
+        case UNQL::IncrementalNumbers:
             rotateFileForIncrementalNumbers();
             break;
-        case StrictRotation:
+        case UNQL::StrictRotation:
             rotateFileForStrictRotation();
             break;
         default:
