@@ -39,8 +39,8 @@ public:
 
     static QString getCurrentTstampString();
 
-    QString loggerName() const  { return m_loggerName;  }
     QString message() const;
+    QString loggerName() const  { return m_loggerName;  }
     QString rawMessage() const  { return m_msg;         }
     QString tstamp() const      { return m_tstamp;      }
     UNQL::LogMessagePriorityType level() const

@@ -96,11 +96,13 @@ public:
         Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
         Logger* createFileLogger    ( const QString &logName, const QString &fileName,          const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createNetworkLogger ( const QString &logName, const QString &address, int port, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
+        Logger* createRSyslogLogger ( const QString &logName, const QString &i_id, quint8 i_facility, const QString &address, int port, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         Logger* createDbLogger      ( const QString &logName, const QString &aDbFileName,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK  );
         Logger* createAndroidLogger ( const QString &logName, const WriterConfig &wc=WriterConfig()                                                        );
 
         LogWriter& getDbWriter        ( const QString &aDbFileName,             const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getNetworkWriter   ( const QString &address, int port,       const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
+        LogWriter& getRSyslogWriter   ( const QString &i_id, quint8 i_facility, const QString &address, int port,  const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getFileWriter      ( const QString &fileName,                const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getConsoleWriter   ( UNQL::ConsoleColorScheme i_colorScheme, const WriterConfig &wc=WriterConfig(), int &ok=DEFAULT_OK );
         LogWriter& getDummyWriter     ();

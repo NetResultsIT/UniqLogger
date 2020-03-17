@@ -4,8 +4,8 @@
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
 
-#ifndef __INTERNAL_LOGGER_INCS__
-#define __INTERNAL_LOGGER_INCS__
+#ifndef UNQL_LOGGER_INCS
+#define UNQL_LOGGER_INCS
 
 #include <QStringList>
 #include <QObject>

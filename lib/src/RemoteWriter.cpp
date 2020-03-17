@@ -31,6 +31,19 @@ RemoteWriter::~RemoteWriter()
 
 
 /*!
+ * \brief RemoteWriter::getMessage composes and returns the next message string to be printed by this writer
+ * This is an internal method that is supposed to be called within the mutex.lock()
+ * \return the composed message string
+ */
+QString
+RemoteWriter::getMessage()
+{
+    return m_logMessageList.takeFirst().message();
+}
+
+
+
+/*!
   \brief writes the messages in the queue on the socket
   */
 void
@@ -40,19 +53,19 @@ RemoteWriter::writeToDevice()
 
     QString s;
     mutex.lock();
-    if (m_Config.netProtocol == UDP) {
-        int msgcount = m_logMessageList.count();
-        for (int i=0; i<msgcount; i++) {
-            s = m_logMessageList.takeFirst().message();
-            m_pUdpSocket->writeDatagram(s.toLatin1()+"\r\n", QHostAddress(m_serverAddress), m_serverPort);
-        }
-    }
-    if (!m_logIsPaused && m_Socket->state() == QAbstractSocket::ConnectedState)
-    {
-        int msgcount = m_logMessageList.count();
-        for (int i=0; i<msgcount; i++) {
-            s = m_logMessageList.takeFirst().message();
-            m_Socket->write(s.toLatin1()+"\r\n");
+    if (!m_logIsPaused) {
+        if (m_Config.netProtocol == UNQL::UDP) {
+            int msgcount = m_logMessageList.count();
+            for (int i=0; i<msgcount; i++) {
+                s = this->getMessage();
+                m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
+            }
+        } else if (m_Socket->state() == QAbstractSocket::ConnectedState) {
+            int msgcount = m_logMessageList.count();
+            for (int i=0; i<msgcount; i++) {
+                s = this->getMessage();
+                m_Socket->write(s.toLatin1() + "\r\n");
+            }
         }
     }
     mutex.unlock();
@@ -133,7 +146,7 @@ RemoteWriter::run()
     connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
     connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
-    if (m_Config.netProtocol != UDP) {
+    if (m_Config.netProtocol != UNQL::UDP) {
         QMetaObject::invokeMethod(this, "connectToServer");
     } else {
         qDebug() << "NOT CONNECTING since we're using UDP";

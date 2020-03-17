@@ -24,6 +24,9 @@ class RemoteWriter: public LogWriter
     QString m_serverAddress;
     quint16 m_serverPort;
 
+protected:
+    virtual QString getMessage();
+
 protected slots:
     void writeToDevice();
     void onConnectionToServer();
@@ -40,6 +43,5 @@ public:
     const QString getHost() const   { return m_serverAddress;   }
     int getPort() const             { return m_serverPort;      }
 };
-
 #endif
 

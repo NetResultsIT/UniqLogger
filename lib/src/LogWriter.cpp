@@ -27,7 +27,7 @@ WriterConfig::WriterConfig()
     , compressionLevel ( 6 )                        // Use default compression level
     , compressionAlgo  ( NrFileCompressor::NO_COMPRESSION )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
-    , netProtocol      ( UNQL::UDP )
+    , netProtocol      ( UNQL::TCP )                // Transport protocol for remote messages
 {
 /* empty ctor */
 }

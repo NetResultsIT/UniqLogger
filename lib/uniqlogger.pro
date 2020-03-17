@@ -85,6 +85,7 @@ HEADERS += \
     src/LogWriter.h \
     src/FileWriter.h \
     src/ConsoleWriter.h \
+    src/RSyslogWriter.h \
     src/SysLogMessageFactory.h \
     src/UniqLogger.h \
     src/LogMessage.h \
@@ -97,6 +98,7 @@ SOURCES += \
     src/LogWriter.cpp \
     src/FileWriter.cpp \
     src/ConsoleWriter.cpp \
+    src/RSyslogWriter.cpp \
     src/SysLogMessageFactory.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \

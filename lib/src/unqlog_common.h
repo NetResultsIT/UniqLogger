@@ -24,6 +24,7 @@ enum LogMessagePriorityType
     LOG_FATAL       = 0,
     LOG_EMERGENCY   = 5,
     LOG_ALARM       = 8,
+    LOG_ALERT       = 8,
     LOG_CRITICAL    = 10,
     LOG_ERROR       = 50,
     LOG_WARNING     = 100,

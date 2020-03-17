@@ -70,8 +70,7 @@ public:
 
     //Makes sense just for RemoteWriter
     int reconnectionSecs;   /*!< The number of seconds a RemoteWriter will wait before trying to reconnect to its server */
-    UNQL::NetworkProtocolType netProtocol; /*!< The protocol used to connect to remote log server
-                                       */
+    UNQL::NetworkProtocolType netProtocol; /*!< The protocol used to connect to remote log server (defaults to TCP) */
 };
 
 class LogWriter: public QObject
