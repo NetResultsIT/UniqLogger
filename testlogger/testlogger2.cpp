@@ -25,6 +25,8 @@ testlogger_cli::testlogger_cli(QObject *parent)
     loggerF2 = nullptr; //This will be a file logger
     loggerN1 = nullptr; //This will be a net logger to localhost:1674
     loggerN2 = nullptr; //This will be a net logger to localhost:1675
+    loggerRS1 = nullptr; //This will be rsyslogr to 192.168.1.16:5144 (TCP)
+    loggerRS2 = nullptr; //This will be a net logger to nas.netresults.network:5144 (UDP)
     loggerCr = nullptr; //This will be red console
     loggerCy = nullptr; //This will be yellow console
     loggerCg = nullptr; //This will be green console
@@ -33,7 +35,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
     dummy    = nullptr; //This will be a dummy logger;
 
     QTimer *timer = new QTimer();
-    int millis = 20;
+    int millis = 2000;
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
 
@@ -80,12 +82,16 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
 
 #if(TEST_NET)
-    WriterConfig wconf;
+    WriterConfig wconf, wconf2;
     wconf.maxMessageNum = 10;
+    wconf2.netProtocol = UNQL::UDP;
 
     qDebug() << "writing to network...";
     loggerN1 = ul->createNetworkLogger("netlog to localhost:1674", "127.0.0.1", 1674, wconf);
-    loggerN2 = ul->createNetworkLogger("netlog to localhost:1675", "127.0.0.1", 2345);
+    loggerN2 = ul->createNetworkLogger("netlog to localhost:1675", "127.0.0.1", 1675);
+
+    loggerRS1 = ul->createRSyslogLogger("syslog to synology 5144", "TCPMSG", 0, "192.168.1.16", 5144);
+    loggerRS2 = ul->createRSyslogLogger("syslog to synology 5144", "UDPMSG", 7, "nas.netresults.network", 5144, wconf2);
 
     //testThreadedNetLogger("127.0.0.1", 1674);
 #endif
@@ -230,6 +236,7 @@ testlogger_cli::timedLog()
     qDebug() << "writing to net... iteration" << i;
     loggerN2->log(UNQL::LOG_CRITICAL, ( QString("net critical") + QString::number(i) ).toLatin1().constData());
     *loggerN1 << UNQL::LOG_INFO << ( QString("net info ") + QString::number(i) ) << UNQL::EOM;
+    *loggerRS1 << UNQL::LOG_ALARM << ( QString("syslog alarm ") + QString::number(i) ) << UNQL::EOM;
 
 #if(TEST_NET_MULTISRC)
     if (i%3 == 0 && i<40) {
