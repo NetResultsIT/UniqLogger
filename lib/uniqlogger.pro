@@ -85,7 +85,6 @@ HEADERS += \
     src/LogWriter.h \
     src/FileWriter.h \
     src/ConsoleWriter.h \
-    src/RSyslogWriter.h \
     src/SysLogMessageFactory.h \
     src/UniqLogger.h \
     src/LogMessage.h \
@@ -98,7 +97,6 @@ SOURCES += \
     src/LogWriter.cpp \
     src/FileWriter.cpp \
     src/ConsoleWriter.cpp \
-    src/RSyslogWriter.cpp \
     src/SysLogMessageFactory.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
@@ -129,8 +127,8 @@ contains ( DEFINES, ENABLE_UNQL_DBG ) {
 contains ( DEFINES, 'ENABLE_UNQL_NETLOG' ) {
     message("[*] Network Logging: ENABLED")
     QT += network
-    HEADERS +=  src/RemoteWriter.h
-    SOURCES += 	src/RemoteWriter.cpp
+    HEADERS +=  src/RemoteWriter.h src/RSyslogWriter.h
+    SOURCES += 	src/RemoteWriter.cpp src/RSyslogWriter.cpp
 }
 else {
     message("[ ] Network Logging: DISABLED")
