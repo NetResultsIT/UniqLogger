@@ -7,11 +7,22 @@
 #include "RemoteWriter.h"
 
 #include <QTime>
+#include <QHostAddress>
+#include <QHostInfo>
 
 RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, const WriterConfig &wconf)
     : LogWriter(wconf)
 {
+    //ensure we're using an IP address
     m_serverAddress = aServerAddress;
+    if (QHostAddress(m_serverAddress).isNull()) {
+        QHostInfo info = QHostInfo::fromName(m_serverAddress);
+        if (!info.addresses().isEmpty()) {
+            m_serverAddress = info.addresses().first().toString();
+            // use the first IP address
+        }
+    }
+
     m_serverPort = aServerPort;
 
     m_Socket = new QTcpSocket(this);
@@ -44,7 +55,7 @@ RemoteWriter::getMessage()
 
 
 /*!
-  \brief writes the messages in the queue on the socket
+  \brief writes the messages in the queue on the socket if logger is not paused
   */
 void
 RemoteWriter::writeToDevice()
@@ -58,7 +69,7 @@ RemoteWriter::writeToDevice()
             int msgcount = m_logMessageList.count();
             for (int i=0; i<msgcount; i++) {
                 s = this->getMessage();
-                m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
+                int wb = m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
             }
         } else if (m_Socket->state() == QAbstractSocket::ConnectedState) {
             int msgcount = m_logMessageList.count();

@@ -237,6 +237,7 @@ testlogger_cli::timedLog()
     loggerN2->log(UNQL::LOG_CRITICAL, ( QString("net critical") + QString::number(i) ).toLatin1().constData());
     *loggerN1 << UNQL::LOG_INFO << ( QString("net info ") + QString::number(i) ) << UNQL::EOM;
     *loggerRS1 << UNQL::LOG_ALARM << ( QString("syslog alarm ") + QString::number(i) ) << UNQL::EOM;
+    *loggerRS2 << UNQL::LOG_ERROR << ( QString("syslog udp error ") + QString::number(i) ) << UNQL::EOM;
 
 #if(TEST_NET_MULTISRC)
     if (i%3 == 0 && i<40) {
