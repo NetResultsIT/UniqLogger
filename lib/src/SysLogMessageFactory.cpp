@@ -30,7 +30,15 @@ SysLogMessageFactory::generateHeader()
     QString h;
     const QString VERSION = "1";
     const QString SP = " ";
-    h += calculatePriority() + VERSION + SP + m_timestamp.toString(Qt::ISODateWithMs) + SP + m_hostname + SP + m_appname + SP + m_pid + SP + m_mid;
+
+    QString ts;
+#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
+    ts = m_timestamp.toString("yyyy-MM-ddTHH:mm:ss.zzz");
+#else
+    ts = m_timestamp.toString(Qt::ISODateWithMs);
+#endif
+
+    h += calculatePriority() + VERSION + SP + ts + SP + m_hostname + SP + m_appname + SP + m_pid + SP + m_mid;
     return h;
 }
 
