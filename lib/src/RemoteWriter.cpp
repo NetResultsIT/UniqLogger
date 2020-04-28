@@ -13,13 +13,18 @@
 RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, const WriterConfig &wconf)
     : LogWriter(wconf)
 {
-    //ensure we're using an IP address
+    //ensure we're using an IP address instead of an alphanumeric one
     m_serverAddress = aServerAddress;
     if (QHostAddress(m_serverAddress).isNull()) {
         QHostInfo info = QHostInfo::fromName(m_serverAddress);
         if (!info.addresses().isEmpty()) {
             m_serverAddress = info.addresses().first().toString();
             // use the first IP address
+        } else {
+            LogMessage msg("Remote Logwriter", UNQL::LOG_ERROR,
+                           "DNS failed to give an IP address for " + m_serverAddress,
+                           LogMessage::getCurrentTstampString());
+            appendMessage(msg);
         }
     }
 

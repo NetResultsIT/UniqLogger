@@ -128,7 +128,7 @@ contains ( DEFINES, 'ENABLE_UNQL_NETLOG' ) {
     message("[*] Network Logging: ENABLED")
     QT += network
     HEADERS +=  src/RemoteWriter.h src/RSyslogWriter.h
-    SOURCES += 	src/RemoteWriter.cpp src/RSyslogWriter.cpp
+    SOURCES +=  src/RemoteWriter.cpp src/RSyslogWriter.cpp
 }
 else {
     message("[ ] Network Logging: DISABLED")
