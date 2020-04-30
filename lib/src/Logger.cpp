@@ -23,6 +23,8 @@ Logger::Logger()
     m_spacingString = ' ';
     m_startEncasingChar = '[';
     m_endEncasingChar = ']';
+    m_printToQDebug = false;
+    m_printToStdOut = false;
 }
 
 Logger::~Logger()
@@ -266,7 +268,14 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
     return loglevel;
 }
 
-
+#include <iostream>
+void Logger::printAlsoToConsoleIfRequired(const QString &mess)
+{
+    if (m_printToQDebug)
+        qDebug() << mess;
+    if (m_printToStdOut)
+        std::cout << mess.toStdString() << std::endl;
+}
 
 /*!
   \brief this is the main method called to log a message on this logger module
@@ -277,6 +286,8 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
 void
 Logger::log(int priority, const char* mess, ...)
 {
+    printAlsoToConsoleIfRequired(mess);
+
     if (priority <= m_logVerbosityAcceptedLevel || priority == UNQL::LOG_FORCED)
     {
         char buffer[UNQL_ERRMSG_SIZE];
@@ -338,12 +349,15 @@ Logger::dispatchBufferedMessages()
     muxMessages.lock();
     bos = m_bufferedStreamMessages.take(QThread::currentThread());
     //qDebug() << "buffer of thread" << QThread::currentThread() << "has " << bos.count() << "messages" << bos.list();
-    if ( bos.priority() != UNQL::LOG_OFF
-         && bos.priority() <= m_logVerbosityAcceptedLevel
-         && bos.count() > 0 )
-    {
+    if (bos.count() > 0) {
         s = bos.list().join(m_spacingString);
-        this->priv_log(bos.priority(), s);
+        printAlsoToConsoleIfRequired(s);
+        if ( bos.priority() != UNQL::LOG_OFF
+             && bos.priority() <= m_logVerbosityAcceptedLevel
+        ) {
+
+            this->priv_log(bos.priority(), s);
+        }
     }
     muxMessages.unlock();
 }

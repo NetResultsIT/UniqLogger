@@ -28,7 +28,7 @@ class ULOG_LIB_API Logger: public QObject
     Q_OBJECT
 
     int m_logVerbosityAcceptedLevel, m_logVerbosityDefaultLevel;
-
+    bool m_printToStdOut, m_printToQDebug;
     QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
     QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;
@@ -48,6 +48,8 @@ class ULOG_LIB_API Logger: public QObject
     //* access ctor and addLogDevice() and removeLogDevice()
     friend class UniqLogger;
 
+    void printAlsoToConsoleIfRequired(const QString &message);
+    
 signals:
     void writersToDelete(const QList<LogWriter*>);
 
@@ -66,6 +68,8 @@ public:
     void setTimeStampFormat         ( const QString&    );
     void setSpacingString           ( const QString &   );
     void setEncasingChars           ( const QChar&, const QChar& );
+    void printToStdOut(bool enable) { m_printToStdOut = enable; }
+    void printToQDebug(bool enable) { m_printToQDebug = enable; }
 
     //GETTERS
     int getVerbosityLevel() const;
@@ -74,12 +78,15 @@ public:
     QString getModuleName() const       { return m_moduleName;      }
     QString getTStampFmtString() const  { return m_timeStampFormat; }
     QString getSpacingString() const    { return m_spacingString;   }
+    bool printToStdOut() const          { return m_printToStdOut;   }
+    bool printToQDebug() const          { return m_printToQDebug;   }
 
     //LOGGING
     void log( int, const char*, ... );
     void log( const char*, ...      );
     void flush();
     void monitor( const QVariant &data, const QString &key, const QString &desc="");
+
 
     Logger& operator<< ( const UNQL::LogMessagePriorityType& d      );
     Logger& operator<< ( const UNQL::LogStreamManipType& d          );
