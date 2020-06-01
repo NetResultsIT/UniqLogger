@@ -455,6 +455,7 @@ unix {
             message("UNQL normal deploy behaviour enabled on iOS")
             QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
             QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
+            QMAKE_POST_LINK += $(RANLIB) $$DSTDIR/libUniqLogger_iOS.a $$escape_expand(\\n\\t)
         }
     } else {
         QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"

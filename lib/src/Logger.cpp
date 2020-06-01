@@ -11,6 +11,8 @@
 #include <QDateTime>
 #include <QMutexLocker>
 
+#include <iostream>
+
 /*!
   */
 Logger::Logger()
@@ -23,6 +25,8 @@ Logger::Logger()
     m_spacingString = ' ';
     m_startEncasingChar = '[';
     m_endEncasingChar = ']';
+    m_printToQDebug = false;
+    m_printToStdOut = false;
 }
 
 Logger::~Logger()
@@ -267,6 +271,38 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
 }
 
 
+/*!
+ * \brief Logger::printToStdOut will enable or disable the printout of logged message to stdout
+ * \param enable the new status of the std::cout printout
+ * \note the printing will \em not take log priority into account so \em every message will be printed to std::cout
+ * The purpose of this function is to cleanup code during debugging and allow programmers see all the messages that might go into log files
+ * directly on console
+ */
+void Logger::printToStdOut(bool enable)
+{ m_printToStdOut = enable; }
+
+
+/*!
+ * \brief Logger::printToQDebug
+ * \param enablethe new status of the qDebug() printout
+ * \note the printing will \em not take log priority into account so \em every message will be printed with qDebug()
+ * The purpose of this function is to cleanup code during debugging and allow programmers see all the messages that might go into log files
+ * directly on console
+ */
+void Logger::printToQDebug(bool enable)
+{ m_printToQDebug = enable; }
+
+/*!
+ * \brief Logger::printAlsoToConsoleIfRequired will print out to std::cout and/or with qDebug() (that is std::cerr but with different timing due to buffering)
+ * \param mess the QString containing the message to print
+ */
+void Logger::printAlsoToConsoleIfRequired(const QString &mess)
+{
+    if (m_printToQDebug)
+        qDebug() << mess;
+    if (m_printToStdOut)
+        std::cout << mess.toStdString() << std::endl;
+}
 
 /*!
   \brief this is the main method called to log a message on this logger module
@@ -277,6 +313,8 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
 void
 Logger::log(int priority, const char* mess, ...)
 {
+    printAlsoToConsoleIfRequired(mess);
+
     if (priority <= m_logVerbosityAcceptedLevel || priority == UNQL::LOG_FORCED)
     {
         char buffer[UNQL_ERRMSG_SIZE];
@@ -338,12 +376,15 @@ Logger::dispatchBufferedMessages()
     muxMessages.lock();
     bos = m_bufferedStreamMessages.take(QThread::currentThread());
     //qDebug() << "buffer of thread" << QThread::currentThread() << "has " << bos.count() << "messages" << bos.list();
-    if ( bos.priority() != UNQL::LOG_OFF
-         && bos.priority() <= m_logVerbosityAcceptedLevel
-         && bos.count() > 0 )
-    {
+    if (bos.count() > 0) {
         s = bos.list().join(m_spacingString);
-        this->priv_log(bos.priority(), s);
+        printAlsoToConsoleIfRequired(s);
+        if ( bos.priority() != UNQL::LOG_OFF
+             && bos.priority() <= m_logVerbosityAcceptedLevel
+        ) {
+
+            this->priv_log(bos.priority(), s);
+        }
     }
     muxMessages.unlock();
 }

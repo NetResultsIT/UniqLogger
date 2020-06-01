@@ -213,8 +213,13 @@ testlogger_cli::timedLog()
 
 #if(TEST_FILE_ROTATION)
     qDebug() << "written " << i * 2 << "KB to file...";
+    qDebug() << "is loggerF1 printing to qdebug()? " << loggerF1->printToQDebug();
+    loggerF1->printToQDebug(false);
+    qDebug() << "is loggerF2 printing to qdebug()? " << loggerF2->printToStdOut();
+    loggerF2->printToStdOut(true);
     loggerF1->log(UNQL::LOG_INFO, ( QString("file text iteration ") + QString::number(i) + " " + QString().fill('a', 1500) ).toLatin1().constData() );
     loggerF2->log(UNQL::LOG_INFO, ( QString("file2 text iteration") + QString::number(i) + " " + QString().fill('b', 500) ).toLatin1().constData() );
+    *loggerF2 << UNQL::LOG_WARNING << "Do you see me?" << UNQL::EOM;
 #endif
 
 
