@@ -11,6 +11,8 @@
 #include <QDateTime>
 #include <QMutexLocker>
 
+#include <iostream>
+
 /*!
   */
 Logger::Logger()
@@ -268,7 +270,32 @@ Logger::selectCorrectLogLevel(int chosenPriority) const
     return loglevel;
 }
 
-#include <iostream>
+
+/*!
+ * \brief Logger::printToStdOut will enable or disable the printout of logged message to stdout
+ * \param enable the new status of the std::cout printout
+ * \note the printing will \em not take log priority into account so \em every message will be printed to std::cout
+ * The purpose of this function is to cleanup code during debugging and allow programmers see all the messages that might go into log files
+ * directly on console
+ */
+void Logger::printToStdOut(bool enable)
+{ m_printToStdOut = enable; }
+
+
+/*!
+ * \brief Logger::printToQDebug
+ * \param enablethe new status of the qDebug() printout
+ * \note the printing will \em not take log priority into account so \em every message will be printed with qDebug()
+ * The purpose of this function is to cleanup code during debugging and allow programmers see all the messages that might go into log files
+ * directly on console
+ */
+void Logger::printToQDebug(bool enable)
+{ m_printToQDebug = enable; }
+
+/*!
+ * \brief Logger::printAlsoToConsoleIfRequired will print out to std::cout and/or with qDebug() (that is std::cerr but with different timing due to buffering)
+ * \param mess the QString containing the message to print
+ */
 void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 {
     if (m_printToQDebug)

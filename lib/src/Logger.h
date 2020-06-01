@@ -68,8 +68,8 @@ public:
     void setTimeStampFormat         ( const QString&    );
     void setSpacingString           ( const QString &   );
     void setEncasingChars           ( const QChar&, const QChar& );
-    void printToStdOut(bool enable) { m_printToStdOut = enable; }
-    void printToQDebug(bool enable) { m_printToQDebug = enable; }
+    void printToStdOut(bool enable);
+    void printToQDebug(bool enable);
 
     //GETTERS
     int getVerbosityLevel() const;
