@@ -48,8 +48,8 @@ public slots:
 class testlogger_cli : public QObject
 {
     Q_OBJECT
-    Logger  *loggerF1, *loggerF2, *loggerN2, *loggerN1, *loggerD;
-    Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm, *dummy;
+    Logger  *loggerF1, *loggerF2, *loggerN2, *loggerN1, *loggerRS1, *loggerRS2;
+    Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm, *dummy, *loggerD;
 
 public:
     testlogger_cli(QObject *parent = nullptr);

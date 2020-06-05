@@ -18,7 +18,7 @@ class TestloggerZip : public QObject
 
     void writeLog(Logger *io_loggerPtr, int i_MBToWrite);
 
-    void test_SingleFile(const QString &i_fileName, FileRotationPolicyType i_rotationPolicy, int i_compressionLevel);
+    void test_SingleFile(const QString &i_fileName, UNQL::FileRotationPolicyType i_rotationPolicy, int i_compressionLevel);
     void test_compress3FilesIncrementalRotation();
     void test_noCompressSingleFileStrictRotation();
     void test_noCompressSingleFileIncrementalRotation();

@@ -15,6 +15,7 @@
 
 #include "LogMessage.h"
 
+namespace UNQL {
 
 enum FileRotationPolicyType {
     StrictRotation,     // Rotate over single file
@@ -28,6 +29,14 @@ enum TimeRotationPolicyType {
     DayOfWeekRotation,  /*!< Rotates over day of the week with suffixes like: Mon, Tue, etc. */
     DayOfMonthRotation  /*!< Rotates over day of the month with suffixes like: d01, d12, d23, etc. */
 };
+
+enum NetworkProtocolType {
+    TCP,
+    UDP,
+    TLS
+};
+
+}
 
 class ULOG_LIB_API WriterConfig
 {
@@ -46,7 +55,7 @@ public:
     //Makes sense just for FileWriter
     int maxFileSize;        /*!< The maximum file size (in MB) of a file written by the FileWriter */
     int maxFileNum;         /*!< The number of files that FileWriter should use during rotation, 0 disables it */
-    FileRotationPolicyType rotationPolicy;     /// The rotation policy enum (StrictRotation or IncrementalNumbers) */
+    UNQL::FileRotationPolicyType rotationPolicy;     /// The rotation policy enum (StrictRotation or IncrementalNumbers) */
     /* file log compression specific vars */
     int compressionLevel;   /*!< The compression level used to compress the rotated log files ranges from 0 to 9
                                 0: simple storage
@@ -61,6 +70,7 @@ public:
 
     //Makes sense just for RemoteWriter
     int reconnectionSecs;   /*!< The number of seconds a RemoteWriter will wait before trying to reconnect to its server */
+    UNQL::NetworkProtocolType netProtocol; /*!< The protocol used to connect to remote log server (defaults to TCP) */
 };
 
 class LogWriter: public QObject

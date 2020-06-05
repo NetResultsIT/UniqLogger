@@ -44,7 +44,7 @@ void TestloggerZip::writeLog(Logger* io_loggerPtr, int i_MBToWrite)
 }
 
 
-void TestloggerZip::test_SingleFile(const QString& i_fileName, FileRotationPolicyType i_rotationPolicy, int i_compressionLevel)
+void TestloggerZip::test_SingleFile(const QString& i_fileName, UNQL::FileRotationPolicyType i_rotationPolicy, int i_compressionLevel)
 {
     WriterConfig wconf;
     wconf.maxFileNum  = 1;
@@ -61,7 +61,7 @@ void TestloggerZip::test_SingleFile(const QString& i_fileName, FileRotationPolic
     flogPtr->deleteLater();
 
     QString fileNameToCheck = i_fileName;
-    if ( i_rotationPolicy == IncrementalNumbers )
+    if ( i_rotationPolicy == UNQL::IncrementalNumbers )
     {
         QString filePattern("%1-%2");
         fileNameToCheck = filePattern.arg(i_fileName).arg(4);
@@ -86,7 +86,7 @@ void TestloggerZip::test_3FilesStrictRotation(const QString& i_fileName, int i_c
     wconf.maxFileNum  = fileCount;
     wconf.maxFileSize = 1;  /* 1MB */
     wconf.compressionLevel = i_compressionLevel;
-    wconf.rotationPolicy = StrictRotation;
+    wconf.rotationPolicy = UNQL::StrictRotation;
     Logger* flogPtr = m_unqloggerPtr->createFileLogger("ZIPTEST", i_fileName, wconf);
 
     qDebug() << "starting uniqlogger zip test..." << Q_FUNC_INFO;
@@ -132,7 +132,7 @@ void TestloggerZip::test_3FilesIncrementalRotation(const QString& i_fileName, in
     wconf.maxFileNum  = fileCount;
     wconf.maxFileSize = 1;  /* 1MB */
     wconf.compressionLevel = i_compressionLevel;
-    wconf.rotationPolicy = IncrementalNumbers;
+    wconf.rotationPolicy = UNQL::IncrementalNumbers;
     Logger* flogPtr = m_unqloggerPtr->createFileLogger("ZIPTEST", i_fileName, wconf);
 
     qDebug() << "starting uniqlogger zip test..." << Q_FUNC_INFO;
@@ -174,22 +174,22 @@ void TestloggerZip::test_3FilesIncrementalRotation(const QString& i_fileName, in
 
 void TestloggerZip::test_compressSingleFileStrictRotation()
 {
-    test_SingleFile("ziptest_single_file_strictRotation", StrictRotation, 6);
+    test_SingleFile("ziptest_single_file_strictRotation", UNQL::StrictRotation, 6);
 }
 
 void TestloggerZip::test_compressSingleFileIncrementalRotation()
 {
-    test_SingleFile("ziptest_single_file_IncrementalRotation", IncrementalNumbers, 6);
+    test_SingleFile("ziptest_single_file_IncrementalRotation", UNQL::IncrementalNumbers, 6);
 }
 
 void TestloggerZip::test_noCompressSingleFileStrictRotation()
 {
-    test_SingleFile("ziptest_single_file_noCompress_strictRotation", StrictRotation, 0);
+    test_SingleFile("ziptest_single_file_noCompress_strictRotation", UNQL::StrictRotation, 0);
 }
 
 void TestloggerZip::test_noCompressSingleFileIncrementalRotation()
 {
-    test_SingleFile("ziptest_single_file_noCompress_IncrementalRotation", IncrementalNumbers, 0);
+    test_SingleFile("ziptest_single_file_noCompress_IncrementalRotation", UNQL::IncrementalNumbers, 0);
 }
 
 void TestloggerZip::test_compress3FilesStrictRotation()

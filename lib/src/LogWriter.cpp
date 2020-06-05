@@ -23,10 +23,11 @@ WriterConfig::WriterConfig()
     , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
     , maxFileSize      ( 0 )                        // unlimited MB size of logfile
     , maxFileNum       ( 1 )                        // log on just one file by default
-    , rotationPolicy   ( StrictRotation )           // We use the strict rotation policy by default
+    , rotationPolicy   ( UNQL::StrictRotation )     // We use the strict rotation policy by default
     , compressionLevel ( 6 )                        // Use default compression level
     , compressionAlgo  ( NrFileCompressor::NO_COMPRESSION )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
+    , netProtocol      ( UNQL::TCP )                // Transport protocol for remote messages
 {
 /* empty ctor */
 }
@@ -65,6 +66,7 @@ WriterConfig::toString() const
        << "\nRotationPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
        << "\nNETWORK PARAMS"
        << "\nReconnection seconds: " << QString::number(reconnectionSecs)
+       << "\nTransport Protocol: " << QString::number(netProtocol)
        << "\n----------";
 
     return s = sl.join("");
@@ -81,7 +83,8 @@ WriterConfig::operator ==(const WriterConfig& rhs) const
          maxFileSize        == rhs.maxFileSize      &&
          rotationPolicy     == rhs.rotationPolicy   &&
          compressionLevel   == rhs.compressionLevel &&
-         reconnectionSecs   == rhs.reconnectionSecs
+         reconnectionSecs   == rhs.reconnectionSecs &&
+         netProtocol        == rhs.netProtocol
         )
     {
         return true;

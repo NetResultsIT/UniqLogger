@@ -1,5 +1,5 @@
-#ifndef _UNQL_GLOBAL_
-#define _UNQL_GLOBAL_
+#ifndef UNQL_GLOBAL_INCS
+#define UNQL_GLOBAL_INCS
 
 #ifdef ENABLE_UNQL_DBG
     #define ULDBG qDebug()
@@ -22,8 +22,13 @@ namespace UNQL {
 enum LogMessagePriorityType
 {
     LOG_FATAL       = 0,
+    LOG_EMERGENCY   = 5,
+    LOG_ALARM       = 8,
+    LOG_ALERT       = 8,
     LOG_CRITICAL    = 10,
+    LOG_ERROR       = 50,
     LOG_WARNING     = 100,
+    LOG_NOTICE      = 500,
     LOG_INFO        = 1000,
     LOG_DBG         = 10000,
     LOG_DBG_ALL     = 100000,

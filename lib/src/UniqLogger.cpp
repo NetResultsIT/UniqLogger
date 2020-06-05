@@ -8,6 +8,7 @@
 
 #ifdef ENABLE_UNQL_NETLOG
  #include "RemoteWriter.h"
+ #include "RSyslogWriter.h"
 #endif
 
 #ifdef ENABLE_UNQL_DBLOG
@@ -45,14 +46,18 @@ UniqLogger::UniqLogger(int nthreads)
 
     m_pTPool = new NRThreadPool(nthreads, "UNQL_WPool", this);
 
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,   "FATAL");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL,"CRITICAL");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_WARNING, "WARNING");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,    "INFO");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,     "DEBUG");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL, "FULL DEBUG");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR, "MONITOR");
-    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FORCED,  "FORCED");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,    "FATAL");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_EMERGENCY,"EMERGENCY");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_ALARM,    "ALARM");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_CRITICAL, "CRITICAL");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_ERROR,    "ERROR");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_WARNING,  "WARNING");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_NOTICE,   "NOTICE");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,     "INFO");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,      "DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL,  "FULL DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR,  "MONITOR");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FORCED,   "FORCED");
 
     ULDBG << "Being here with app: " << QCoreApplication::instance();
 }
@@ -220,7 +225,7 @@ UniqLogger::createLogger(const QString &logname)
 
         bool b = connect(l, SIGNAL(writersToDelete(const QList<LogWriter*>)), this, SLOT(writerFinished(const QList<LogWriter*>)), Qt::DirectConnection);
         Q_ASSERT(b);
-        Q_UNUSED(b);
+        Q_UNUSED(b)
     }
     return l;
 }
@@ -234,7 +239,7 @@ UniqLogger::createLogger(const QString &logname)
  * \return the pointer to the logger class created or a null pointer if something went wrong
  */
 Logger*
-UniqLogger::createDummyLogger( const QString& logname, const WriterConfig &)
+UniqLogger::createDummyLogger(const QString& logname, const WriterConfig &)
 {
     Logger *l = createLogger(logname);
     LogWriter &dw = getDummyWriter();
@@ -264,6 +269,8 @@ Logger *UniqLogger::createAndroidLogger(const QString& logname, const WriterConf
   \brief creates a logger and automatically connects a file writer with default values
   \param i_logname the module name for this logger
   \param i_filename the filename where this logger will write messages by default
+  \param i_wconf the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 Logger*
@@ -295,6 +302,8 @@ UniqLogger::createFileLogger(const QString & i_logname, const QString &i_filenam
   \param i_logname the module name for this logger
   \param i_ha the address where this logger will try to connect to write messages
   \param i_port the server port where this logger will try to connect to write messages
+  \param i_wconf the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return a pointer to the logger class created
   */
 Logger*
@@ -302,6 +311,35 @@ UniqLogger::createNetworkLogger(const QString & i_logname, const QString &i_ha, 
 {
     Logger *l = createLogger(i_logname);
     LogWriter &rw = getNetworkWriter(i_ha, i_port, i_wconf, ok);
+    if (ok != UNQL::UnqlErrorNoError) {
+        //FIXME - handle all the possible other errors
+        WriterConfig wc2 = rw.getWriterConfig();
+        QString msg = QString("Logger %3 tried to open this writer with this configuration:\n%1\nbut it had been previously opened with this one:\n%2").arg(i_wconf.toString()).arg(wc2.toString()).arg(i_logname);
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
+        rw.appendMessage(lm);
+    }
+    this->addWriterToLogger(l, rw);
+    return l;
+}
+
+
+
+/*!
+  \brief creates a logger and automatically connects a rsyslog writer with default values
+  \param i_logname the module name for this logger
+  \param i_id the message ID string reported by this logger as specified in RFC 5424
+  \param i_facility the facility (0-23) reported by this logger as specified in RFC 5424
+  \param i_ha the address where this logger will try to connect to write messages
+  \param i_port the server port where this logger will try to connect to write messages
+  \param i_wconf the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
+  \return a pointer to the logger class created
+  */
+Logger*
+UniqLogger::createRSyslogLogger(const QString & i_logname, const QString &i_id, quint8 i_facility, const QString &i_ha, int i_port, const WriterConfig &i_wconf, int &ok)
+{
+    Logger *l = createLogger(i_logname);
+    LogWriter &rw = getRSyslogWriter(i_id, i_facility, i_ha, i_port, i_wconf, ok);
     if (ok != UNQL::UnqlErrorNoError) {
         //FIXME - handle all the possible other errors
         WriterConfig wc2 = rw.getWriterConfig();
@@ -320,6 +358,8 @@ UniqLogger::createNetworkLogger(const QString & i_logname, const QString &i_ha, 
   \brief creates a logger and automatically connects a DB writer with default values
   \param _logname the module name for this logger
   \param aDbFileName the name of the file that continas DB data
+  \param wc the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return a reference to the logger class created
   */
 Logger*
@@ -338,6 +378,7 @@ UniqLogger::createDbLogger(const QString & i_logname, const QString &aDbFileName
   \brief creates a logger and automatically connects a console writer with default values
   \param logName the module name for this logger
   \param scheme the color scheme in which this logger will going to write messages with
+  \param wc the writerConfig class containing confguration options for this writer
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 Logger*
@@ -355,7 +396,8 @@ UniqLogger::createConsoleLogger(const QString &logName, UNQL::ConsoleColorScheme
   \brief returns a file writer that can be added to other loggers
         If it fails it throw an exception
   \param i_filename the filename where this logger will write messages by default
-  \param i_rotationPolicy the file rotation policy (by default StrictRotation is used)
+  \param wc the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return the reference to the logger class created
   */
 LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConfig &wc, int &ok)
@@ -404,6 +446,8 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
 /*!
   \brief returns a file writer that can be added to other loggers
   \param _filename the filename where this logger will write messages by default
+  \param wc the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return the pointer to the logger class created or a null pointer if something went wrong
   */
 LogWriter&
@@ -448,12 +492,14 @@ UniqLogger::getDbWriter(const QString &_filename, const WriterConfig &wc, int &o
 
 #ifdef ENABLE_UNQL_NETLOG
 /*!
-  \brief creates a logger and automatically connects a network writer with default values
-  \param _ha the address where this logger will try to connect to write messages
-  \param _port the server port where this logger will try to connect to write messages
+  \brief returns a network writer connected to the specified address and port
+  \param i_ha the address where this logger will try to connect to write messages
+  \param i_port the server port where this logger will try to connect to write messages
+  \param wc the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return a reference to the logwriter class created
   */
-LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const WriterConfig &wc, int &ok)
+LogWriter &UniqLogger::getNetworkWriter(const QString & i_ha, int i_port, const WriterConfig &wc, int &ok)
 {
     RemoteWriter *rw = nullptr;
     LogWriter *lw = nullptr;
@@ -463,7 +509,7 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         rw = dynamic_cast<RemoteWriter*>(lw);
-        if (rw && rw->getHost() == _ha && rw->getPort() == _port) {
+        if (rw && rw->getHost() == i_ha && rw->getPort() == i_port) {
             ULDBG << "Existing Networkwriter found! ------------------->><<-------";
             if ( !checkMatchingConfigForWriter(*rw, wc) )
             {
@@ -476,7 +522,52 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
     }
     muxDeviceCounter.unlock();
 
-    rw = new RemoteWriter(_ha, _port, wc);
+    rw = new RemoteWriter(i_ha, static_cast<quint16>(i_port), wc);
+    if (rw)
+    {
+        registerWriter(rw);
+        m_pTPool->runObject(rw);
+        rw->run();
+    }
+    return *rw;
+}
+
+
+
+/*!
+  \brief returns a network writer connected to the specified address and port
+  \param i_id the message ID string reported by this logger as specified in RFC 5424
+  \param i_facility the facility (0-23) reported by this logger as specified in RFC 5424
+  \param i_ha the address where this logger will try to connect to write messages
+  \param i_port the server port where this logger will try to connect to write messages
+  \param wc the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
+  \return a reference to the logwriter class created
+  */
+LogWriter &UniqLogger::getRSyslogWriter(const QString &i_id, quint8 i_facility, const QString & i_ha, int i_port, const WriterConfig &wc, int &ok)
+{
+    RSyslogWriter *rw = nullptr;
+    LogWriter *lw = nullptr;
+
+    muxDeviceCounter.lock();
+    LogWriterUsageMapType::Iterator it;
+    for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
+        lw = it.key();
+        rw = dynamic_cast<RSyslogWriter*>(lw);
+        if (rw && rw->getHost() == i_ha && rw->getPort() == i_port) {
+            ULDBG << "Existing RSyslog found! ------------------->><<-------";
+            if ( !checkMatchingConfigForWriter(*rw, wc) )
+            {
+                ULDBG << "WriterConfigs are incompatible for remote writers";
+                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+            }
+            muxDeviceCounter.unlock();
+            return *rw;
+        }
+    }
+    muxDeviceCounter.unlock();
+
+    rw = new RSyslogWriter(i_id, i_facility, i_ha, static_cast<quint16>(i_port), wc);
     if (rw)
     {
         registerWriter(rw);
@@ -491,10 +582,10 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & _ha, int _port, const Wr
 
 /*!
   \brief creates a ConsoleWriter with the specified color scheme.
-
-  If a console writer with the same color scheme and writer config exists it will be reused.
-
+  \note If a console writer with the same color scheme and writer config exists it will be reused.
   \param i_colorScheme The color scheme which this logger will use to write messages.
+  \param wc the writerConfig class containing confguration options for this writer
+  \param ok an output param containing the status code of this operation
   \return A reference to the LogWriter class.
   */
 LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorScheme i_colorScheme, const WriterConfig &wc, int &ok)

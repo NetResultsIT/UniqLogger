@@ -16,7 +16,7 @@
 class LogMessageFormatting
 {
     QString m_spacingString;
-    QPair<QChar,QChar> m_encasingChars;
+    QPair<QChar, QChar> m_encasingChars;
 public:
     LogMessageFormatting(const QString &aSpace=" ", const QPair<QChar,QChar> aEncasingCharPair = qMakePair(QChar('['),QChar(']'))) :
         m_spacingString(aSpace),
@@ -39,8 +39,8 @@ public:
 
     static QString getCurrentTstampString();
 
-    QString loggerName() const  { return m_loggerName;  }
     QString message() const;
+    QString loggerName() const  { return m_loggerName;  }
     QString rawMessage() const  { return m_msg;         }
     QString tstamp() const      { return m_tstamp;      }
     UNQL::LogMessagePriorityType level() const

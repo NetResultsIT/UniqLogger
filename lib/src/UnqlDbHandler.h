@@ -1,6 +1,11 @@
+/********************************************************************************
+ *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Author(s):                                                                 *
+ *              Francesco Lamonica      <f.lamonica@netresults.it>              *
+ ********************************************************************************/
+
 #ifndef UNQLDBHANDLER_H
 #define UNQLDBHANDLER_H
-
 
 #include <nrdbhandler.h>
 

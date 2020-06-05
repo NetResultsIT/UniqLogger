@@ -5,6 +5,7 @@
  ********************************************************************************/
 
 #include "LogMessage.h"
+
 #include <QDateTime>
 
 QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
@@ -17,6 +18,7 @@ LogMessage::LogMessage(const QString &aLoggerName, UNQL::LogMessagePriorityType 
       m_tstamp(aTstamp)
 {
 }
+
 
 QString
 LogMessage::message() const
