@@ -87,14 +87,15 @@ public:
     void flush();
     void monitor( const QVariant &data, const QString &key, const QString &desc="");
 
-
     Logger& operator<< ( const UNQL::LogMessagePriorityType& d      );
     Logger& operator<< ( const UNQL::LogStreamManipType& d          );
-    Logger& operator<< ( double d                       );
     Logger& operator<< ( const QStringList& sl          );
     Logger& operator<< ( const QList<int>& vl           );
     Logger& operator<< ( const QMap<int, QList<int> >&  );
     Logger& operator<< ( const QVariant& v              );
+
+    template<typename T>
+    Logger& operator<<( std::enable_if< std::is_arithmetic<T>::value> x);
 };
 
 #endif

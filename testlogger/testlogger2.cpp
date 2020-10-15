@@ -4,10 +4,10 @@
 #include <QTimer>
 #include <QDateTime>
 
-#define TEST_FILE_ROTATION 0
+#define TEST_FILE_ROTATION 1
 #define TEST_CONSOLE_COLOR 0
 #define TEST_FORMATTING 0
-#define TEST_NET 1
+#define TEST_NET 0
 #define TEST_NET_MULTISRC 0
 #define TEST_DB 0
 #define TEST_MONITOR 0
@@ -218,6 +218,17 @@ testlogger_cli::timedLog()
 
 
 #if(TEST_FILE_ROTATION)
+    static int small = 100;
+    static long long big = 1000000;
+    static quint64 bigq = 1E7;
+    double dnum = big * 3.1459163 *1E6;
+    loggerF1->printToQDebug(true);
+    *loggerF1 << "Writing a small number: " << small++ << UNQL::EOM;
+    *loggerF1 << "Writing a big number:" << big++ << UNQL::EOM;
+    *loggerF1 << "Writing a qbig number:" << bigq++ << UNQL::EOM;
+    *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
+
+
     qDebug() << "written " << i * 2 << "KB to file...";
     qDebug() << "is loggerF1 printing to qdebug()? " << loggerF1->printToQDebug();
     loggerF1->printToQDebug(false);

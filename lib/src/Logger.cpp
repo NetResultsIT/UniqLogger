@@ -398,7 +398,6 @@ Logger::dispatchBufferedMessages()
 }
 
 
-
 Logger&
 Logger::operator<< ( const UNQL::LogMessagePriorityType& lmt )
 {
@@ -491,7 +490,7 @@ Logger::operator<< ( const QMap<int, QList<int> >& amap )
     return *this;
 }
 
-
+/* Previous implementation is still here commented since there was bit of a hack for android that need to be tested
 Logger&
 Logger::operator<< ( double d )
 {
@@ -512,5 +511,12 @@ Logger::operator<< ( double d )
 #endif
     return *this;
 }
+*/
 
-
+template<typename T>
+Logger& Logger::operator<<( std::enable_if< std::is_arithmetic<T>::value> x) {
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(x));
+    muxMessages.unlock();
+    return *this;
+};
