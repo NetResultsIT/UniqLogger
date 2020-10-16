@@ -512,3 +512,11 @@ Logger::operator<< ( double d )
 }
 */
 
+Logger&
+Logger::operator<< ( unsigned long d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}

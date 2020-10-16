@@ -93,12 +93,15 @@ public:
     Logger& operator<< ( const QList<int>& vl           );
     Logger& operator<< ( const QMap<int, QList<int> >&  );
     Logger& operator<< ( const QVariant& v              );
+    Logger& operator<< ( unsigned long                  );
 
+    /* VS2010 does not allow a default template argument for non-template classes
     // Use SFINAE with second default template param to validate numeric types
     template <typename T, typename std::enable_if< std::is_arithmetic<T>::value, int>::type = 0>
     Logger& operator<<(T x){
         return (*this << QString::number(x));
     };
+    */
 
 };
 
