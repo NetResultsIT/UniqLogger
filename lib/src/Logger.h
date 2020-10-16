@@ -94,8 +94,12 @@ public:
     Logger& operator<< ( const QMap<int, QList<int> >&  );
     Logger& operator<< ( const QVariant& v              );
 
-    template<typename T>
-    Logger& operator<<( std::enable_if< std::is_arithmetic<T>::value> x);
+    // Use SFINAE with second default template param to validate numeric types
+    template <typename T, typename std::enable_if< std::is_arithmetic<T>::value, int>::type = 0>
+    Logger& operator<<(T x){
+        return (*this << QString::number(x));
+    };
+
 };
 
 #endif

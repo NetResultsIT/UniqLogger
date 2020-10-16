@@ -449,7 +449,6 @@ Logger::operator<< ( const QVariant& v )
 }
 
 
-
 Logger&
 Logger::operator<< ( const QStringList& sl )
 {
@@ -513,10 +512,3 @@ Logger::operator<< ( double d )
 }
 */
 
-template<typename T>
-Logger& Logger::operator<<( std::enable_if< std::is_arithmetic<T>::value> x) {
-    muxMessages.lock();
-        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(x));
-    muxMessages.unlock();
-    return *this;
-};
