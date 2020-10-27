@@ -222,11 +222,22 @@ testlogger_cli::timedLog()
     static long long big = 1000000;
     static quint64 bigq = 1E7;
     double dnum = big * 3.1459163 *1E6;
+    static unsigned long int ulnum = 12345678890;
+    static bool bb = true;
+    static QList<int> intlist;
+
+    bb = !bb;
+    intlist.append(small);
+
     loggerF1->printToQDebug(true);
+
     *loggerF1 << "Writing a small number: " << small++ << UNQL::EOM;
     *loggerF1 << "Writing a big number:" << big++ << UNQL::EOM;
     *loggerF1 << "Writing a qbig number:" << bigq++ << UNQL::EOM;
+    *loggerF1 << "Writing a ulbig number:" << ulnum++ << UNQL::EOM;
     *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
+    *loggerF1 << "Writing a boolean:" << bb << UNQL::EOM;
+    *loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
 
 
     qDebug() << "written " << i * 2 << "KB to file...";
