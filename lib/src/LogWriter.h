@@ -17,17 +17,16 @@
 
 namespace UNQL {
 
-enum FileRotationPolicyType {
+enum FileRotationNamingPolicyType {
     StrictRotation,     // Rotate over single file
-    IncrementalNumbers, // New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate)
+    HigherNumbersOlder, // New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate)
     HigherNumbersNewer  // New logs are inserted in files with a higher number, no renaming / moving of files
 };
 
-enum TimeRotationPolicyType {
+enum FileRotationTimePolicyType {
     NoTimeRotation,     /*!< Do not perform any time-based rotation */
-    HourlyRotation,     /*!< Rotates over day of the month with suffixes like: h01, h12, h23, etc.*/
-    DayOfWeekRotation,  /*!< Rotates over day of the week with suffixes like: Mon, Tue, etc. */
-    DayOfMonthRotation  /*!< Rotates over day of the month with suffixes like: d01, d12, d23, etc. */
+    HourlyRotation,     /*!< Rotates to a new log file every hour with suffixes like: h01, h12, h23, etc.*/
+    DailyRotation,      /*!< Rotates to a new log file every day with suffixes like: Mon, Tue, etc. */
 };
 
 enum NetworkProtocolType {
@@ -53,9 +52,10 @@ public:
     bool writeIdleMark;     /*!< Whether the LogWriter should add a MARK string to show it's alive in case nothing is being logged */
 
     //Makes sense just for FileWriter
-    int maxFileSize;        /*!< The maximum file size (in MB) of a file written by the FileWriter */
+    int maxFileSize;        /*!< The maximum file size (in MB) of a single file written by the FileWriter */
     int maxFileNum;         /*!< The number of files that FileWriter should use during rotation, 0 disables it */
-    UNQL::FileRotationPolicyType rotationPolicy;     /// The rotation policy enum (StrictRotation or IncrementalNumbers) */
+    UNQL::FileRotationNamingPolicyType rotationPolicy;   /*!< The naming convention to distinguish log files */
+    UNQL::FileRotationTimePolicyType timeRotationPolicy; /*!< Indicate if files should be rotated on a time policy i.e.: hourly, daily */
     /* file log compression specific vars */
     int compressionLevel;   /*!< The compression level used to compress the rotated log files ranges from 0 to 9
                                 0: simple storage

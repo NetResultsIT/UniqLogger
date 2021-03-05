@@ -23,24 +23,23 @@ private:
     QString m_logfileBaseName;
     QString m_currentLogfileName;
 
-    UNQL::TimeRotationPolicyType m_timeRotationPolicy;
     QDateTime m_lastWrittenDateTime;
     QString lastUsedLogfilePostfix;
     QQueue<QString> m_lastUsedFilenames;
 
-
-    //QString calculateCurrentFileName(int num=0);
+protected:
     void calculateLogFilePattern(const QString &filename, QString &path, QString &pattern);
     QString calculateNextLogFileName(int offset=0);
     void changeOutputFile(const QString&);
     void writeToDevice();
     void rotateFilesIfNeeded();
-    void addNumberAndTimeToFilename(QString &sl, int filenum);
+    bool addNumberAndTimeToFilename(QString &sl, int filenum);
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
     void removeOldestFile();
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();
+    void rotateFileForTimePolicy();
 
     void renameOldLogFiles();
     bool isCompressionActive() const;
@@ -54,7 +53,7 @@ public:
     void setLogfileRotationRange(int maxfilenum);
     void stopLogging(bool erasefile=false);
     QString getBaseName() const { return m_logfileBaseName; }
-    UNQL::FileRotationPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
+    UNQL::FileRotationNamingPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
 };
 
 #endif

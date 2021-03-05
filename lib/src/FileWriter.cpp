@@ -60,36 +60,38 @@ FileWriter::setLogfileRotationRange(int maxfilenum)
  * \param sl
  * \param filenum
  */
-void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
+bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
 {
+    bool timePassed = false;
     s += "-";
     s += QString::number(filenum);
 
     QDateTime now = QDateTime::currentDateTime();
 
     if (
-        m_timeRotationPolicy == UNQL::HourlyRotation
+        m_Config.timeRotationPolicy == UNQL::HourlyRotation
         && m_lastWrittenDateTime.secsTo(now) > 3600
        )
     {
         s += "-h" + now.toString("HH");
         m_lastWrittenDateTime = now;
+        timePassed = true;
     }
     else if (
-             (
-                 m_timeRotationPolicy == UNQL::DayOfWeekRotation
-              || m_timeRotationPolicy == UNQL::DayOfMonthRotation
-             )
+             m_Config.timeRotationPolicy == UNQL::DailyRotation
              && m_lastWrittenDateTime.addDays(1) >= now
             )
     {
         QString dayPartFormat = "ddd"; //By default set as day of week
-        if (m_timeRotationPolicy == UNQL::DayOfMonthRotation)
-            dayPartFormat = "dd";
+        //if (m_timeRotationPolicy == UNQL::DayOfMonthRotation)
+        //    dayPartFormat = "dd";
 
         s += "-" + now.toString(dayPartFormat);
         m_lastWrittenDateTime = now;
+        timePassed = true;
     }
+
+    return timePassed;
 }
 
 
@@ -110,7 +112,7 @@ void FileWriter::calculateLogFilePattern(const QString &i_filename, QString &o_r
         filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
     }
 
-    //find how many dots are there
+    //find how many dots are there within logfile name
     QStringList sl = filename.split(".");
 
     if (sl.count() == 1) //no dots
@@ -175,7 +177,7 @@ FileWriter::calculateNextLogFileName(int i_fileOffset)
   This method is used during log rotation
   */
 void
-FileWriter::changeOutputFile(const QString &aFilename)
+FileWriter::changeOutputFile(const QString &i_filename)
 {
     QMutexLocker ml(&mutex);
 
@@ -187,11 +189,11 @@ FileWriter::changeOutputFile(const QString &aFilename)
         m_logFile.close();
     }
 
-    m_logFile.setFileName(aFilename);
+    m_logFile.setFileName(i_filename);
     m_logFile.open( QIODevice::WriteOnly | QIODevice::Append );
     if (!m_logFile.isOpen()) //we were already logging to a file
     {
-        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_CRITICAL, "Cannot open logfile " + i_filename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
         m_logFile.close();
@@ -200,7 +202,7 @@ FileWriter::changeOutputFile(const QString &aFilename)
     else
     {
         m_streamIsOpen = true;
-        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Opened logfile " + i_filename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
     }
 }
@@ -263,6 +265,7 @@ FileWriter::writeToDevice()
 /*!
  * \brief FileWriter::rotateFileForIncrementalNumbers
  * This will rotate the file with incremental numbering
+ * i.e. log-1.txt will be deleted, log.txt -> log-1.txt and a new log.txt will be created
  */
 void FileWriter::rotateFileForIncrementalNumbers()
 {
@@ -370,6 +373,17 @@ void FileWriter::rotateFileForStrictRotation()
 }
 
 
+void FileWriter::rotateFileForTimePolicy()
+{
+    QString basename = m_logfileBaseName;
+    bool b = addNumberAndTimeToFilename(basename, m_rotationCurFileNumber);
+
+    if (b) {
+        qDebug() << "time passed and new name should be: " << basename;
+    }
+}
+
+
 /*!
  * \brief FileWriter::rotateFilesIfNeeded
  * check whether the current log file needs to be rotated (i.e. size or time) and rotates alllog files involved
@@ -377,12 +391,16 @@ void FileWriter::rotateFileForStrictRotation()
 void
 FileWriter::rotateFilesIfNeeded()
 {
+    //first we check if we need to change thefle due to time rotation
+    if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+        rotateFileForTimePolicy();
+    }
     //check if we need to change file for its size
     if ( (m_Config.maxFileSize > 0) && ( (m_logFile.size() / 1000000.0) > m_Config.maxFileSize) )
     {
         switch (m_Config.rotationPolicy)
         {
-        case UNQL::IncrementalNumbers:
+        case UNQL::HigherNumbersOlder:
             rotateFileForIncrementalNumbers();
             break;
         case UNQL::StrictRotation:
@@ -393,8 +411,6 @@ FileWriter::rotateFilesIfNeeded()
         } /* switch( rotation policy ) */
     }
 
-    //TODO
-    //check if we need to change the file due to timestamp
 }
 
 
