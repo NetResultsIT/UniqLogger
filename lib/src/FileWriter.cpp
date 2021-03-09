@@ -54,32 +54,48 @@ FileWriter::setLogfileRotationRange(int maxfilenum)
 { m_Config.maxFileNum = maxfilenum; }
  
 
+int FileWriter::secsPassedSinceTimeRotationWasNeeded()
+{
+    int timePassed = 0;
+
+    QDateTime now = QDateTime::currentDateTime();
+
+    if (
+         (m_Config.timeRotationPolicy == UNQL::HourlyRotation
+          && m_lastWrittenDateTime.secsTo(now) > 3600)
+       ||
+         (m_Config.timeRotationPolicy == UNQL::DailyRotation
+          && m_lastWrittenDateTime.addDays(1) >= now)
+       ||
+         (m_Config.timeRotationPolicy == UNQL::PerMinuteRotation
+          && m_lastWrittenDateTime.secsTo(now) > 60)
+       )
+    {
+        timePassed = m_lastWrittenDateTime.secsTo(now);
+    }
+
+    return timePassed;
+}
 
 /*!
  * \brief FileWriter::addNumberAndTimeToFilename
  * \param sl
  * \param filenum
  */
-bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
+bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum, int secsToAdd)
 {
-    bool timePassed = false;
     s += "-";
     s += QString::number(filenum);
 
-    QDateTime now = QDateTime::currentDateTime();
-
+    QDateTime now = m_lastWrittenDateTime.addSecs(secsToAdd);
     if (
         m_Config.timeRotationPolicy == UNQL::HourlyRotation
-        && m_lastWrittenDateTime.secsTo(now) > 3600
        )
     {
         s += "-h" + now.toString("HH");
-        m_lastWrittenDateTime = now;
-        timePassed = true;
     }
     else if (
              m_Config.timeRotationPolicy == UNQL::DailyRotation
-             && m_lastWrittenDateTime.addDays(1) >= now
             )
     {
         QString dayPartFormat = "ddd"; //By default set as day of week
@@ -88,10 +104,9 @@ bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
 
         s += "-" + now.toString(dayPartFormat);
         m_lastWrittenDateTime = now;
-        timePassed = true;
     }
 
-    return timePassed;
+    return true;
 }
 
 
@@ -146,7 +161,8 @@ FileWriter::calculateNextLogFileName(int i_fileOffset)
 {
     QString filepath, filepattern;
     calculateLogFilePattern(m_logfileBaseName, filepath, filepattern);
-
+    Q_ASSERT(filepath == m_logfilePath);
+    Q_ASSERT(filepattern == m_logfilePattern);
     int filenum;
 
     /*
@@ -173,8 +189,8 @@ FileWriter::calculateNextLogFileName(int i_fileOffset)
 
 /*!
   \brief this method changes the logfile that is used for the log file
-  \param _filename the new file to be used
-  This method is used during log rotation
+  \param i_filename the new file to be used
+  This method is used during log rotation and the filename cannot change extension or path
   */
 void
 FileWriter::changeOutputFile(const QString &i_filename)
@@ -216,6 +232,8 @@ void
 FileWriter::setOutputFile(const QString& aFilename)
 {
     m_logfileBaseName = aFilename;
+
+    calculateLogFilePattern(m_logfileBaseName, m_logfilePath, m_logfilePattern);
     QString fname = calculateNextLogFileName();
     changeOutputFile(fname);
 }
@@ -376,10 +394,12 @@ void FileWriter::rotateFileForStrictRotation()
 void FileWriter::rotateFileForTimePolicy()
 {
     QString basename = m_logfileBaseName;
-    bool b = addNumberAndTimeToFilename(basename, m_rotationCurFileNumber);
+    int secsPassedSinceLastWrittenLog = secsPassedSinceTimeRotationWasNeeded();
 
-    if (b) {
+    if (secsPassedSinceLastWrittenLog > 0) {
+        bool b = addNumberAndTimeToFilename(basename, m_rotationCurFileNumber, secsPassedSinceLastWrittenLog);
         qDebug() << "time passed and new name should be: " << basename;
+        changeOutputFile(basename);
     }
 }
 

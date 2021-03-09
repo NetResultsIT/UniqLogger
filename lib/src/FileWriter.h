@@ -20,7 +20,7 @@ private:
     QFile m_logFile;
     int m_rotationCurFileNumber;
     bool m_streamIsOpen, m_fileSizeExceeded;
-    QString m_logfileBaseName;
+    QString m_logfileBaseName, m_logfilePath, m_logfileExtension, m_logfilePattern;
     QString m_currentLogfileName;
 
     QDateTime m_lastWrittenDateTime;
@@ -33,7 +33,8 @@ protected:
     void changeOutputFile(const QString&);
     void writeToDevice();
     void rotateFilesIfNeeded();
-    bool addNumberAndTimeToFilename(QString &sl, int filenum);
+    int secsPassedSinceTimeRotationWasNeeded();
+    bool addNumberAndTimeToFilename(QString &sl, int filenum, int secsToAdd);
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
     void removeOldestFile();

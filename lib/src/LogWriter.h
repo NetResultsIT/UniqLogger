@@ -25,8 +25,9 @@ enum FileRotationNamingPolicyType {
 
 enum FileRotationTimePolicyType {
     NoTimeRotation,     /*!< Do not perform any time-based rotation */
-    HourlyRotation,     /*!< Rotates to a new log file every hour with suffixes like: h01, h12, h23, etc.*/
     DailyRotation,      /*!< Rotates to a new log file every day with suffixes like: Mon, Tue, etc. */
+    HourlyRotation,     /*!< Rotates to a new log file every hour with suffixes like: h01, h12, h23, etc.*/
+    PerMinuteRotation,
 };
 
 enum NetworkProtocolType {
