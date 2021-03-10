@@ -60,6 +60,8 @@ int FileWriter::secsPassedSinceTimeRotationWasNeeded()
 
     QDateTime now = QDateTime::currentDateTime();
 
+    //TODO - we should compare not the whole lastwrittendatetime but only the day, hour, minute part
+    //otherwise if we start at 16:57 we will trigger the hour change at 17:57
     if (
          (m_Config.timeRotationPolicy == UNQL::HourlyRotation
           && m_lastWrittenDateTime.secsTo(now) > 3600)
@@ -385,7 +387,7 @@ void FileWriter::renameOldLogFiles()
  */
 void FileWriter::rotateFileForIncrementalNumbers()
 {
-    QString actuallog = m_currentLogfileName;
+    QString actuallog = m_logFile.fileName();
     m_rotationCurFileNumber++;
     QString currFileName = calculateNextLogFileName();
     changeOutputFile( currFileName );
@@ -423,17 +425,25 @@ void FileWriter::rotateFileForStrictRotation()
 void FileWriter::rotateFileForTimePolicy()
 {
     qDebug() << Q_FUNC_INFO;
-    QString basename = m_logfileBaseName;
+    QString basename;
     int secsPassedSinceLastWrittenLog = secsPassedSinceTimeRotationWasNeeded();
+
     qDebug() << "Seconds passed since rotation is needed (current time is " << QDateTime::currentDateTime()
              << "): " << secsPassedSinceLastWrittenLog;
+
     if (secsPassedSinceLastWrittenLog > 0) {
-        //addNumberAndTimeToFilename(basename, m_rotationCurFileNumber, secsPassedSinceLastWrittenLog);
+        QString previousFile = m_logFile.fileName();
+        qDebug() << "Currently logging to " << previousFile;
         basename = calculateNextLogFileName();
         qDebug() << "time passed and new name should be: " << basename;
         changeOutputFile(basename);
         m_lastWrittenDateTime = QDateTime::currentDateTime();
+        m_lastUsedFilenames.append(previousFile);
+
+        removeOldestFile();
     }
+    qDebug() << "Currently used files: " << m_lastUsedFilenames;
+
 }
 
 

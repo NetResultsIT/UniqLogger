@@ -31,7 +31,6 @@ private:
     bool m_streamIsOpen, m_fileSizeExceeded;
     LogFileInfo m_LogfileInfo;
     QString m_logfileBaseName;
-    QString m_currentLogfileName;
 
     QDateTime m_lastWrittenDateTime;
     QString lastUsedLogfilePostfix;
