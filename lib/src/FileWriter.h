@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -26,9 +26,9 @@ class FileWriter: public LogWriter
     Q_OBJECT
 
 private:
-    QFile m_logFile;
+    QFile m_LogFile;
     int m_rotationCurFileNumber;
-    bool m_streamIsOpen, m_fileSizeExceeded;
+    bool m_streamIsOpen;
     LogFileInfo m_LogfileInfo;
     QString m_logfileBaseName;
 
@@ -43,7 +43,6 @@ protected:
     void writeToDevice();
     void rotateFilesIfNeeded();
     int secsPassedSinceTimeRotationWasNeeded();
-    //bool addNumberAndTimeToFilename(QString &sl, int filenum, int secsToAdd);
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
     void removeOldestFile();
