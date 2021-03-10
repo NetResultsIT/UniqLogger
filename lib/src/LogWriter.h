@@ -18,8 +18,7 @@
 namespace UNQL {
 
 enum FileRotationNamingPolicyType {
-    StrictRotation,     // Rotate over single file
-    HigherNumbersOlder, // New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate)
+    StrictRotation, // New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate)
     HigherNumbersNewer  // New logs are inserted in files with a higher number, no renaming / moving of files
 };
 

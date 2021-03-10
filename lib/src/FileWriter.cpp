@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -77,37 +77,37 @@ int FileWriter::secsPassedSinceTimeRotationWasNeeded()
     return timePassed;
 }
 
-/*!
- * \brief FileWriter::addNumberAndTimeToFilename
- * \param sl
- * \param filenum
- */
-bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum, int secsToAdd)
-{
-    s += "-";
-    s += QString::number(filenum);
+///*!
+// * \brief FileWriter::addNumberAndTimeToFilename
+// * \param sl
+// * \param filenum
+// */
+//bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum, int secsToAdd)
+//{
+//    s += "-";
+//    s += QString::number(filenum);
 
-    QDateTime now = m_lastWrittenDateTime.addSecs(secsToAdd);
-    if (
-        m_Config.timeRotationPolicy == UNQL::HourlyRotation
-       )
-    {
-        s += "-h" + now.toString("HH");
-    }
-    else if (
-             m_Config.timeRotationPolicy == UNQL::DailyRotation
-            )
-    {
-        QString dayPartFormat = "ddd"; //By default set as day of week
-        //if (m_timeRotationPolicy == UNQL::DayOfMonthRotation)
-        //    dayPartFormat = "dd";
+//    QDateTime now = m_lastWrittenDateTime.addSecs(secsToAdd);
+//    if (
+//        m_Config.timeRotationPolicy == UNQL::HourlyRotation
+//       )
+//    {
+//        s += "-h" + now.toString("HH");
+//    }
+//    else if (
+//             m_Config.timeRotationPolicy == UNQL::DailyRotation
+//            )
+//    {
+//        QString dayPartFormat = "ddd"; //By default set as day of week
+//        //if (m_timeRotationPolicy == UNQL::DayOfMonthRotation)
+//        //    dayPartFormat = "dd";
 
-        s += "-" + now.toString(dayPartFormat);
-        m_lastWrittenDateTime = now;
-    }
+//        s += "-" + now.toString(dayPartFormat);
+//        m_lastWrittenDateTime = now;
+//    }
 
-    return true;
-}
+//    return true;
+//}
 
 
 /*!
@@ -116,39 +116,53 @@ bool FileWriter::addNumberAndTimeToFilename(QString &s, int filenum, int secsToA
  * \param o_rPath the output variable containing the path where the new logfile will be
  * \param o_rPattern the pattern (i.e. containing the placeholder that will be replaced with log file number) of the logfile
  */
-void FileWriter::calculateLogFilePattern(const QString &i_filename, QString &o_rPath, QString &o_rPattern)
+LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
 {
     QString fullfilename = QDir::fromNativeSeparators(i_filename);
     QString filename = fullfilename.split("/").takeLast();
-    QString filepath;
+    //QString filepath;
 
+    LogFileInfo lfi;
 
     if (fullfilename.lastIndexOf("/") >= 0) {
-        filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
+        lfi.path = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
     }
 
     //find how many dots are there within logfile name
     QStringList sl = filename.split(".");
+    qDebug() << filename << sl;
 
-    if (sl.count() == 1) //no dots
+    if (sl.count() == 1) //no dots e.g. Mylog
     {
+        lfi.basename = filename;
         filename.append("-%1");
+        lfi.pattern = filename;
     }
-    else if (sl.count() == 2) //one dot
+    else if (sl.count() == 2) //one dot e.g: log.txt
     {
         filename = sl[0];
+        lfi.basename = filename;
         filename.append("-%1");
+        lfi.extension = sl[1];
         filename += ".";
         filename += sl[1];
+        lfi.pattern = filename;
     }
-    else //more than one dot
+    else //more than one dot e.g. a.long.name.with.dots.log
+        //eveything before last dot is considered filename the last part the extension
     {
-        sl[0] += "%1";
-        filename = sl.join(".");
+        lfi.extension = sl.takeLast();
+        lfi.basename = sl.join(".");
+        filename = lfi.basename + "-%1";
+        lfi.pattern = filename;
     }
 
-    o_rPath = filepath;
-    o_rPattern = filename;
+    //override
+    lfi.pattern = "%1";
+    if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
+        lfi.pattern.prepend("%2");
+
+    return lfi;
 }
 
 
@@ -159,30 +173,42 @@ void FileWriter::calculateLogFilePattern(const QString &i_filename, QString &o_r
 QString
 FileWriter::calculateNextLogFileName(int i_fileOffset)
 {
-    QString filepath, filepattern;
-    calculateLogFilePattern(m_logfileBaseName, filepath, filepattern);
-    Q_ASSERT(filepath == m_logfilePath);
-    Q_ASSERT(filepattern == m_logfilePattern);
+    //QString filepath, filepattern;
+    //calculateLogFilePattern(m_logfileBaseName, filepath, filepattern);
+    //Q_ASSERT(filepath == m_logfilePath);
+    //Q_ASSERT(filepattern == m_logfilePattern);
     int filenum;
+
+    //if timerotation is enabled we change the mainName adding the time part
+    //if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+    //    m_LogfileInfo.basename += "-" + QDateTime::currentDateTime().toString("yyyy-MM-dd");
+    //}
 
     /*
      *  The file with num == 0 --> no number, will not have any special extension if
      *  compression is enabled, because it is the file we are logging on
      */
+    QString patt;
     if (i_fileOffset == 0) {
-        if (m_Config.rotationPolicy == UNQL::StrictRotation) {
-            return m_logfileBaseName;
-        }
+        //if (m_Config.rotationPolicy == UNQL::StrictRotation) {
+            //return m_logfileBaseName;
+        //}
+        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
+            patt = m_LogfileInfo.pattern.arg("").arg(QDateTime::currentDateTime().toString("-yyyy-MM-ddThh:mm"));
+
 
         filenum = m_rotationCurFileNumber;
     }
     else {
         filenum = i_fileOffset;
+        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
+            patt = m_LogfileInfo.pattern.arg("-" + QString::number(filenum)).arg(QDateTime::currentDateTime().toString("-yyyy-MM-ddThh:mm"));
+        else
+            patt = m_LogfileInfo.pattern.arg("-" + QString::number(filenum));
     }
 
-    QString filename = filepattern.arg(filenum);
 
-    return filepath + filename;
+    return m_LogfileInfo.path + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension;
 }
 
 
@@ -233,7 +259,7 @@ FileWriter::setOutputFile(const QString& aFilename)
 {
     m_logfileBaseName = aFilename;
 
-    calculateLogFilePattern(m_logfileBaseName, m_logfilePath, m_logfilePattern);
+    m_LogfileInfo = calculateLogFilePattern(m_logfileBaseName);
     QString fname = calculateNextLogFileName();
     changeOutputFile(fname);
 }
@@ -280,26 +306,7 @@ FileWriter::writeToDevice()
 }
 
 
-/*!
- * \brief FileWriter::rotateFileForIncrementalNumbers
- * This will rotate the file with incremental numbering
- * i.e. log-1.txt will be deleted, log.txt -> log-1.txt and a new log.txt will be created
- */
-void FileWriter::rotateFileForIncrementalNumbers()
-{
-    m_rotationCurFileNumber++;
-    QString currFileName = calculateNextLogFileName();
-    changeOutputFile( currFileName );
 
-    QString previousFile = calculateNextLogFileName(m_rotationCurFileNumber - 1);
-    if ( isCompressionActive() )
-    {
-        previousFile = compressIfNeeded( previousFile );
-    }
-    m_lastUsedFilenames.append(previousFile);
-
-    removeOldestFile();
-}
 
 
 bool FileWriter::isCompressionActive() const
@@ -371,6 +378,28 @@ void FileWriter::renameOldLogFiles()
     }
 }
 
+/*!
+ * \brief FileWriter::rotateFileForIncrementalNumbers
+ * This will log into a file with a higher number, previous will be zipped and the oldest eventually deleted
+ * i.e. log.txt will be deleted, log-1.txt will be zipped (if needed) and new messages will go into log-2.txt (newly created)
+ */
+void FileWriter::rotateFileForIncrementalNumbers()
+{
+    QString actuallog = m_currentLogfileName;
+    m_rotationCurFileNumber++;
+    QString currFileName = calculateNextLogFileName();
+    changeOutputFile( currFileName );
+
+    QString previousFile = calculateNextLogFileName(m_rotationCurFileNumber - 1);
+    Q_ASSERT(actuallog == previousFile);
+    if ( isCompressionActive() )
+    {
+        previousFile = compressIfNeeded( previousFile );
+    }
+    m_lastUsedFilenames.append(previousFile);
+
+    removeOldestFile();
+}
 
 /*!
  * \brief FileWriter::rotateFileForStrictRotation
@@ -393,13 +422,17 @@ void FileWriter::rotateFileForStrictRotation()
 
 void FileWriter::rotateFileForTimePolicy()
 {
+    qDebug() << Q_FUNC_INFO;
     QString basename = m_logfileBaseName;
     int secsPassedSinceLastWrittenLog = secsPassedSinceTimeRotationWasNeeded();
-
+    qDebug() << "Seconds passed since rotation is needed (current time is " << QDateTime::currentDateTime()
+             << "): " << secsPassedSinceLastWrittenLog;
     if (secsPassedSinceLastWrittenLog > 0) {
-        bool b = addNumberAndTimeToFilename(basename, m_rotationCurFileNumber, secsPassedSinceLastWrittenLog);
+        //addNumberAndTimeToFilename(basename, m_rotationCurFileNumber, secsPassedSinceLastWrittenLog);
+        basename = calculateNextLogFileName();
         qDebug() << "time passed and new name should be: " << basename;
         changeOutputFile(basename);
+        m_lastWrittenDateTime = QDateTime::currentDateTime();
     }
 }
 
@@ -415,12 +448,12 @@ FileWriter::rotateFilesIfNeeded()
     if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
         rotateFileForTimePolicy();
     }
-    //check if we need to change file for its size
-    if ( (m_Config.maxFileSize > 0) && ( (m_logFile.size() / 1000000.0) > m_Config.maxFileSize) )
+    //check if we need to change file for its size, NOTE: if we rotated the file for time above its size will be 0 at first run
+    if ( (m_Config.maxFileSize > 0) && ( (m_logFile.size() / 1E6) > m_Config.maxFileSize) )
     {
         switch (m_Config.rotationPolicy)
         {
-        case UNQL::HigherNumbersOlder:
+        case UNQL::HigherNumbersNewer:
             rotateFileForIncrementalNumbers();
             break;
         case UNQL::StrictRotation:

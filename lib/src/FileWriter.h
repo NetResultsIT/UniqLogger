@@ -12,6 +12,15 @@
 #include <QDateTime>
 #include <QQueue>
 
+class LogFileInfo
+{
+public:
+    QString path;
+    QString basename;
+    QString extension;
+    QString pattern;
+};
+
 class FileWriter: public LogWriter
 {
     Q_OBJECT
@@ -20,7 +29,8 @@ private:
     QFile m_logFile;
     int m_rotationCurFileNumber;
     bool m_streamIsOpen, m_fileSizeExceeded;
-    QString m_logfileBaseName, m_logfilePath, m_logfileExtension, m_logfilePattern;
+    LogFileInfo m_LogfileInfo;
+    QString m_logfileBaseName;
     QString m_currentLogfileName;
 
     QDateTime m_lastWrittenDateTime;
@@ -28,13 +38,13 @@ private:
     QQueue<QString> m_lastUsedFilenames;
 
 protected:
-    void calculateLogFilePattern(const QString &filename, QString &path, QString &pattern);
+    LogFileInfo calculateLogFilePattern(const QString &filename);
     QString calculateNextLogFileName(int offset=0);
     void changeOutputFile(const QString&);
     void writeToDevice();
     void rotateFilesIfNeeded();
     int secsPassedSinceTimeRotationWasNeeded();
-    bool addNumberAndTimeToFilename(QString &sl, int filenum, int secsToAdd);
+    //bool addNumberAndTimeToFilename(QString &sl, int filenum, int secsToAdd);
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
     void removeOldestFile();
