@@ -4,9 +4,6 @@
 
 VERSION = 1.0.0
 
-# UNcomment line below to disallow moving binary in last_build folder on iOS (due to large size)
-#IOS_NOT_MOVE = true
-
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 !exists($$PWD/config.pri) {

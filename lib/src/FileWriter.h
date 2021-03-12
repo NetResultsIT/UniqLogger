@@ -27,18 +27,19 @@ class FileWriter: public LogWriter
 
 private:
     QFile m_LogFile;
-    int m_rotationCurFileNumber;
     bool m_streamIsOpen;
     LogFileInfo m_LogfileInfo;
     QString m_logfileBaseName;
 
     QDateTime m_lastWrittenDateTime;
-    QString lastUsedLogfilePostfix;
-    QQueue<QString> m_lastUsedFilenames;
 
 protected:
+    int m_rotationCurFileNumber;
+    QQueue<QString> m_lastUsedFilenames;
     LogFileInfo calculateLogFilePattern(const QString &filename);
-    QString calculateNextLogFileName(int offset=0);
+    QString calculateLogFileNameForIndex(int index);
+    QString calculateNextLogFileName();
+    QString calculatePreviousLogFileName(int index);
     void changeOutputFile(const QString&);
     void writeToDevice();
     void rotateFilesIfNeeded();
