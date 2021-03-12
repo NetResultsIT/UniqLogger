@@ -97,7 +97,7 @@ LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
 
     //find how many dots are there within logfile name
     QStringList sl = filename.split(".");
-    qDebug() << filename << sl;
+    //qDebug() << filename << sl;
 
     if (sl.count() == 1) //no dots e.g. Mylog
     {
@@ -137,24 +137,14 @@ QString
 FileWriter::calculatePreviousLogFileName(int index)
 {
     Q_ASSERT(index>=0);
-    qDebug() << "Calculating previous log filename for index " << index;
-    //if (index==0)
-    //    return m_LogFile.fileName();
+    ULDBG << "Calculating previous log filename for index " << index;
 
     QString tempfilename;
     QString extension = m_LogfileInfo.extension;
 
     tempfilename = calculateLogFileNameForIndex(index);
-    /*if (index < 2) {
-        qDebug() << "using next log filename";
-        tempfilename = m_LogFile.fileName().left(m_LogFile.fileName().length() - (extension.length() + 1))
-                         + "-" + QString::number(index) + "." + extension;
-        tempfilename = calculateNextLogFileName();
-    } else {
-        qDebug() << "using replace method";
-        tempfilename = tempfilename.replace("-"+QString::number(index), "-"+QString::number(index+1));
-    }*/
-    qDebug() << "calculated old log filename: " << tempfilename;
+
+    ULDBG << "calculated old log filename: " << tempfilename;
     return tempfilename;
 }
 
@@ -322,23 +312,13 @@ void FileWriter::removeOldestFile()
  */
 void FileWriter::renameOldLogFiles()
 {
-    qDebug() << "last used files Q has " << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
-    /*if (m_lastUsedFilenames.size() < m_Config.maxFileNum) {
-        qDebug() << "queue of old files is not yet full: "  << "manually renaming current files...";
-        for (int i=m_lastUsedFilenames.size()-1; i>=0; i--) {
-            QFile f(m_lastUsedFilenames.at(i));
-            QString olderlogsfile = calculatePreviousLogFileName(i+1);
-            qDebug() << "renaming " << m_lastUsedFilenames.at(i) << " into " << olderlogsfile;
-            f.rename(olderlogsfile);
-        }
-        return;
-    }*/
+    ULDBG << "last used files Q has " << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
 
     //if we have more than m_Config.maxfiles files we get the last and delete it
     if (m_Config.maxFileNum > 0 && m_Config.maxFileNum <= m_lastUsedFilenames.size() + 1) {
         QString lastfile = m_lastUsedFilenames.last();
         if (QFile::exists(lastfile)) {
-            qDebug() << "removing old logfile: " << lastfile;
+            ULDBG << "removing old logfile: " << lastfile;
             QFile::remove(lastfile);
         }
         else {
@@ -347,19 +327,12 @@ void FileWriter::renameOldLogFiles()
     }
 
     //now we shall rename each file
-    /*for (int i=m_lastUsedFilenames.size()-2; i >= 0; i--) {
-        qDebug() << "renaming " << m_lastUsedFilenames.at(i) << " into "
-                 << m_lastUsedFilenames.at(i+1);
-        QFile newer(m_lastUsedFilenames.at(i));
-        newer.rename(m_lastUsedFilenames.at(i+1));
-    }*/
     for (int i = m_rotationCurFileNumber; i > 0; i--)
     {
         qDebug() << "Processing renaming cycle " << i ;
         QString olderfile = calculatePreviousLogFileName(i);
         QString newerfile = calculatePreviousLogFileName(i-1);
-        qDebug() << "renaming " << newerfile << " into "
-                 << olderfile;
+        ULDBG << "renaming " << newerfile << " into " << olderfile;
         QFile newer(newerfile);
         bool b = newer.rename(olderfile);
         Q_ASSERT(b);
@@ -415,8 +388,6 @@ void FileWriter::rotateFileForIncrementalNumbers()
     QString currFileName = calculateNextLogFileName();
     changeOutputFile( currFileName );
 
-    //QString previousFile = calculateNextLogFileName(m_rotationCurFileNumber - 1);
-    //Q_ASSERT(actuallog == previousFile);
     if ( isCompressionActive() )
     {
         previousFile = compressIfNeeded( previousFile );
@@ -440,14 +411,13 @@ void FileWriter::rotateFileForStrictRotation()
     m_rotationCurFileNumber++;
     QString renamedlogfile = calculatePreviousLogFileName(m_rotationCurFileNumber);
     //append the last used file to be rotated
-    qDebug() << "appending " << renamedlogfile << " to lastUsedFilenames";
+    ULDBG << "appending " << renamedlogfile << " to lastUsedFilenames";
     m_lastUsedFilenames.append(renamedlogfile);
 
     //now move the other files starting from the one b4 last
     renameOldLogFiles(); /* loop to rename old rotated files */
 
-    //Set the new file to log to.
-    //QString currFileName = calculateNextLogFileName();
+    //Set the same logfile to restart logging.
     changeOutputFile( m_LogFile.fileName() );
 }
 
