@@ -268,6 +268,15 @@ FileWriter::changeOutputFile(const QString &i_filename)
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Opened logfile " + i_filename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
     }
+
+
+    if (!m_lastUsedFilenames.contains(i_filename)) {
+        m_lastUsedFilenames.enqueue(i_filename);
+        ULDBG << "appended newest logfile " << i_filename << " to last used filenames that now is " << m_lastUsedFilenames ;
+    }
+    else {
+        ULDBG << m_lastUsedFilenames << " already contains " << i_filename;
+    }
 }
  
 
@@ -352,7 +361,7 @@ void FileWriter::removeOldestFiles()
     }
 
     ULDBG << "Last used file names is currently: " << m_lastUsedFilenames;
-    while (m_lastUsedFilenames.size() >= m_Config.maxFileNum) {
+    while (m_lastUsedFilenames.size() > m_Config.maxFileNum) {
         QString lastfile = m_lastUsedFilenames.dequeue();
         if (QFile::exists(lastfile)) {
             ULDBG << "about to remove old logfile: " << lastfile;
@@ -396,11 +405,17 @@ void FileWriter::renameOldLogFilesForStrictRotation()
         QString newerfile = calculatePreviousLogFileName(i-1);
         ULDBG << "renaming " << newerfile << " into " << olderfile;
         QFile newer(newerfile);
-        if (QFile::exists(olderfile)) {
+        QFile older(olderfile);
+        if (older.exists()) {
             ULDBG << "target file " << olderfile << " exists, removing it before renaming";
-            QFile::remove(olderfile);
+            if (!older.remove()) {
+                ULDBG << "error renaming file: " << older.errorString();
+            }
         }
         bool b = newer.rename(olderfile);
+        if (!b) {
+            ULDBG << "error renaming file: " << newer.errorString();
+        }
 
         Q_ASSERT(b);
 //        if (!m_lastUsedFilenames.contains(olderfile)) {
@@ -467,7 +482,7 @@ void FileWriter::rotateFileForIncrementalNumbers()
     {
         previousFile = compressIfNeeded( previousFile );
     }
-    m_lastUsedFilenames.enqueue(previousFile);
+    //m_lastUsedFilenames.enqueue(previousFile);
 
     removeOldestFiles();
 }
@@ -488,24 +503,26 @@ void FileWriter::rotateFileForStrictRotation()
         ULDBG << "Incrementing m_rotationCurFileNumber from " << m_rotationCurFileNumber << " to " << m_rotationCurFileNumber + 1;
         m_rotationCurFileNumber++;
     }
+
     QString renamedlogfile = calculatePreviousLogFileName(m_rotationCurFileNumber);
-    //append the last used file to be rotated
-    if (m_rotationCurFileNumber != 1) {
-        ULDBG << "INSERTING " << renamedlogfile << " to lastUsedFilenames";
-        if (!m_lastUsedFilenames.contains(renamedlogfile))
-            m_lastUsedFilenames.push_front(renamedlogfile);
-        else {
-            ULDBG << "NOT INSERTING since it's already there";
-        }
+    //we insert the name the current file will be renamed to at the beginning of last used file Q to be rotated
+    ULDBG << "INSERTING " << renamedlogfile << " to lastUsedFilenames";
+    if (!m_lastUsedFilenames.contains(renamedlogfile)) {
+        QString previousFile = calculatePreviousLogFileName(m_rotationCurFileNumber - 1);
+        ULDBG << "Calculating the file that contains log before this: " << previousFile;
+        int pos = m_lastUsedFilenames.indexOf(previousFile);
+        ULDBG << "found " << m_LogFile.fileName() << " in " << m_lastUsedFilenames << " at pos "
+              << pos;
+        m_lastUsedFilenames.insert(pos, renamedlogfile);
+        //m_lastUsedFilenames.push_front(renamedlogfile);
     } else {
-        ULDBG << "APPENDING " << renamedlogfile << " to lastUsedFilenames";
-        if (!m_lastUsedFilenames.contains(renamedlogfile))
-            m_lastUsedFilenames.enqueue(renamedlogfile);
-        else {
-            ULDBG << "NOT APPENDING since it's already there";
-        }
+        ULDBG << "NOT INSERTING since it's already there";
     }
+    ULDBG << "now last Q is: " << m_lastUsedFilenames;
+
+    //check if there are any file to remove
     removeOldestFiles();
+
     //now move the other files starting from the one b4 last
     renameOldLogFilesForStrictRotation(); /* loop to rename old rotated files */
 
@@ -534,7 +551,7 @@ void FileWriter::rotateFileForTimePolicy()
         //qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);
         ULDBG << "Current1 last used files: " << m_lastUsedFilenames;
-        m_lastUsedFilenames.enqueue(previousFile);
+        //m_lastUsedFilenames.enqueue(previousFile);
         removeOldestFiles();
     } else {
         ULDBG << "File rotation for TIME policy was NOT needed";

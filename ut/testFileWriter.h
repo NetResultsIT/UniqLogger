@@ -8,6 +8,7 @@ class testFileWriter : public FileWriter
     Q_OBJECT
 public:
     explicit testFileWriter(WriterConfig wc=WriterConfig());
+    void cleanup(QStringList);
 
 signals:
 
@@ -19,6 +20,7 @@ private slots:
     void testRotateForTimePolicyAndSizeStrict();
     void testRotateForIncrementalNumbers();
     void testRotateForStrictNumbers();
+    void testRemoveOldestFiles();
 };
 
 #endif // TESTFILEWRITER_H
