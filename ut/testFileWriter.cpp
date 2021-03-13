@@ -258,7 +258,6 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
 
 void testFileWriter::testRotateForTimePolicyAndSizeStrict()
 {
-    QSKIP("test");
     //cleanup
     resetLastUsedFilenames();
     setTestingCurrentDateTime(QDateTime());

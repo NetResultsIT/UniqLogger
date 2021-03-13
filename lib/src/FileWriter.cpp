@@ -400,6 +400,7 @@ void FileWriter::renameOldLogFiles()
         Q_ASSERT(b);
         if (!m_lastUsedFilenames.contains(olderfile)) {
             ULDBG << "re-INSERTING " << olderfile << " into last used filenames";
+            m_lastUsedFilenames.push_front(olderfile);
         }
     }
     qDebug() << "finished renaming files";
@@ -511,7 +512,7 @@ void FileWriter::rotateFileForTimePolicy()
     QString newlogfilename;
     int secsPassedSinceLastWrittenLog = secsPassedSinceTimeRotationWasNeeded();
 
-    qDebug() << "Seconds passed since rotation is needed (current time is " << getCurrentDateTime()
+    ULDBG << "Seconds passed since rotation is needed (current time is " << getCurrentDateTime()
              << "): " << secsPassedSinceLastWrittenLog;
 
     if (secsPassedSinceLastWrittenLog > 0) {
@@ -519,22 +520,23 @@ void FileWriter::rotateFileForTimePolicy()
         QString previousFile = m_LogFile.fileName();
         //we need to reset the rotation index before calculating the new logfile name
         m_rotationCurFileNumber = 0;
-        qDebug() << "Currently logging to " << previousFile;
+        ULDBG << "Currently logging to " << previousFile;
         //we need to update the written date time before calculating the new logfile name
         m_lastWrittenDateTime = getCurrentDateTime();
         newlogfilename = calculateNextLogFileName();
-        qDebug() << "time passed and new name should be: " << newlogfilename;
+        //qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);
-        if (m_Config.rotationPolicy == UNQL::StrictRotation)
+        ULDBG << "Current1 last used files: " << m_lastUsedFilenames;
+        /*if (m_Config.rotationPolicy == UNQL::StrictRotation)
             m_lastUsedFilenames.push_front(previousFile);
-        else
+        else*/
             m_lastUsedFilenames.enqueue(previousFile);
 
         removeOldestFiles();
     } else {
         ULDBG << "File rotation for TIME policy was NOT needed";
     }
-    qDebug() << "Currently used files: " << m_lastUsedFilenames;
+    ULDBG << "Current last used files: " << m_lastUsedFilenames;
 }
 
 
