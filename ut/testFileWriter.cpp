@@ -209,6 +209,7 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
 {
     //cleanup
     resetLastUsedFilenames();
+    setTestingCurrentDateTime(QDateTime());
 
     QStringList filenames;
 
@@ -231,19 +232,72 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
     Q_ASSERT(QFileInfo::exists(filenames[0]));
 
     writeToFile(filenames[0], 2);
-    rotateFileForIncrementalNumbers();
+    rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
     Q_ASSERT(QFileInfo::exists(filenames[1]));
     Q_ASSERT(getCurrentLogFilename() == filenames[1]);
 
 
     writeToFile(filenames[1], 2);
-    rotateFileForIncrementalNumbers();
+    rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
     Q_ASSERT(QFileInfo::exists(filenames[2]));
     Q_ASSERT(getCurrentLogFilename() == filenames[2]);
 
 
     setTestingCurrentDateTime(dt1);
+    rotateFilesIfNeeded(); //or rotateFileForTimePolicy();
+    Q_ASSERT(!QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[3]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[3]);
+
+
+    foreach (QString s, filenames) {
+        deleteFile(s);
+    }
+}
+
+
+void testFileWriter::testRotateForTimePolicyAndSizeStrict()
+{
+    QSKIP("test");
+    //cleanup
+    resetLastUsedFilenames();
+    setTestingCurrentDateTime(QDateTime());
+
+    QStringList filenames;
+
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 1;
+    m_Config.rotationPolicy = UNQL::StrictRotation;
+    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
+
+    filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:00:00-1.txt"
+              << "log-2021-03-16T02:00:00-2.txt" << "log-2021-03-16T02:01:00.txt";
+
+    QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
+    Q_ASSERT(dt.isValid());
+    QDateTime dt1 = QDateTime::fromString("2021-03-16T02:01:00", "yyyy-MM-ddThh:mm:ss");
+    Q_ASSERT(dt1.isValid());
+
+    overrideLastWrittenDateTime(dt);
+    setOutputFile("log.txt");
+
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+
+    writeToFile(filenames[0], 2);
+    rotateFileForStrictRotation();
+    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[0]);
+
+
+    writeToFile(filenames[0], 2);
+    rotateFileForStrictRotation();
+    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[0]);
+
+
+    setTestingCurrentDateTime(dt1);
     rotateFileForTimePolicy();
+    Q_ASSERT(!QFileInfo::exists(filenames[2]));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
     Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 

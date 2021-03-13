@@ -33,11 +33,11 @@ private:
     QString m_logfileBaseName;
 
     QDateTime m_lastWrittenDateTime;
+    QDateTime m_currentDateTimeUsedForTest;
 
 protected:
     //Testing functions
     QQueue<QString> m_lastUsedFilenames;
-    QDateTime m_currentDateTimeUsedForTest;
     void overrideCurrentRotationNumber(int idx);
     void overrideLastWrittenDateTime(QDateTime dt);
     void setTestingCurrentDateTime(QDateTime dt);
@@ -50,17 +50,17 @@ private:
     QString calculatePreviousLogFileName(int index);
     QDateTime getCurrentDateTime() const;
     void changeOutputFile(const QString&);
-    void writeToDevice();
-    void rotateFilesIfNeeded();
     int secsPassedSinceTimeRotationWasNeeded();
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
 protected:
+    void writeToDevice();
     LogFileInfo calculateLogFilePattern(const QString &filename);
     void removeOldestFiles();
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();
     void rotateFileForTimePolicy();
+    void rotateFilesIfNeeded();
 
     void renameOldLogFiles();
     bool isCompressionActive() const;

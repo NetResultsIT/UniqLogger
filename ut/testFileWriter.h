@@ -16,6 +16,7 @@ private slots:
     void testCalculateLogInfo();
     void testRotateForTimePolicy();
     void testRotateForTimePolicyAndSizeHigherNewer();
+    void testRotateForTimePolicyAndSizeStrict();
     void testRotateForIncrementalNumbers();
     void testRotateForStrictNumbers();
 };

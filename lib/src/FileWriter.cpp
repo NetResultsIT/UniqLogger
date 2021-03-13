@@ -70,6 +70,12 @@ void FileWriter::overrideCurrentRotationNumber(int index)
 void FileWriter::overrideLastWrittenDateTime(QDateTime dt)
 { m_lastWrittenDateTime = dt; }
 
+
+/*!
+ * \brief FileWriter::overrideLastWrittenDateTime Sets a new value to be used as QDateTime::getCurrentDateTime()
+ * \param dt the new date time that should be used as current DateTime
+ * \warning this function *MUST* only be used for unit testing, using in production WILL stop correct uniqlogger behaviour
+ */
 void FileWriter::setTestingCurrentDateTime(QDateTime dt)
 { m_currentDateTimeUsedForTest = dt; }
 
@@ -82,7 +88,10 @@ void FileWriter::resetLastUsedFilenames()
 { m_lastUsedFilenames.clear(); }
 
 
-
+/*!
+ * \brief FileWriter::getCurrentDateTime a utility function that wraps QDateTime::currentDateTime and might override it for testing
+ * \return current QDateTime
+ */
 QDateTime FileWriter::getCurrentDateTime() const
 {
     if (m_currentDateTimeUsedForTest.isValid()) {
@@ -127,7 +136,7 @@ int FileWriter::secsPassedSinceTimeRotationWasNeeded()
 
 /*!
  * \brief FileWriter::calculateLogFilePattern calculates the pattern (i.e. the logfilename with a placeholder for file numbering) for the logfile
- * \param i_filename the log basefilename
+ * \param i_filename the log basefilename that will be analyzed to split into basic info and fill he LogFileInfo
  * \return LogFileInfo class containing data about the current log file
  */
 LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
@@ -186,13 +195,13 @@ FileWriter::calculatePreviousLogFileName(int index)
     ULDBG << "Calculating previous log filename for index " << index;
 
     QString tempfilename;
-    QString extension = m_LogfileInfo.extension;
 
     tempfilename = calculateLogFileNameForIndex(index);
 
     ULDBG << "calculated old log filename: " << tempfilename;
     return tempfilename;
 }
+
 
 QString
 FileWriter::calculateLogFileNameForIndex(int index)
@@ -215,8 +224,7 @@ FileWriter::calculateLogFileNameForIndex(int index)
 
 
 /*!
-  \brief calculates the log file that is going to be used for the logging
-  \param i_fileOffset the offset from which we should start calculating (default = 0)
+  \brief calculates the log file that is going to be used for the logging the next messages
   */
 QString
 FileWriter::calculateNextLogFileName()
@@ -323,9 +331,6 @@ FileWriter::writeToDevice()
 }
 
 
-
-
-
 bool FileWriter::isCompressionActive() const
 {
     if ( ( m_Config.compressionAlgo > 0 ) && ( m_Config.maxFileNum > 1) )
@@ -348,12 +353,7 @@ void FileWriter::removeOldestFiles()
 
     ULDBG << "Last used file names is currently: " << m_lastUsedFilenames;
     while (m_lastUsedFilenames.size() >= m_Config.maxFileNum) {
-        QString lastfile;
-        /*if (m_Config.rotationPolicy == UNQL::StrictRotation) {
-            lastfile = m_lastUsedFilenames.takeLast();
-        } else {*/
-            lastfile = m_lastUsedFilenames.dequeue();
-        //}
+        QString lastfile = m_lastUsedFilenames.dequeue();
         if (QFile::exists(lastfile)) {
             ULDBG << "about to remove old logfile: " << lastfile;
             QFile::remove(lastfile);
