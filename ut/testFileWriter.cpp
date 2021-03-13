@@ -69,9 +69,30 @@ void createFile(QString fname)
     f.close();
 }
 
-void
-testFileWriter::testRotateOldFiles()
+
+void writeToFile(QString fname, int megabytes)
 {
+    QFile f(fname);
+    QString s;
+    s.fill('x', megabytes * 1E6);
+    f.open(QIODevice::WriteOnly);
+    f.write(s.toUtf8());
+    f.close();
+}
+
+void deleteFile(QString fname)
+{
+    QFile f(fname);
+    f.remove();
+}
+
+void
+testFileWriter::testRenameOldFiles()
+{
+    //QSKIP("skipping for now");
+    //cleanup
+    m_lastUsedFilenames.clear();
+
     m_Config.maxFileNum = 3;
 
     QString f("log.txt");
@@ -94,8 +115,8 @@ testFileWriter::testRotateOldFiles()
     setOutputFile(f);
     createFile(f);
     createFile(f1);
-    m_lastUsedFilenames.append(f1);
     m_lastUsedFilenames.append(f2);
+    m_lastUsedFilenames.append(f1);
     m_rotationCurFileNumber = 2;
     renameOldLogFiles();
     Q_ASSERT(!QFile::exists(f));
@@ -112,8 +133,8 @@ testFileWriter::testRotateOldFiles()
     Q_ASSERT(QFile::exists(f1));
     Q_ASSERT(QFile::exists(f2));
 
-    m_lastUsedFilenames.append(f1);
     m_lastUsedFilenames.append(f2);
+    m_lastUsedFilenames.append(f1);
 
     m_rotationCurFileNumber = 2;
     renameOldLogFiles();
@@ -123,8 +144,111 @@ testFileWriter::testRotateOldFiles()
     Q_ASSERT(QFile::exists(f2));
 
     //remove files for next test
-    QFile del1(f1);
-    QFile del2(f2);
-    Q_ASSERT(del1.remove());
-    Q_ASSERT(del2.remove());
+    deleteFile(f1);
+    deleteFile(f2);
+}
+
+
+
+void testFileWriter::testRotateForTimePolicy()
+{
+
+}
+
+
+void testFileWriter::testRotateForIncrementalNumbers()
+{
+    //cleanup
+    m_lastUsedFilenames.clear();
+
+    QStringList filenames;
+
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 1;
+    m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
+    filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
+
+    //create base file
+    createFile(filenames[0]);
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    setOutputFile(filenames[0]);
+
+    //write to log.txt more than allowed size and rotate
+    writeToFile(filenames[0], 2);
+    rotateFileForIncrementalNumbers();
+
+    //verify we created the new file
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[1]);
+
+
+    //write to log-1 more than allowed size and rotate
+    writeToFile(filenames[1], 2);
+    rotateFileForIncrementalNumbers();
+
+    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[2]);
+
+
+    //write to log-2 more than allowed size and rotate
+    writeToFile(filenames[2], 2);
+    rotateFileForIncrementalNumbers();
+
+    Q_ASSERT(!QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[3]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[3]);
+
+    foreach (QString s, filenames) {
+        deleteFile(s);
+    }
+}
+
+
+void testFileWriter::testRotateForStrictNumbers()
+{
+    m_lastUsedFilenames.clear();
+    QStringList filenames;
+
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 1;
+    m_Config.rotationPolicy = UNQL::StrictRotation;
+    filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
+
+    //create base file
+    createFile(filenames[0]);
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    setOutputFile(filenames[0]);
+
+    //write to log.txt more than allowed size and rotate
+    writeToFile(filenames[0], 2);
+    rotateFileForStrictRotation();
+
+    //verify we created the new file
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[0]);
+
+
+    //write to log more than allowed size and rotate
+    writeToFile(filenames[0], 2);
+    rotateFileForStrictRotation();
+
+    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[0]);
+
+
+    //write to log more than allowed size and rotate
+    writeToFile(filenames[0], 2);
+    rotateFileForStrictRotation();
+
+    Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[0]);
+
+    foreach (QString s, filenames) {
+        deleteFile(s);
+    }
 }

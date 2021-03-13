@@ -16,8 +16,8 @@
 
 FileWriter::FileWriter(const WriterConfig &wc)
     : LogWriter(wc)
+    , m_rotationCurFileNumber(0)
 {
-    m_rotationCurFileNumber = 0;
     m_logfileBaseName = "uniqlogfile.txt";
     m_lastWrittenDateTime = QDateTime::currentDateTime();
 }
@@ -217,6 +217,10 @@ FileWriter::changeOutputFile(const QString &i_filename)
 }
  
 
+QString
+FileWriter::getCurrentLogFilename() const
+{ return m_LogFile.fileName(); }
+
 /*!
   \brief sets the base name that will be used for the log files
   \param aFilename the basename of the log files
@@ -225,6 +229,7 @@ void
 FileWriter::setOutputFile(const QString& aFilename)
 {
     m_logfileBaseName = aFilename;
+    m_rotationCurFileNumber = 0;
 
     m_LogfileInfo = calculateLogFilePattern(m_logfileBaseName);
     QString fname = calculateNextLogFileName();
@@ -247,6 +252,7 @@ FileWriter::writeToDevice()
     {
         mutex.lock();
         int nummsg = m_logMessageList.count();
+        int writtenbytes = 0;
         for (int i=0; i<nummsg; i++)
             if (m_LogFile.isOpen()) //we could be in the middle of changing logfile
             {
@@ -258,15 +264,13 @@ FileWriter::writeToDevice()
                 LogMessage lm = m_logMessageList.takeFirst();
                 QString m = lm.message();
                 QString s = m + terminator;
-#ifdef ENABLE_UNQL_DBG
-                int dddd = m_LogFile.write(s.toLatin1());
-                qDebug() << "wrote " << dddd << " on " << m_LogFile.fileName();
-#else
-                m_LogFile.write(s.toLatin1());
-#endif
+
+                writtenbytes += m_LogFile.write(s.toLatin1());
             }
         m_LogFile.flush();
         mutex.unlock();
+
+        ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
 
         rotateFilesIfNeeded();
     }
@@ -288,21 +292,32 @@ bool FileWriter::isCompressionActive() const
 /*!
  * \brief FileWriter::removeOldestFile removes the files that should no longer be used for logging
  */
-void FileWriter::removeOldestFile()
+void FileWriter::removeOldestFiles()
 {
-    if (m_Config.maxFileNum == 0)
+    ULDBG << "Checking whether there are some old logfiles to be removed";
+    if (m_Config.maxFileNum == 0) {
+        ULDBG << "There is no rotation, ignoring";
         return;
+    }
 
-    while (m_lastUsedFilenames.size() > m_Config.maxFileNum) {
-        QString lastfile = m_lastUsedFilenames.dequeue();
+    ULDBG << "Last used file names is currently: " << m_lastUsedFilenames;
+    while (m_lastUsedFilenames.size() >= m_Config.maxFileNum) {
+        QString lastfile;
+        /*if (m_Config.rotationPolicy == UNQL::StrictRotation) {
+            lastfile = m_lastUsedFilenames.takeLast();
+        } else {*/
+            lastfile = m_lastUsedFilenames.dequeue();
+        //}
         if (QFile::exists(lastfile)) {
-            ULDBG << "removing old logfile: " << lastfile;
+            ULDBG << "about to remove old logfile: " << lastfile;
             QFile::remove(lastfile);
         }
         else {
-            ULDBG << lastfile << " does not exists, cannot delete";
+            ULDBG << lastfile << " does not seem to exist, cannot delete it ";
         }
     }
+
+    ULDBG << "Last used file names is NOW: " << m_lastUsedFilenames;
 }
 
 
@@ -314,17 +329,18 @@ void FileWriter::renameOldLogFiles()
 {
     ULDBG << "last used files Q has " << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
 
-    //if we have more than m_Config.maxfiles files we get the last and delete it
-    if (m_Config.maxFileNum > 0 && m_Config.maxFileNum <= m_lastUsedFilenames.size() + 1) {
-        QString lastfile = m_lastUsedFilenames.last();
+    //if we have m_Config.maxfiles in the last used files we need to remove the last so that we can allow renaming
+    if (m_Config.maxFileNum > 0 && m_Config.maxFileNum == m_lastUsedFilenames.size() + 1) {
+        QString lastfile = m_lastUsedFilenames.dequeue();
         if (QFile::exists(lastfile)) {
             ULDBG << "removing old logfile: " << lastfile;
             QFile::remove(lastfile);
         }
         else {
-            ULDBG << lastfile << " does not exists, cannot delete";
+            ULDBG << lastfile << " does not exist, cannot delete";
         }
     }
+
 
     //now we shall rename each file
     for (int i = m_rotationCurFileNumber; i > 0; i--)
@@ -336,8 +352,13 @@ void FileWriter::renameOldLogFiles()
         QFile newer(newerfile);
         bool b = newer.rename(olderfile);
         Q_ASSERT(b);
+        if (!m_lastUsedFilenames.contains(olderfile)) {
+            ULDBG << "re-INSERTING " << olderfile << " into last used filenames";
+        }
     }
     qDebug() << "finished renaming files";
+
+
 
     /*
     for (int i = m_Config.maxFileNum-2; i>=0; i--) {
@@ -392,9 +413,9 @@ void FileWriter::rotateFileForIncrementalNumbers()
     {
         previousFile = compressIfNeeded( previousFile );
     }
-    m_lastUsedFilenames.append(previousFile);
+    m_lastUsedFilenames.enqueue(previousFile);
 
-    removeOldestFile();
+    removeOldestFiles();
 }
 
 /*!
@@ -403,17 +424,34 @@ void FileWriter::rotateFileForIncrementalNumbers()
  */
 void FileWriter::rotateFileForStrictRotation()
 {
+    ULDBG << "Rotating files for STRICT rotation...";
     //Close current logfile
     m_LogFile.flush();
     m_LogFile.close();
 
     //increment the rotation number and calculate the max rotation filename
-    m_rotationCurFileNumber++;
+    if (m_rotationCurFileNumber < m_Config.maxFileNum - 1) {
+        ULDBG << "Incrementing m_rotationCurFileNumber from " << m_rotationCurFileNumber << " to " << m_rotationCurFileNumber + 1;
+        m_rotationCurFileNumber++;
+    }
     QString renamedlogfile = calculatePreviousLogFileName(m_rotationCurFileNumber);
     //append the last used file to be rotated
-    ULDBG << "appending " << renamedlogfile << " to lastUsedFilenames";
-    m_lastUsedFilenames.append(renamedlogfile);
-
+    if (m_rotationCurFileNumber != 1) {
+        ULDBG << "INSERTING " << renamedlogfile << " to lastUsedFilenames";
+        if (!m_lastUsedFilenames.contains(renamedlogfile))
+            m_lastUsedFilenames.push_front(renamedlogfile);
+        else {
+            ULDBG << "NOT INSERTING since it's already there";
+        }
+    } else {
+        ULDBG << "APPENDING " << renamedlogfile << " to lastUsedFilenames";
+        if (!m_lastUsedFilenames.contains(renamedlogfile))
+            m_lastUsedFilenames.enqueue(renamedlogfile);
+        else {
+            ULDBG << "NOT APPENDING since it's already there";
+        }
+    }
+removeOldestFiles();
     //now move the other files starting from the one b4 last
     renameOldLogFiles(); /* loop to rename old rotated files */
 
@@ -441,9 +479,12 @@ void FileWriter::rotateFileForTimePolicy()
         newlogfilename = calculateNextLogFileName();
         qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);
-        m_lastUsedFilenames.append(previousFile);
+        if (m_Config.rotationPolicy == UNQL::StrictRotation)
+            m_lastUsedFilenames.push_front(previousFile);
+        else
+            m_lastUsedFilenames.enqueue(previousFile);
 
-        removeOldestFile();
+        removeOldestFiles();
     } else {
         ULDBG << "File rotation for TIME policy was NOT needed";
     }
@@ -464,6 +505,7 @@ FileWriter::rotateFilesIfNeeded()
         rotateFileForTimePolicy();
     }
     //check if we need to change file for its size, NOTE: if we rotated the file for time above its size will be 0 at first run
+    ULDBG << "Checking if File rotation is needed due to SIZE policy...";
     if ( (m_Config.maxFileSize > 0) && ( (m_LogFile.size() / 1E6) > m_Config.maxFileSize) )
     {
         ULDBG << "File rotation needed due to SIZE policy";
@@ -478,6 +520,13 @@ FileWriter::rotateFilesIfNeeded()
         default:
             break;
         } /* switch( rotation policy ) */
+    } else {
+        if (m_Config.maxFileSize == 0) {
+            ULDBG << "Filesize cheking is disabled... ignoring";
+        } else {
+            ULDBG << "File rotation due to SIZE NOT needed: accepted size is " << m_Config.maxFileSize << "MB and file "
+                  << m_LogFile.fileName() << " is big " << m_LogFile.size() << " bytes ("<<  (m_LogFile.size() / 1E6) << "MB)";
+        }
     }
 }
 

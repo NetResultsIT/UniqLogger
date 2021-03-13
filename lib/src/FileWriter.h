@@ -46,7 +46,7 @@ protected:
     int secsPassedSinceTimeRotationWasNeeded();
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
-    void removeOldestFile();
+    void removeOldestFiles();
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();
     void rotateFileForTimePolicy();
@@ -58,6 +58,7 @@ public:
     explicit FileWriter(const WriterConfig &);
     virtual ~FileWriter();
 
+    QString getCurrentLogFilename() const;
     void setOutputFile(const QString& filename="log.txt");
     void setLogfileMaxSize(int filesize);
     void setLogfileRotationRange(int maxfilenum);

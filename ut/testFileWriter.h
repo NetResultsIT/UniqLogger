@@ -12,8 +12,11 @@ public:
 signals:
 
 private slots:
-    void testRotateOldFiles();
+    void testRenameOldFiles();
     void testCalculateLogInfo();
+    void testRotateForTimePolicy();
+    void testRotateForIncrementalNumbers();
+    void testRotateForStrictNumbers();
 };
 
 #endif // TESTFILEWRITER_H
