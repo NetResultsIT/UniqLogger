@@ -53,23 +53,69 @@ FileWriter::setLogfileRotationRange(int maxfilenum)
 { m_Config.maxFileNum = maxfilenum; }
  
 
+/*!
+ * \brief FileWriter::overrideCurrentRotationNumber Sets a new value for m_rotationCurFileNumber member
+ * \param index the new value for m_rotationCurFileNumber
+ * \warning this function should only be used for unit testing, using in production might stop correct uniqlogger behaviour
+ */
+void FileWriter::overrideCurrentRotationNumber(int index)
+{ m_rotationCurFileNumber = index; }
+
+
+/*!
+ * \brief FileWriter::overrideLastWrittenDateTime Sets a new value for lastWrittenDateTime member
+ * \param dt the new date time that should be used
+ * \warning this function should only be used for unit testing, using in production might stop correct uniqlogger behaviour
+ */
+void FileWriter::overrideLastWrittenDateTime(QDateTime dt)
+{ m_lastWrittenDateTime = dt; }
+
+void FileWriter::setTestingCurrentDateTime(QDateTime dt)
+{ m_currentDateTimeUsedForTest = dt; }
+
+
+/*!
+ * \brief FileWriter::resetLastUsedFilenames clear the Queue containg the last used filenames
+ * \warning this is a method to be used only during testing.
+ */
+void FileWriter::resetLastUsedFilenames()
+{ m_lastUsedFilenames.clear(); }
+
+
+
+QDateTime FileWriter::getCurrentDateTime() const
+{
+    if (m_currentDateTimeUsedForTest.isValid()) {
+        ULDBG << "WARNING - using a user-set datetime: " << m_currentDateTimeUsedForTest;
+        return m_currentDateTimeUsedForTest;
+    }
+
+    return QDateTime::currentDateTime();
+}
+
+
+/*!
+ * \brief FileWriter::secsPassedSinceTimeRotationWasNeeded
+ * \return the number of seconds passed since the last time-rotation was needed (or 0 if such time did not pass)
+ */
 int FileWriter::secsPassedSinceTimeRotationWasNeeded()
 {
     int timePassed = 0;
 
-    QDateTime now = QDateTime::currentDateTime();
+    //use testing qdatetime if valid or the real now() if not.
+    QDateTime now = getCurrentDateTime();
 
     //TODO - we should compare not the whole lastwrittendatetime but only the day, hour, minute part
     //otherwise if we start at 16:57 we will trigger the hour change at 17:57
     if (
          (m_Config.timeRotationPolicy == UNQL::HourlyRotation
-          && m_lastWrittenDateTime.secsTo(now) > 3600)
+          && m_lastWrittenDateTime.secsTo(now) >= 3600)
        ||
          (m_Config.timeRotationPolicy == UNQL::DailyRotation
           && m_lastWrittenDateTime.addDays(1) >= now)
        ||
          (m_Config.timeRotationPolicy == UNQL::PerMinuteRotation
-          && m_lastWrittenDateTime.secsTo(now) > 60)
+          && m_lastWrittenDateTime.secsTo(now) >= 60)
        )
     {
         timePassed = m_lastWrittenDateTime.secsTo(now);
@@ -465,7 +511,7 @@ void FileWriter::rotateFileForTimePolicy()
     QString newlogfilename;
     int secsPassedSinceLastWrittenLog = secsPassedSinceTimeRotationWasNeeded();
 
-    qDebug() << "Seconds passed since rotation is needed (current time is " << QDateTime::currentDateTime()
+    qDebug() << "Seconds passed since rotation is needed (current time is " << getCurrentDateTime()
              << "): " << secsPassedSinceLastWrittenLog;
 
     if (secsPassedSinceLastWrittenLog > 0) {
@@ -475,7 +521,7 @@ void FileWriter::rotateFileForTimePolicy()
         m_rotationCurFileNumber = 0;
         qDebug() << "Currently logging to " << previousFile;
         //we need to update the written date time before calculating the new logfile name
-        m_lastWrittenDateTime = QDateTime::currentDateTime();
+        m_lastWrittenDateTime = getCurrentDateTime();
         newlogfilename = calculateNextLogFileName();
         qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);

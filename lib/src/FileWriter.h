@@ -26,6 +26,7 @@ class FileWriter: public LogWriter
     Q_OBJECT
 
 private:
+    int m_rotationCurFileNumber;
     QFile m_LogFile;
     bool m_streamIsOpen;
     LogFileInfo m_LogfileInfo;
@@ -34,18 +35,28 @@ private:
     QDateTime m_lastWrittenDateTime;
 
 protected:
-    int m_rotationCurFileNumber;
+    //Testing functions
     QQueue<QString> m_lastUsedFilenames;
-    LogFileInfo calculateLogFilePattern(const QString &filename);
+    QDateTime m_currentDateTimeUsedForTest;
+    void overrideCurrentRotationNumber(int idx);
+    void overrideLastWrittenDateTime(QDateTime dt);
+    void setTestingCurrentDateTime(QDateTime dt);
+    void resetLastUsedFilenames();
+
+    //normal usage functions
+private:
     QString calculateLogFileNameForIndex(int index);
     QString calculateNextLogFileName();
     QString calculatePreviousLogFileName(int index);
+    QDateTime getCurrentDateTime() const;
     void changeOutputFile(const QString&);
     void writeToDevice();
     void rotateFilesIfNeeded();
     int secsPassedSinceTimeRotationWasNeeded();
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
+protected:
+    LogFileInfo calculateLogFilePattern(const QString &filename);
     void removeOldestFiles();
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();

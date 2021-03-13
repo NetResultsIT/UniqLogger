@@ -80,18 +80,20 @@ void writeToFile(QString fname, int megabytes)
     f.close();
 }
 
+
 void deleteFile(QString fname)
 {
     QFile f(fname);
     f.remove();
 }
 
+//TODO - check if there is a way to test renaming withou exposid the last used file Q
 void
 testFileWriter::testRenameOldFiles()
 {
     //QSKIP("skipping for now");
     //cleanup
-    m_lastUsedFilenames.clear();
+    resetLastUsedFilenames();
 
     m_Config.maxFileNum = 3;
 
@@ -103,7 +105,7 @@ testFileWriter::testRenameOldFiles()
     Q_ASSERT(QFile::exists(f));
 
     setOutputFile(f);
-    m_rotationCurFileNumber = 1;
+    overrideCurrentRotationNumber(1);
     m_lastUsedFilenames.append(f1);
 
     renameOldLogFiles();
@@ -111,20 +113,20 @@ testFileWriter::testRenameOldFiles()
     Q_ASSERT(QFile::exists(f1));
     //end of first test (renaming log into log-1)
 
-    m_lastUsedFilenames.clear();
+    resetLastUsedFilenames();
     setOutputFile(f);
     createFile(f);
     createFile(f1);
     m_lastUsedFilenames.append(f2);
     m_lastUsedFilenames.append(f1);
-    m_rotationCurFileNumber = 2;
+    overrideCurrentRotationNumber(2);
     renameOldLogFiles();
     Q_ASSERT(!QFile::exists(f));
     Q_ASSERT(QFile::exists(f1));
     Q_ASSERT(QFile::exists(f2));
     //end of second test (renaming log-1 into log-2, then log into log-1)
 
-    m_lastUsedFilenames.clear();
+    resetLastUsedFilenames();
     createFile(f);
     createFile(f1);
     createFile(f2);
@@ -136,7 +138,7 @@ testFileWriter::testRenameOldFiles()
     m_lastUsedFilenames.append(f2);
     m_lastUsedFilenames.append(f1);
 
-    m_rotationCurFileNumber = 2;
+    overrideCurrentRotationNumber(2);
     renameOldLogFiles();
 
     Q_ASSERT(!QFile::exists(f));
@@ -152,20 +154,68 @@ testFileWriter::testRenameOldFiles()
 
 void testFileWriter::testRotateForTimePolicy()
 {
+    //cleanup
+    resetLastUsedFilenames();
 
+    QStringList filenames;
+
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 0;
+    m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
+    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
+
+    filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:01:00.txt"
+              << "log-2021-03-16T02:02:00.txt" << "log-2021-03-16T02:03:00.txt";
+
+    QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
+    Q_ASSERT(dt.isValid());
+    QDateTime dt1 = QDateTime::fromString("2021-03-16T02:01:00", "yyyy-MM-ddThh:mm:ss");
+    Q_ASSERT(dt1.isValid());
+    QDateTime dt2 = QDateTime::fromString("2021-03-16T02:02:00", "yyyy-MM-ddThh:mm:ss");
+    Q_ASSERT(dt2.isValid());
+    QDateTime dt3 = QDateTime::fromString("2021-03-16T02:03:00", "yyyy-MM-ddThh:mm:ss");
+    Q_ASSERT(dt3.isValid());
+
+    overrideLastWrittenDateTime(dt);
+    setOutputFile("log.txt");
+
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+
+
+    setTestingCurrentDateTime(dt1);
+    rotateFileForTimePolicy();
+    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[1]);
+
+    setTestingCurrentDateTime(dt2);
+    rotateFileForTimePolicy();
+    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[2]);
+
+
+    setTestingCurrentDateTime(dt3);
+    rotateFileForTimePolicy();
+    Q_ASSERT(QFileInfo::exists(filenames[3]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[3]);
+    Q_ASSERT(!QFileInfo::exists(filenames[0]));
+
+    foreach (QString s, filenames) {
+        deleteFile(s);
+    }
 }
 
 
 void testFileWriter::testRotateForIncrementalNumbers()
 {
     //cleanup
-    m_lastUsedFilenames.clear();
+    resetLastUsedFilenames();
 
     QStringList filenames;
 
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
+    m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
     filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
 
     //create base file
@@ -207,12 +257,13 @@ void testFileWriter::testRotateForIncrementalNumbers()
 
 void testFileWriter::testRotateForStrictNumbers()
 {
-    m_lastUsedFilenames.clear();
+    resetLastUsedFilenames();
     QStringList filenames;
 
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::StrictRotation;
+    m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
     filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
 
     //create base file
