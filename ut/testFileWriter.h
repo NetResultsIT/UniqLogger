@@ -15,6 +15,7 @@ private slots:
     void testRenameOldFiles();
     void testCalculateLogInfo();
     void testRotateForTimePolicy();
+    void testRotateForTimePolicyAndSizeHigherNewer();
     void testRotateForIncrementalNumbers();
     void testRotateForStrictNumbers();
 };
