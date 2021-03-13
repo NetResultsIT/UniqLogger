@@ -62,7 +62,7 @@ protected:
     void rotateFileForTimePolicy();
     void rotateFilesIfNeeded();
 
-    void renameOldLogFiles();
+    void renameOldLogFilesForStrictRotation();
     bool isCompressionActive() const;
 
 public:

@@ -368,13 +368,13 @@ void FileWriter::removeOldestFiles()
 
 
 /*!
- * \brief FileWriter::renameOldLogFiles
+ * \brief FileWriter::renameOldLogFilesForStrictRotation
  * In case of strict rotation this method will rename all involved files accordingly (i.e. log-2 -> log-3, log-1 -> log-2 and log -> log-1)
  */
-void FileWriter::renameOldLogFiles()
+void FileWriter::renameOldLogFilesForStrictRotation()
 {
     ULDBG << "last used files Q has " << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
-
+/*
     //if we have m_Config.maxfiles in the last used files we need to remove the last so that we can allow renaming
     if (m_Config.maxFileNum > 0 && m_Config.maxFileNum == m_lastUsedFilenames.size() + 1) {
         QString lastfile = m_lastUsedFilenames.dequeue();
@@ -386,24 +386,31 @@ void FileWriter::renameOldLogFiles()
             ULDBG << lastfile << " does not exist, cannot delete";
         }
     }
-
+*/
 
     //now we shall rename each file
     for (int i = m_rotationCurFileNumber; i > 0; i--)
     {
-        qDebug() << "Processing renaming cycle " << i ;
+        //qDebug() << "Processing renaming cycle " << i ;
         QString olderfile = calculatePreviousLogFileName(i);
         QString newerfile = calculatePreviousLogFileName(i-1);
         ULDBG << "renaming " << newerfile << " into " << olderfile;
         QFile newer(newerfile);
-        bool b = newer.rename(olderfile);
-        Q_ASSERT(b);
-        if (!m_lastUsedFilenames.contains(olderfile)) {
-            ULDBG << "re-INSERTING " << olderfile << " into last used filenames";
-            m_lastUsedFilenames.push_front(olderfile);
+        if (QFile::exists(olderfile)) {
+            ULDBG << "target file " << olderfile << " exists, removing it before renaming";
+            QFile::remove(olderfile);
         }
+        bool b = newer.rename(olderfile);
+
+        Q_ASSERT(b);
+//        if (!m_lastUsedFilenames.contains(olderfile)) {
+//            ULDBG << "re-INSERTING " << olderfile << " into last used filenames";
+//            m_lastUsedFilenames.push_front(olderfile);
+//        }
     }
-    qDebug() << "finished renaming files";
+    ULDBG << "finished renaming files";
+    ULDBG << "last used files Q has AFTER renaming" << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
+
 
 
 
@@ -498,9 +505,9 @@ void FileWriter::rotateFileForStrictRotation()
             ULDBG << "NOT APPENDING since it's already there";
         }
     }
-removeOldestFiles();
+    removeOldestFiles();
     //now move the other files starting from the one b4 last
-    renameOldLogFiles(); /* loop to rename old rotated files */
+    renameOldLogFilesForStrictRotation(); /* loop to rename old rotated files */
 
     //Set the same logfile to restart logging.
     changeOutputFile( m_LogFile.fileName() );
@@ -527,11 +534,7 @@ void FileWriter::rotateFileForTimePolicy()
         //qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);
         ULDBG << "Current1 last used files: " << m_lastUsedFilenames;
-        /*if (m_Config.rotationPolicy == UNQL::StrictRotation)
-            m_lastUsedFilenames.push_front(previousFile);
-        else*/
-            m_lastUsedFilenames.enqueue(previousFile);
-
+        m_lastUsedFilenames.enqueue(previousFile);
         removeOldestFiles();
     } else {
         ULDBG << "File rotation for TIME policy was NOT needed";
@@ -547,7 +550,8 @@ void FileWriter::rotateFileForTimePolicy()
 void
 FileWriter::rotateFilesIfNeeded()
 {
-    //first we check if we need to change thefle due to time rotation
+    ULDBG << "Checking if file " << m_LogFile.fileName() << " needs to be rotated";
+    //first we check if we need to change the file due to time rotation
     if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
         ULDBG << "Checking if File rotation is needed due to TIME policy...";
         rotateFileForTimePolicy();
@@ -564,8 +568,6 @@ FileWriter::rotateFilesIfNeeded()
             break;
         case UNQL::StrictRotation:
             rotateFileForStrictRotation();
-            break;
-        default:
             break;
         } /* switch( rotation policy ) */
     } else {

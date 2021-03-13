@@ -108,7 +108,7 @@ testFileWriter::testRenameOldFiles()
     overrideCurrentRotationNumber(1);
     m_lastUsedFilenames.append(f1);
 
-    renameOldLogFiles();
+    renameOldLogFilesForStrictRotation();
     Q_ASSERT(!QFile::exists(f));
     Q_ASSERT(QFile::exists(f1));
     //end of first test (renaming log into log-1)
@@ -120,7 +120,7 @@ testFileWriter::testRenameOldFiles()
     m_lastUsedFilenames.append(f2);
     m_lastUsedFilenames.append(f1);
     overrideCurrentRotationNumber(2);
-    renameOldLogFiles();
+    renameOldLogFilesForStrictRotation();
     Q_ASSERT(!QFile::exists(f));
     Q_ASSERT(QFile::exists(f1));
     Q_ASSERT(QFile::exists(f2));
@@ -139,7 +139,7 @@ testFileWriter::testRenameOldFiles()
     m_lastUsedFilenames.append(f1);
 
     overrideCurrentRotationNumber(2);
-    renameOldLogFiles();
+    renameOldLogFilesForStrictRotation();
 
     Q_ASSERT(!QFile::exists(f));
     Q_ASSERT(QFile::exists(f1));
@@ -270,7 +270,8 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
     m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
 
     filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:00:00-1.txt"
-              << "log-2021-03-16T02:00:00-2.txt" << "log-2021-03-16T02:01:00.txt";
+              << "log-2021-03-16T02:00:00-2.txt" << "log-2021-03-16T02:01:00.txt"
+              << "log-2021-03-16T02:01:00-1.txt";
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
     Q_ASSERT(dt.isValid());
@@ -297,9 +298,20 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
     setTestingCurrentDateTime(dt1);
     rotateFileForTimePolicy();
     Q_ASSERT(!QFileInfo::exists(filenames[2]));
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[1]));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
     Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 
+
+    writeToFile(filenames[3], 2);
+    rotateFileForStrictRotation();
+    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[3]));
+    Q_ASSERT(QFileInfo::exists(filenames[4]));
+    Q_ASSERT(!QFileInfo::exists(filenames[1]));
+    Q_ASSERT(!QFileInfo::exists(filenames[2]));
+    Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 
     foreach (QString s, filenames) {
         deleteFile(s);
