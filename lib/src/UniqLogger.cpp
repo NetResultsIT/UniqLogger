@@ -236,6 +236,7 @@ UniqLogger::createLogger(const QString &logname)
  * \brief creates a dummy logger: it will drop all the data sent to the logger
  *  you could consider as redirecting logs to /dev/null
  * \param logname  the modulename for this logger
+ * \param wc the configuration to be used (only some params will be honoured) with this logger
  * \return the pointer to the logger class created or a null pointer if something went wrong
  */
 Logger*

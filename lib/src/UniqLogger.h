@@ -44,7 +44,7 @@ class NRThreadPool;
     It's also possible to define the timestamp format in order to show milliseconds.
 
     Monitoring is another cool feature of the UniQLogger library, it allows to define a map
-    of variables (identified by a keyword that must be unique per logger) that can be \i turned on
+    of variables (identified by a keyword that must be unique per logger) that can be \em turned on
     and off by the UniQLogger monitorVar() method.
 */
 

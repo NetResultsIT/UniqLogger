@@ -56,6 +56,10 @@ public:
      */
     ConsoleColorScheme();
 
+    /*!
+     * \brief ConsoleColorScheme copy constructor
+     * \param c2 the colorscheme we will use as source
+     */
     ConsoleColorScheme(const ConsoleColorScheme& c2);
 
     /*!
@@ -89,6 +93,11 @@ public:
      */
     void setDefaultColor(UNQL::ConsoleColorType i_color);
 
+    /*!
+     * \brief operator == comparison operator
+     * \param rhs the colorscheme we are comparing this to
+     * \return true if all the color match
+     */
     bool operator ==(const UNQL::ConsoleColorScheme &rhs) const;
 };
 

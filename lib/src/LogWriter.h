@@ -37,6 +37,9 @@ enum NetworkProtocolType {
 
 }
 
+/*!
+ * \brief The WriterConfig class provides configuration settings for all LogWriter subclasses
+ */
 class ULOG_LIB_API WriterConfig
 {
 public:

@@ -23,7 +23,7 @@ WriterConfig::WriterConfig()
     , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
     , maxFileSize      ( 0 )                        // unlimited MB size of logfile
     , maxFileNum       ( 1 )                        // log on just one file by default
-    , rotationPolicy   ( UNQL::StrictRotation ) // We use the higher-numbers-are-older rotation policy by default
+    , rotationPolicy   ( UNQL::StrictRotation )     // We use the higher-numbers-are-older rotation policy by default
     , compressionLevel ( 6 )                        // Use default compression level
     , compressionAlgo  ( NrFileCompressor::NO_COMPRESSION )
     , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs

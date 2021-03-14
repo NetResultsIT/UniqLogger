@@ -121,7 +121,7 @@ Logger::setEncasingChars(const QChar &startChar, const QChar &endChar)
 
 /*!
   \brief change the spacing character that is used for this logger
-  \param spChar is the spacing character that separates the module names and priority levels, the default is ' '
+  \param spStr is the spacing string that separates the module names and priority levels, the default is ' '
   */
 void
 Logger::setSpacingString(const QString &spStr)
@@ -160,6 +160,12 @@ Logger::addLogDevice(LogWriter *el)
 }
 
 
+/*!
+ * \brief Logger::removeLogDevice removes a logwriter from this logger
+ * \param el the pointer to the writer we want to remove
+ * \return a negative value if an error occurred, 0 otherwise
+  this method will remove a LogWriter from the ones this logger dispatches its messages
+ */
 int
 Logger::removeLogDevice(LogWriter *el)
 {
@@ -186,7 +192,9 @@ Logger::dispatchMessage(const LogMessage &m)
 }
 
 
-
+/*!
+ * \brief Logger::flush forces this Logger to write all its messages to the connected writers
+ */
 void
 Logger::flush()
 {
@@ -292,7 +300,7 @@ void Logger::printToStdOut(bool enable)
 
 /*!
  * \brief Logger::printToQDebug
- * \param enablethe new status of the qDebug() printout
+ * \param enable the new status of the qDebug() printout
  * \note the printing will \em not take log priority into account so \em every message will be printed with qDebug()
  * The purpose of this function is to cleanup code during debugging and allow programmers see all the messages that might go into log files
  * directly on console
