@@ -94,6 +94,7 @@ void testFileWriter::cleanup(QStringList filenames) {
         deleteFile(s);
     }
     setTestingCurrentDateTime(QDateTime());
+    m_Config = WriterConfig();
 }
 
 void
@@ -102,13 +103,15 @@ testFileWriter::testRemoveOldestFiles()
     //QSKIP("Adjusting code...");
 
     QStringList filenames;
+    filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
+
+    cleanup(filenames);
+
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
     m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
-    filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
 
-    cleanup(filenames);
     foreach (QString s, filenames) {
         createFile(s);
     }
@@ -137,11 +140,13 @@ testFileWriter::testRenameOldFiles()
     //QSKIP("skipping for now");
 
     QStringList filenames;
-    m_Config.maxFileNum = 3;
     filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
 
     //cleanup possible leftover from previous (failed tests)
     cleanup(filenames);
+
+    m_Config.maxFileNum = 3;
+    m_Config.timeRotationPolicy = UNQL::NoTimeRotation;
 
     setOutputFile(filenames[0]);
     overrideCurrentRotationNumber(1);
@@ -195,16 +200,17 @@ void testFileWriter::testRotateForTimePolicy()
     //QSKIP("adjusting code");
 
     QStringList filenames;
+    filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:01:00.txt"
+              << "log-2021-03-16T02:02:00.txt" << "log-2021-03-16T02:03:00.txt";
+
+    cleanup(filenames);
+
 
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 0;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
     m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
 
-    filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:01:00.txt"
-              << "log-2021-03-16T02:02:00.txt" << "log-2021-03-16T02:03:00.txt";
-
-    cleanup(filenames);
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
     Q_ASSERT(dt.isValid());
@@ -257,15 +263,16 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
     //QSKIP("adjusting code");
 
     QStringList filenames;
+    filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:00:00-1.txt"
+              << "log-2021-03-16T02:00:00-2.txt" << "log-2021-03-16T02:01:00.txt";
+
+    cleanup(filenames);
+
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
     m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
 
-    filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:00:00-1.txt"
-              << "log-2021-03-16T02:00:00-2.txt" << "log-2021-03-16T02:01:00.txt";
-
-    cleanup(filenames);
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
     Q_ASSERT(dt.isValid());
@@ -313,16 +320,17 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
     //QSKIP("adjusting code");
 
     QStringList filenames;
-    m_Config.maxFileNum = 3;
-    m_Config.maxFileSize = 1;
-    m_Config.rotationPolicy = UNQL::StrictRotation;
-    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
 
     filenames << "log-2021-03-16T02:00:00.txt" << "log-2021-03-16T02:00:00-1.txt"
               << "log-2021-03-16T02:00:00-2.txt" << "log-2021-03-16T02:01:00.txt"
               << "log-2021-03-16T02:01:00-1.txt";
 
     cleanup(filenames);
+
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 1;
+    m_Config.rotationPolicy = UNQL::StrictRotation;
+    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
     Q_ASSERT(dt.isValid());
@@ -383,14 +391,15 @@ void testFileWriter::testRotateForIncrementalNumbers()
 
     //init
     QStringList filenames;
-    m_Config.maxFileNum = 3;
-    m_Config.maxFileSize = 1;
-    m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
-    m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
     filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
 
     //cleanup possible leftover from previous (failed tests)
     cleanup(filenames);
+
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 1;
+    m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
+    m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
 
     //create base file
     setOutputFile(filenames[0]);
@@ -438,17 +447,14 @@ void testFileWriter::testRotateForStrictNumbers()
     //QSKIP("adjusting code");
 
     QStringList filenames;
+    filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
+    cleanup(filenames);
+
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::StrictRotation;
     m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
-    filenames << "log.txt" << "log-1.txt" << "log-2.txt" << "log-3.txt";
 
-    //cleanup possible leftover from previous (failed tests)
-    resetLastUsedFilenames();
-    foreach (QString s, filenames) {
-        deleteFile(s);
-    }
 
     //create base file
     setOutputFile(filenames[0]);

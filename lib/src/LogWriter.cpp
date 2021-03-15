@@ -18,16 +18,17 @@
  ******************/
 
 WriterConfig::WriterConfig()
-    : maxMessageNum    ( 0 )                        // unlimited
-    , writerFlushSecs  ( 5 )                        // each writer will flush data every 5 seconds
-    , writeIdleMark    ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
-    , maxFileSize      ( 0 )                        // unlimited MB size of logfile
-    , maxFileNum       ( 1 )                        // log on just one file by default
-    , rotationPolicy   ( UNQL::StrictRotation )     // We use the higher-numbers-are-older rotation policy by default
-    , compressionLevel ( 6 )                        // Use default compression level
-    , compressionAlgo  ( NrFileCompressor::NO_COMPRESSION )
-    , reconnectionSecs ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
-    , netProtocol      ( UNQL::TCP )                // Transport protocol for remote messages
+    : maxMessageNum      ( 0 )                        // unlimited
+    , writerFlushSecs    ( 5 )                        // each writer will flush data every 5 seconds
+    , writeIdleMark      ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
+    , maxFileSize        ( 0 )                        // unlimited MB size of logfile
+    , maxFileNum         ( 1 )                        // log on just one file by default
+    , rotationPolicy     ( UNQL::StrictRotation )     // We use the higher-numbers-are-older rotation policy by default
+    , timeRotationPolicy ( UNQL::NoTimeRotation )     // We use the higher-numbers-are-older rotation policy by defaulttime
+    , compressionLevel   ( 6 )                        // Use default compression level
+    , compressionAlgo    ( NrFileCompressor::NO_COMPRESSION )
+    , reconnectionSecs   ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
+    , netProtocol        ( UNQL::TCP )                // Transport protocol for remote messages
 {
 /* empty ctor */
 }
