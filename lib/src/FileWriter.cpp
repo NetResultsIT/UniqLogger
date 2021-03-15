@@ -414,6 +414,12 @@ void FileWriter::renameOldLogFilesForStrictRotation()
         //qDebug() << "Processing renaming cycle " << i ;
         QString olderfile = calculatePreviousLogFileName(i);
         QString newerfile = calculatePreviousLogFileName(i-1);
+
+        if ( isCompressionActive() && i != 1) {
+            olderfile = NrFileCompressor::getCompressedFilename(olderfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+            newerfile = NrFileCompressor::getCompressedFilename(newerfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+        }
+
         ULDBG << "renaming " << newerfile << " into " << olderfile;
         QFile newer(newerfile);
         QFile older(olderfile);
@@ -488,7 +494,6 @@ void FileWriter::rotateFileForIncrementalNumbers()
     {
         previousFile = compressIfNeeded( previousFile );
     }
-    //m_lastUsedFilenames.enqueue(previousFile);
 
     removeOldestFiles();
 }
@@ -530,6 +535,14 @@ void FileWriter::rotateFileForStrictRotation()
 
     //now move the other files starting from the one b4 last
     renameOldLogFilesForStrictRotation(); /* loop to rename old rotated files */
+
+    if ( isCompressionActive() )
+    {
+        //we always need to compress the first file (i.e. log-1.txt) after rotation of ex-current mainfile (i.e. log.txt)
+        QString previousFile = calculatePreviousLogFileName(1);
+        ULDBG << "Compressing " << previousFile << " after strict rotation...";
+        compressIfNeeded( previousFile );
+    }
 
     //Set the same logfile to restart logging.
     changeOutputFile( m_LogFile.fileName() );
@@ -621,8 +634,8 @@ FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
          !i_fileToBeCompressed.endsWith(".zip") )
     {
         QString compressedfileName = NrFileCompressor::getCompressedFilename(i_fileToBeCompressed, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
-        ULDBG << "uncompress filename: " << i_fileToBeCompressed;
-        ULDBG << "compressed filename:  " << compressedfileName;
+        ULDBG << "uncompressed filename: " << i_fileToBeCompressed;
+        ULDBG << "compressed   filename:  " << compressedfileName;
         mutex.lock();
         int ret = NrFileCompressor::fileCompress(i_fileToBeCompressed,
                                      static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
