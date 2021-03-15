@@ -24,7 +24,7 @@ WriterConfig::WriterConfig()
     , maxFileSize        ( 0 )                        // unlimited MB size of logfile
     , maxFileNum         ( 1 )                        // log on just one file by default
     , rotationPolicy     ( UNQL::StrictRotation )     // We use the higher-numbers-are-older rotation policy by default
-    , timeRotationPolicy ( UNQL::NoTimeRotation )     // We use the higher-numbers-are-older rotation policy by defaulttime
+    , timeRotationPolicy ( UNQL::NoTimeRotation )     // Do not rotate on a time-based policy by default
     , compressionLevel   ( 6 )                        // Use default compression level
     , compressionAlgo    ( NrFileCompressor::NO_COMPRESSION )
     , reconnectionSecs   ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs

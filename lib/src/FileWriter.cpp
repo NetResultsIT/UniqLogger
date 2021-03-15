@@ -381,6 +381,10 @@ void FileWriter::removeOldestFiles()
     ULDBG << "Last used file names is currently: " << m_lastUsedFilenames;
     while (m_lastUsedFilenames.size() > m_Config.maxFileNum) {
         QString lastfile = m_lastUsedFilenames.dequeue();
+        if (isCompressionActive()) {
+            ULDBG << "Compression is active, adding compressed extension to " << lastfile;
+            lastfile = NrFileCompressor::getCompressedFilename(lastfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+        }
         if (QFile::exists(lastfile)) {
             ULDBG << "about to remove old logfile: " << lastfile;
             QFile::remove(lastfile);

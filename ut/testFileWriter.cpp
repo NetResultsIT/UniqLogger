@@ -147,6 +147,7 @@ testFileWriter::testRenameOldFiles()
 
     m_Config.maxFileNum = 3;
     m_Config.timeRotationPolicy = UNQL::NoTimeRotation;
+    m_Config.compressionAlgo = 1;
 
     setOutputFile(filenames[0]);
     overrideCurrentRotationNumber(1);
@@ -385,7 +386,7 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
 }
 
 
-void testFileWriter::testRotateForIncrementalNumbers()
+void testFileWriter::testRotateForIncrementalNumbers(int compressionAlgorithm)
 {
     //QSKIP("adjusting code");
 
@@ -399,7 +400,21 @@ void testFileWriter::testRotateForIncrementalNumbers()
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
-    m_Config.timeRotationPolicy= UNQL::NoTimeRotation;
+    m_Config.compressionAlgo = compressionAlgorithm;
+
+    QString compressedExt;
+    switch (m_Config.compressionAlgo) {
+        case 1:
+            qDebug() << "Using Gzip compression";
+            compressedExt = ".gz";
+            break;
+        case 2:
+            qDebug() << "Using ZIP compression";
+            compressedExt = ".zip";
+            break;
+        default:
+            qDebug() << "NOT using compression";
+    }
 
     //create base file
     setOutputFile(filenames[0]);
@@ -409,7 +424,7 @@ void testFileWriter::testRotateForIncrementalNumbers()
     rotateFileForIncrementalNumbers();
 
     //verify we created the new file
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(filenames[0] + compressedExt));
     Q_ASSERT(QFileInfo::exists(filenames[1]));
     Q_ASSERT(!QFileInfo::exists(filenames[2]));
     Q_ASSERT(!QFileInfo::exists(filenames[3]));
@@ -419,8 +434,8 @@ void testFileWriter::testRotateForIncrementalNumbers()
     //write to log-1 more than allowed size and rotate
     writeToFile(filenames[1], 2);
     rotateFileForIncrementalNumbers();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(QFileInfo::exists(filenames[0] + compressedExt));
+    Q_ASSERT(QFileInfo::exists(filenames[1] + compressedExt));
     Q_ASSERT(QFileInfo::exists(filenames[2]));
     Q_ASSERT(!QFileInfo::exists(filenames[3]));
     Q_ASSERT(getCurrentLogFilename() == filenames[2]);
@@ -430,17 +445,27 @@ void testFileWriter::testRotateForIncrementalNumbers()
     writeToFile(filenames[2], 2);
     rotateFileForIncrementalNumbers();
 
-    Q_ASSERT(!QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
-    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(!QFileInfo::exists(filenames[0] + compressedExt));
+    Q_ASSERT(QFileInfo::exists(filenames[1] + compressedExt));
+    Q_ASSERT(QFileInfo::exists(filenames[2] + compressedExt));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
     Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 
     foreach (QString s, filenames) {
-        deleteFile(s);
+        deleteFile(s + compressedExt);
     }
 }
 
+void testFileWriter::testRotateForIncrementalNumbersGzipCompressed()
+{
+    testRotateForIncrementalNumbers(1);
+}
+
+
+void testFileWriter::testRotateForIncrementalNumbersZipCompressed()
+{
+    testRotateForIncrementalNumbers(2);
+}
 
 void testFileWriter::testRotateForStrictNumbers()
 {

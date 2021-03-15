@@ -18,7 +18,9 @@ private slots:
     void testRotateForTimePolicy();
     void testRotateForTimePolicyAndSizeHigherNewer();
     void testRotateForTimePolicyAndSizeStrict();
-    void testRotateForIncrementalNumbers();
+    void testRotateForIncrementalNumbers(int compressionAlg=0);
+    void testRotateForIncrementalNumbersGzipCompressed();
+    void testRotateForIncrementalNumbersZipCompressed();
     void testRotateForStrictNumbers();
     void testRemoveOldestFiles();
 };
