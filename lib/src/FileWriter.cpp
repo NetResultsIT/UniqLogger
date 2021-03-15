@@ -437,44 +437,6 @@ void FileWriter::renameOldLogFilesForStrictRotation()
     }
     ULDBG << "finished renaming files";
     ULDBG << "last used files Q has AFTER renaming" << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
-
-
-
-
-    /*
-    for (int i = m_Config.maxFileNum-2; i>=0; i--) {
-        QString olderfile = calculateNextLogFileName(i);
-        QString newerfile = calculateNextLogFileName(i+1);
-
-        if ( isCompressionActive() && i != 0) {
-            olderfile = NrFileCompressor::getCompressedFilename(olderfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
-            newerfile = NrFileCompressor::getCompressedFilename(newerfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
-        }
-
-
-        if (QFile::exists(olderfile)) {
-            if (QFile::exists(newerfile)) {
-                if (!QFile::remove(newerfile)) {
-                    qCritical() << Q_FUNC_INFO << "Unable to remove older log file " << newerfile;
-                    //TODO - log this message to writer
-                }
-            }
-            ULDBG << "renaming " << olderfile << " to " << newerfile;
-            if (!QFile::rename(olderfile, newerfile)) {
-                qCritical() << Q_FUNC_INFO << "Unable to move log file " << olderfile << " to " << newerfile;
-                //TODO - log this message to writer
-            } else {
-                newerfile = compressIfNeeded(newerfile);
-            }
-            //Add the file to last used
-            if (!m_lastUsedFilenames.contains(newerfile))
-                m_lastUsedFilenames.append(newerfile);
-        }
-        else {//TODO - log this message to writer
-            ULDBG << olderfile << " does not exists: cannot rename it into " << newerfile;
-        }
-    }
-    */
 }
 
 
@@ -492,6 +454,7 @@ void FileWriter::rotateFileForIncrementalNumbers()
 
     if ( isCompressionActive() )
     {
+        ULDBG << "Compressing " << previousFile << " for incrementalnumbers rotation";
         previousFile = compressIfNeeded( previousFile );
     }
 
@@ -574,6 +537,12 @@ void FileWriter::rotateFileForTimePolicy()
         //qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);
         ULDBG << "Current1 last used files: " << m_lastUsedFilenames;
+
+        if ( isCompressionActive() )
+        {
+            ULDBG << "Compressing " << previousFile << " for time rotation";
+            previousFile = compressIfNeeded( previousFile );
+        }
 
         removeOldestFiles();
     } else {

@@ -15,9 +15,15 @@ signals:
 private slots:
     void testRenameOldFiles();
     void testCalculateLogInfo();
-    void testRotateForTimePolicy();
-    void testRotateForTimePolicyAndSizeHigherNewer();
-    void testRotateForTimePolicyAndSizeStrict();
+    void testRotateForTimePolicy(int compressionAlg=0);
+    void testRotateForTimePolicyGzipCompressed();
+    void testRotateForTimePolicyZipCompressed();
+    void testRotateForTimePolicyAndSizeHigherNewer(int compressionAlg=0);
+    void testRotateForTimePolicyAndSizeHigherNewerGzipCompressed();
+    void testRotateForTimePolicyAndSizeHigherNewerZipCompressed();
+    void testRotateForTimePolicyAndSizeStrict(int compressionAlg=0);
+    void testRotateForTimePolicyAndSizeStrictGzipCompressed();
+    void testRotateForTimePolicyAndSizeStrictZipCompressed();
     void testRotateForIncrementalNumbers(int compressionAlg=0);
     void testRotateForIncrementalNumbersGzipCompressed();
     void testRotateForIncrementalNumbersZipCompressed();

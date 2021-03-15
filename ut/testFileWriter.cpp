@@ -2,6 +2,9 @@
 
 #include <FileWriter.h>
 
+//needed for compression name function
+#include "ext/filecompressor/src/NrFileCompressor.h"
+
 #include <QtTest/QtTest>
 
 testFileWriter::testFileWriter(WriterConfig wc)
@@ -10,7 +13,75 @@ testFileWriter::testFileWriter(WriterConfig wc)
 
 }
 
-#include <iostream>
+// UTILITY FUNX
+
+void createFile(QString fname)
+{
+    QFile f(fname);
+    f.open(QIODevice::WriteOnly);
+    f.close();
+}
+
+
+void writeToFile(QString fname, int megabytes)
+{
+    QFile f(fname);
+    QString s;
+    s.fill('x', megabytes * 1E6);
+    f.open(QIODevice::WriteOnly);
+    f.write(s.toUtf8());
+    f.close();
+}
+
+
+void deleteFile(QString fname)
+{
+    QFile f(fname);
+    qDebug() << "about to remove" << fname;
+    bool b = f.remove();
+    if (!b ) {
+        qWarning() << "Could not remove file " << fname << " - " << f.errorString();
+    }
+}
+
+
+QString getCompressedExten(int alg) {
+    QString compressedExt;
+    switch (alg) {
+        case 1:
+            qDebug() << "Using Gzip compression";
+            compressedExt = ".gz";
+            break;
+        case 2:
+            qDebug() << "Using ZIP compression";
+            compressedExt = ".zip";
+            break;
+        default:
+            qDebug() << "NOT using compression";
+    }
+    return compressedExt;
+}
+
+
+QString getCompressedFilename(QString fname, int compressionAlg)
+{
+    QString s = NrFileCompressor::getCompressedFilename(fname, static_cast<NrFileCompressor::compressedFileFormatEnum>(compressionAlg));
+    return s;
+}
+
+//END OF UTILITY FUNX
+
+
+void testFileWriter::cleanup(QStringList filenames) {
+    resetLastUsedFilenames();
+    foreach (QString s, filenames) {
+        deleteFile(s);
+    }
+    setTestingCurrentDateTime(QDateTime());
+    m_Config = WriterConfig();
+}
+
+
 void
 testFileWriter::testCalculateLogInfo()
 {
@@ -60,42 +131,6 @@ testFileWriter::testCalculateLogInfo()
     QVERIFY(lfi.path == "/Users/f.lamonica/");
 }
 
-
-void createFile(QString fname)
-{
-    QFile f(fname);
-
-    f.open(QIODevice::WriteOnly);
-    f.close();
-}
-
-
-void writeToFile(QString fname, int megabytes)
-{
-    QFile f(fname);
-    QString s;
-    s.fill('x', megabytes * 1E6);
-    f.open(QIODevice::WriteOnly);
-    f.write(s.toUtf8());
-    f.close();
-}
-
-
-void deleteFile(QString fname)
-{
-    QFile f(fname);
-    f.remove();
-}
-
-
-void testFileWriter::cleanup(QStringList filenames) {
-    resetLastUsedFilenames();
-    foreach (QString s, filenames) {
-        deleteFile(s);
-    }
-    setTestingCurrentDateTime(QDateTime());
-    m_Config = WriterConfig();
-}
 
 void
 testFileWriter::testRemoveOldestFiles()
@@ -196,7 +231,7 @@ testFileWriter::testRenameOldFiles()
 }
 
 
-void testFileWriter::testRotateForTimePolicy()
+void testFileWriter::testRotateForTimePolicy(int compressionAlg)
 {
     //QSKIP("adjusting code");
 
@@ -206,11 +241,13 @@ void testFileWriter::testRotateForTimePolicy()
 
     cleanup(filenames);
 
+    QString compressedExt = getCompressedExten(compressionAlg);
 
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 0;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
-    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
+    m_Config.timeRotationPolicy = UNQL::PerMinuteRotation;
+    m_Config.compressionAlgo = compressionAlg;
 
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
@@ -230,36 +267,66 @@ void testFileWriter::testRotateForTimePolicy()
 
     setTestingCurrentDateTime(dt1);
     rotateFileForTimePolicy();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
+
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
     Q_ASSERT(QFileInfo::exists(filenames[1]));
-    Q_ASSERT(!QFileInfo::exists(filenames[2]));
-    Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+    if (compressionAlg != 0) { //verify that uncompressed files are not there
+        Q_ASSERT(!QFileInfo::exists(filenames[0]));
+        Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
+        Q_ASSERT(!QFileInfo::exists(filenames[2]));
+        Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    }
     Q_ASSERT(getCurrentLogFilename() == filenames[1]);
 
     setTestingCurrentDateTime(dt2);
     rotateFileForTimePolicy();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
+    if (compressionAlg != 0) { //verify that uncompressed files are not there
+        Q_ASSERT(!QFileInfo::exists(filenames[0]));
+        Q_ASSERT(!QFileInfo::exists(filenames[1]));
+        Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
+        Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    }
     Q_ASSERT(QFileInfo::exists(filenames[2]));
-    Q_ASSERT(!QFileInfo::exists(filenames[3]));
     Q_ASSERT(getCurrentLogFilename() == filenames[2]);
 
 
     setTestingCurrentDateTime(dt3);
     rotateFileForTimePolicy();
-    Q_ASSERT(!QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
-    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
+    if (compressionAlg != 0) { //verify that uncompressed files are not there
+        Q_ASSERT(!QFileInfo::exists(filenames[0]));
+        Q_ASSERT(!QFileInfo::exists(filenames[1]));
+        Q_ASSERT(!QFileInfo::exists(filenames[2]));
+        Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+    }
     Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 
     foreach (QString s, filenames) {
-        deleteFile(s);
+        deleteFile(getCompressedFilename(s, compressionAlg));
     }
+    cleanup(filenames);
 }
 
 
-void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
+void testFileWriter::testRotateForTimePolicyGzipCompressed()
+{
+    testRotateForTimePolicy(1);
+}
+
+
+void testFileWriter::testRotateForTimePolicyZipCompressed()
+{
+    testRotateForTimePolicy(2);
+}
+
+void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("adjusting code");
 
@@ -272,8 +339,10 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
-    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
+    m_Config.timeRotationPolicy = UNQL::PerMinuteRotation;
+    m_Config.compressionAlgo = compressionAlg;
 
+    QString compressedExt = getCompressedExten(compressionAlg);
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
     Q_ASSERT(dt.isValid());
@@ -287,36 +356,68 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer()
 
     writeToFile(filenames[0], 2);
     rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
     Q_ASSERT(QFileInfo::exists(filenames[1]));
-    Q_ASSERT(!QFileInfo::exists(filenames[2]));
-    Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+    if (compressionAlg != 0) { //verify that uncompressed files are not there
+            Q_ASSERT(!QFileInfo::exists(filenames[0]));
+            Q_ASSERT(!QFileInfo::exists(filenames[2]));
+            Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
+            Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    }
     Q_ASSERT(getCurrentLogFilename() == filenames[1]);
 
 
     writeToFile(filenames[1], 2);
     rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
     Q_ASSERT(QFileInfo::exists(filenames[2]));
-    Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+    if (compressionAlg != 0) { //verify that uncompressed files are not there
+            Q_ASSERT(!QFileInfo::exists(filenames[0]));
+            Q_ASSERT(!QFileInfo::exists(filenames[1]));
+            Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
+            Q_ASSERT(!QFileInfo::exists(filenames[3]));
+    }
     Q_ASSERT(getCurrentLogFilename() == filenames[2]);
 
 
     setTestingCurrentDateTime(dt1);
     rotateFilesIfNeeded(); //or rotateFileForTimePolicy();
-    Q_ASSERT(!QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
-    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
+    if (compressionAlg != 0) { //verify that uncompressed files are not there
+            Q_ASSERT(!QFileInfo::exists(filenames[0]));
+            Q_ASSERT(!QFileInfo::exists(filenames[1]));
+            Q_ASSERT(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+            Q_ASSERT(!QFileInfo::exists(filenames[2]));
+    }
     Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 
 
+    foreach (QString s, filenames) {
+        deleteFile(getCompressedFilename(s, compressionAlg));
+    }
     cleanup(filenames);
 }
 
 
-void testFileWriter::testRotateForTimePolicyAndSizeStrict()
+void testFileWriter::testRotateForTimePolicyAndSizeHigherNewerGzipCompressed()
+{
+    testRotateForTimePolicyAndSizeHigherNewer(1);
+}
+
+
+void testFileWriter::testRotateForTimePolicyAndSizeHigherNewerZipCompressed()
+{
+    testRotateForTimePolicyAndSizeHigherNewer(2);
+}
+
+void testFileWriter::testRotateForTimePolicyAndSizeStrict(int compressionAlg)
 {
     //QSKIP("adjusting code");
 
@@ -331,7 +432,10 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
     m_Config.maxFileNum = 3;
     m_Config.maxFileSize = 1;
     m_Config.rotationPolicy = UNQL::StrictRotation;
-    m_Config.timeRotationPolicy= UNQL::PerMinuteRotation;
+    m_Config.timeRotationPolicy = UNQL::PerMinuteRotation;
+    m_Config.compressionAlgo = compressionAlg;
+
+    QString compressedExt = getCompressedExten(compressionAlg);
 
     QDateTime dt = QDateTime::fromString("2021-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
     Q_ASSERT(dt.isValid());
@@ -346,7 +450,7 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
     writeToFile(filenames[0], 2);
     rotateFileForStrictRotation();
     Q_ASSERT(QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
     Q_ASSERT(!QFileInfo::exists(filenames[2]));
     Q_ASSERT(!QFileInfo::exists(filenames[3]));
     Q_ASSERT(!QFileInfo::exists(filenames[4]));
@@ -356,8 +460,8 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
     writeToFile(filenames[0], 2);
     rotateFileForStrictRotation();
     Q_ASSERT(QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
-    Q_ASSERT(QFileInfo::exists(filenames[2]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
     Q_ASSERT(!QFileInfo::exists(filenames[3]));
     Q_ASSERT(!QFileInfo::exists(filenames[4]));
     Q_ASSERT(getCurrentLogFilename() == filenames[0]);
@@ -365,8 +469,8 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
 
     setTestingCurrentDateTime(dt1);
     rotateFileForTimePolicy();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
-    Q_ASSERT(QFileInfo::exists(filenames[1]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
     Q_ASSERT(!QFileInfo::exists(filenames[2]));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
     Q_ASSERT(!QFileInfo::exists(filenames[4]));
@@ -375,33 +479,33 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict()
 
     writeToFile(filenames[3], 2);
     rotateFileForStrictRotation();
-    Q_ASSERT(QFileInfo::exists(filenames[0]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
     Q_ASSERT(QFileInfo::exists(filenames[3]));
-    Q_ASSERT(QFileInfo::exists(filenames[4]));
+    Q_ASSERT(QFileInfo::exists(getCompressedFilename(filenames[4], compressionAlg)));
     Q_ASSERT(!QFileInfo::exists(filenames[1]));
     Q_ASSERT(!QFileInfo::exists(filenames[2]));
     Q_ASSERT(getCurrentLogFilename() == filenames[3]);
 
     cleanup(filenames);
-}
-
-
-QString getCompressedExten(int alg) {
-    QString compressedExt;
-    switch (alg) {
-        case 1:
-            qDebug() << "Using Gzip compression";
-            compressedExt = ".gz";
-            break;
-        case 2:
-            qDebug() << "Using ZIP compression";
-            compressedExt = ".zip";
-            break;
-        default:
-            qDebug() << "NOT using compression";
+    foreach(QString s, filenames) {
+        deleteFile(getCompressedFilename(s, compressionAlg));
     }
-    return compressedExt;
 }
+
+
+void testFileWriter::testRotateForTimePolicyAndSizeStrictGzipCompressed()
+{
+    //QSKIP("");
+    testRotateForTimePolicyAndSizeStrict(1);
+}
+
+
+void testFileWriter::testRotateForTimePolicyAndSizeStrictZipCompressed()
+{
+    //QSKIP("");
+    testRotateForTimePolicyAndSizeStrict(2);
+}
+
 
 void testFileWriter::testRotateForIncrementalNumbers(int compressionAlgorithm)
 {
@@ -524,6 +628,7 @@ void testFileWriter::testRotateForStrictNumbers(int compressionAlgorithm)
     foreach (QString s, filenames) {
         deleteFile(s + compressedExt);
     }
+    cleanup(filenames);
 }
 
 
