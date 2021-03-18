@@ -155,29 +155,16 @@ LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
     if (sl.count() == 1) //no dots e.g. Mylog
     {
         lfi.basename = filename;
-        filename.append("-%1");
-        lfi.pattern = filename;
     }
-    else if (sl.count() == 2) //one dot e.g: log.txt
-    {
-        filename = sl[0];
-        lfi.basename = filename;
-        filename.append("-%1");
-        lfi.extension = sl[1];
-        filename += ".";
-        filename += sl[1];
-        lfi.pattern = filename;
-    }
-    else //more than one dot e.g. a.long.name.with.dots.log
-        //eveything before last dot is considered filename the last part the extension
+    else // one or more than one dot e.g. log.txt or a.long.name.with.dots.log
+         // eveything before last dot is considered filename the last part the extension
     {
         lfi.extension = sl.takeLast();
         lfi.basename = sl.join(".");
-        filename = lfi.basename + "-%1";
-        lfi.pattern = filename;
     }
 
-    //override
+    // Calculate the logfile pattern using %1 for the file index and a *prepended* %2 in case
+    // we're using a time-based rotation
     lfi.pattern = "%1";
     if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
         lfi.pattern.prepend("%2");
@@ -218,14 +205,20 @@ FileWriter::calculateLogFileNameForIndex(int index)
 {
     QString patt;
     if (index == 0) {
-        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
+        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+            // If we have a time rotation we have a pattern like %2%1 so the first argument
+            // will be placed after the second one. See calculateLogFilePattern()
             patt = m_LogfileInfo.pattern.arg("").arg(m_lastWrittenDateTime.toString("-yyyy-MM-ddThh:mm:ss"));
+        }
     }
     else {
-        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
+        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+            // If we have a time rotation we have a pattern like %2%1 so the first argument
+            // will be placed after the second one. See calculateLogFilePattern()
             patt = m_LogfileInfo.pattern.arg("-" + QString::number(index)).arg(m_lastWrittenDateTime.toString("-yyyy-MM-ddThh:mm:ss"));
-        else
+        } else {
             patt = m_LogfileInfo.pattern.arg("-" + QString::number(index));
+        }
     }
 
 
@@ -415,6 +408,8 @@ void FileWriter::renameOldLogFilesForStrictRotation()
         QString olderfile = calculatePreviousLogFileName(i);
         QString newerfile = calculatePreviousLogFileName(i-1);
 
+        // We do not calculate the compressed filenames when i==1 because i=0 is the base logfilename and we already compressed
+        // from (i.e.) log.txt to log-1.txt.gz in rotateFileForStrictRotation()
         if ( isCompressionActive() && i != 1) {
             olderfile = NrFileCompressor::getCompressedFilename(olderfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
             newerfile = NrFileCompressor::getCompressedFilename(newerfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
@@ -581,7 +576,7 @@ FileWriter::rotateFilesIfNeeded()
         } /* switch( rotation policy ) */
     } else {
         if (m_Config.maxFileSize == 0) {
-            ULDBG << "Filesize cheking is disabled... ignoring";
+            ULDBG << "Filesize checking is disabled... ignoring";
         } else {
             ULDBG << "File rotation due to SIZE NOT needed: accepted size is " << m_Config.maxFileSize << "MB and file "
                   << m_LogFile.fileName() << " is big " << m_LogFile.size() << " bytes ("<<  (m_LogFile.size() / 1E6) << "MB)";
