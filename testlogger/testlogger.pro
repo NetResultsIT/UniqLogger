@@ -1,5 +1,5 @@
 
-UNIQLOGGERPATH = ../lib
+UNIQLOGGERPATH = $$PWD/../lib
 
 
 ##### DO NOT CHANGE BELOW THIS LINE ######

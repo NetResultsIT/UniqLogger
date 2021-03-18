@@ -59,7 +59,9 @@ static void test_logger_leak()
 
 int main(int argc, char *argv[])
 {
-    /*QApplication a(argc, argv);*/
+    //Test performance with and without timezone
+    //qputenv("TZ", "Europe/Rome");
+
     QCoreApplication a(argc, argv);
 
     qDebug() << "Ideal thread count reported: " << QThread::idealThreadCount();

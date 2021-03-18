@@ -44,7 +44,7 @@ void TestloggerZip::writeLog(Logger* io_loggerPtr, int i_MBToWrite)
 }
 
 
-void TestloggerZip::test_SingleFile(const QString& i_fileName, UNQL::FileRotationPolicyType i_rotationPolicy, int i_compressionLevel)
+void TestloggerZip::test_SingleFile(const QString& i_fileName, UNQL::FileRotationNamingPolicyType i_rotationPolicy, int i_compressionLevel)
 {
     WriterConfig wconf;
     wconf.maxFileNum  = 1;
@@ -61,7 +61,7 @@ void TestloggerZip::test_SingleFile(const QString& i_fileName, UNQL::FileRotatio
     flogPtr->deleteLater();
 
     QString fileNameToCheck = i_fileName;
-    if ( i_rotationPolicy == UNQL::IncrementalNumbers )
+    if ( i_rotationPolicy == UNQL::StrictRotation )
     {
         QString filePattern("%1-%2");
         fileNameToCheck = filePattern.arg(i_fileName).arg(4);
@@ -132,7 +132,7 @@ void TestloggerZip::test_3FilesIncrementalRotation(const QString& i_fileName, in
     wconf.maxFileNum  = fileCount;
     wconf.maxFileSize = 1;  /* 1MB */
     wconf.compressionLevel = i_compressionLevel;
-    wconf.rotationPolicy = UNQL::IncrementalNumbers;
+    wconf.rotationPolicy = UNQL::StrictRotation;
     Logger* flogPtr = m_unqloggerPtr->createFileLogger("ZIPTEST", i_fileName, wconf);
 
     qDebug() << "starting uniqlogger zip test..." << Q_FUNC_INFO;
@@ -179,7 +179,7 @@ void TestloggerZip::test_compressSingleFileStrictRotation()
 
 void TestloggerZip::test_compressSingleFileIncrementalRotation()
 {
-    test_SingleFile("ziptest_single_file_IncrementalRotation", UNQL::IncrementalNumbers, 6);
+    test_SingleFile("ziptest_single_file_IncrementalRotation", UNQL::StrictRotation, 6);
 }
 
 void TestloggerZip::test_noCompressSingleFileStrictRotation()
@@ -189,7 +189,7 @@ void TestloggerZip::test_noCompressSingleFileStrictRotation()
 
 void TestloggerZip::test_noCompressSingleFileIncrementalRotation()
 {
-    test_SingleFile("ziptest_single_file_noCompress_IncrementalRotation", UNQL::IncrementalNumbers, 0);
+    test_SingleFile("ziptest_single_file_noCompress_IncrementalRotation", UNQL::StrictRotation, 0);
 }
 
 void TestloggerZip::test_compress3FilesStrictRotation()
