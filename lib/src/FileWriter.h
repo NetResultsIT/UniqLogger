@@ -55,6 +55,7 @@ private:
 
 protected:
     void writeToDevice();
+    QDateTime adjustDateTimeForFileSuffix(QDateTime);
     LogFileInfo calculateLogFilePattern(const QString &filename);
     void removeOldestFiles();
     void rotateFileForIncrementalNumbers();

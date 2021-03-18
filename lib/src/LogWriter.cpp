@@ -27,8 +27,9 @@ WriterConfig::WriterConfig()
     , timeRotationPolicy ( UNQL::NoTimeRotation )     // Do not rotate on a time-based policy by default
     , compressionLevel   ( 6 )                        // Use default compression level
     , compressionAlgo    ( NrFileCompressor::NO_COMPRESSION )
-    , reconnectionSecs   ( 5 )                        // If RemoteWrite connection drops, try to reconnect every X secs
-    , netProtocol        ( UNQL::TCP )                // Transport protocol for remote messages
+    , maxMinutes         ( 0 )                        // Do not use rotation based on minutes elapsed
+    , reconnectionSecs   ( 5 )                        // If RemoteWriter connection drops, try to reconnect every X secs
+    , netProtocol        ( UNQL::TCP )                // Use TCP as transport protocol for remote messages
 {
 /* empty ctor */
 }
@@ -64,7 +65,8 @@ WriterConfig::toString() const
        << "\nLog idle mark: " << (writeIdleMark ? "true" : "false")
        << "\nFILE ONLY PARAMS"
        << "\nMax file size (MB): " << QString::number(maxFileSize) << "\nMax number of files: " << QString::number(maxFileNum)
-       << "\nRotationPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
+       << "\nRotationNamingPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
+       << "\nTimeRotationPolicy: " << QString::number(timeRotationPolicy) << "\nMax minutes allowed " << QString::number(maxMinutes)
        << "\nNETWORK PARAMS"
        << "\nReconnection seconds: " << QString::number(reconnectionSecs)
        << "\nTransport Protocol: " << QString::number(netProtocol)
@@ -77,14 +79,16 @@ WriterConfig::toString() const
 bool
 WriterConfig::operator ==(const WriterConfig& rhs) const
 {
-    if ( maxMessageNum      == rhs.maxMessageNum    &&
-         writerFlushSecs    == rhs.writerFlushSecs  &&
-         writeIdleMark      == rhs.writeIdleMark    &&
-         maxFileNum         == rhs.maxFileNum       &&
-         maxFileSize        == rhs.maxFileSize      &&
-         rotationPolicy     == rhs.rotationPolicy   &&
-         compressionLevel   == rhs.compressionLevel &&
-         reconnectionSecs   == rhs.reconnectionSecs &&
+    if ( maxMessageNum      == rhs.maxMessageNum      &&
+         writerFlushSecs    == rhs.writerFlushSecs    &&
+         writeIdleMark      == rhs.writeIdleMark      &&
+         maxFileNum         == rhs.maxFileNum         &&
+         maxFileSize        == rhs.maxFileSize        &&
+         maxMinutes         == rhs.maxMinutes         &&
+         rotationPolicy     == rhs.rotationPolicy     &&
+         timeRotationPolicy == rhs.timeRotationPolicy &&
+         compressionLevel   == rhs.compressionLevel   &&
+         reconnectionSecs   == rhs.reconnectionSecs   &&
          netProtocol        == rhs.netProtocol
         )
     {
@@ -109,7 +113,7 @@ LogWriter::LogWriter(const WriterConfig &wc)
     : m_Config(wc)
     , m_logIsPaused(false)
 {
-    LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "a Logger Started", LogMessage::getCurrentTstampString());
+    LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "LogWriter Started", LogMessage::getCurrentTstampString());
     m_logMessageList.append(lm);
     m_logTimer = new QTimer(this);
 }

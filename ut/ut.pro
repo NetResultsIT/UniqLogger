@@ -16,9 +16,11 @@ INCLUDEPATH += $$UNQLPATH/src
 
 SOURCES += main.cpp \
     testFileWriter.cpp \
+    testTimeUtils.cpp
 
 HEADERS += \
-    testFileWriter.h
+    testFileWriter.h \
+    testTimeUtils.h
 
 LIBS += -L$$UNQLPATH/last_build
 

@@ -5,11 +5,11 @@
 #define NRDBG qDebug()
 #define NRDBG2 qDebug
 
-//#include <testTimeTicker.h>
+#include <testTimeUtils.h>
 #include <testFileWriter.h>
 
 QTEST_MAIN(testFileWriter)
-//QTEST_MAIN(testStatsVar)
+//QTEST_MAIN(testTimeUtils)
 
 /*
 int main(int argc, char *argv[])

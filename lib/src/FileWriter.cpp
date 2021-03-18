@@ -13,6 +13,7 @@
 #include <QQueue>
 
 #include "NrFileCompressor.h"
+#include <TimeUtils.h>
 
 FileWriter::FileWriter(const WriterConfig &wc)
     : LogWriter(wc)
@@ -20,6 +21,14 @@ FileWriter::FileWriter(const WriterConfig &wc)
 {
     m_logfileBaseName = "uniqlogfile.txt";
     m_lastWrittenDateTime = QDateTime::currentDateTime();
+
+    //sanity check for time rotation
+    if (wc.timeRotationPolicy == UNQL::ElapsedMinutesRotation && wc.maxMinutes <= 0) {
+        QString msg = "This FileWriter was configured for time-based rotation based on elapsed minutes but maxMinutes values was set to %1: rotation will NOT happen ";
+        msg = msg.arg(m_Config.maxMinutes);
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
+        m_logMessageList.append(lm);
+    }
 }
 
 
@@ -112,17 +121,19 @@ int FileWriter::secsPassedSinceTimeRotationWasNeeded()
     //use testing qdatetime if valid or the real now() if not.
     QDateTime now = getCurrentDateTime();
 
-    //TODO - we should compare not the whole lastwrittendatetime but only the day, hour, minute part
-    //otherwise if we start at 16:57 we will trigger the hour change at 17:57
     if (
          (m_Config.timeRotationPolicy == UNQL::HourlyRotation
-          && m_lastWrittenDateTime.secsTo(now) >= 3600)
+          && TimeUtils::hourTicked(m_lastWrittenDateTime, now))
        ||
          (m_Config.timeRotationPolicy == UNQL::DailyRotation
-          && m_lastWrittenDateTime.addDays(1) >= now)
+          && TimeUtils::dayTicked(m_lastWrittenDateTime, now))
        ||
          (m_Config.timeRotationPolicy == UNQL::PerMinuteRotation
-          && m_lastWrittenDateTime.secsTo(now) >= 60)
+          && TimeUtils::minuteTicked(m_lastWrittenDateTime, now))
+       ||
+         (m_Config.timeRotationPolicy == UNQL::ElapsedMinutesRotation
+          && m_Config.maxMinutes > 0
+          && m_lastWrittenDateTime.secsTo(now) >= 60 * m_Config.maxMinutes)
        )
     {
         timePassed = m_lastWrittenDateTime.secsTo(now);
@@ -193,6 +204,31 @@ FileWriter::calculatePreviousLogFileName(int index)
 }
 
 
+QDateTime
+FileWriter::adjustDateTimeForFileSuffix(QDateTime dt)
+{
+    QTime t = dt.time();
+    switch (m_Config.timeRotationPolicy) {
+    case UNQL::DailyRotation:
+        t.setHMS(0, 0, 0);
+        break;
+    case UNQL::HourlyRotation:
+        t.setHMS(t.hour(), 0, 0);
+        break;
+    case UNQL::PerMinuteRotation:
+        t.setHMS(t.hour(), t.minute(), 0);
+        break;
+    default:
+        //we do nothing for NoRotation or ElapsedMinutesRotation
+        break;
+    }
+
+    if (m_Config.timeRotationPolicy != UNQL::ElapsedMinutesRotation) {
+        dt.setTime(t);
+    }
+    return dt;
+}
+
 /*!
  * \brief FileWriter::calculateLogFileNameForIndex calculate the full name of the log file
  * \param index the rotation index used o calculate the new filename
@@ -208,14 +244,14 @@ FileWriter::calculateLogFileNameForIndex(int index)
         if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
             // If we have a time rotation we have a pattern like %2%1 so the first argument
             // will be placed after the second one. See calculateLogFilePattern()
-            patt = m_LogfileInfo.pattern.arg("").arg(m_lastWrittenDateTime.toString("-yyyy-MM-ddThh:mm:ss"));
+            patt = m_LogfileInfo.pattern.arg("").arg(m_lastWrittenDateTime.toString(DEF_UNQL_TIME_ROTATION_SUFFIX));
         }
     }
     else {
         if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
             // If we have a time rotation we have a pattern like %2%1 so the first argument
             // will be placed after the second one. See calculateLogFilePattern()
-            patt = m_LogfileInfo.pattern.arg("-" + QString::number(index)).arg(m_lastWrittenDateTime.toString("-yyyy-MM-ddThh:mm:ss"));
+            patt = m_LogfileInfo.pattern.arg("-" + QString::number(index)).arg(m_lastWrittenDateTime.toString(DEF_UNQL_TIME_ROTATION_SUFFIX));
         } else {
             patt = m_LogfileInfo.pattern.arg("-" + QString::number(index));
         }
@@ -249,7 +285,7 @@ FileWriter::changeOutputFile(const QString &i_filename)
     ULDBG << "Setting new log file: " << i_filename;
     if (m_LogFile.isOpen()) //we were already logging to a file so we close it
     {
-        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Closing previously opened logfile", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, QString("Closing previously opened logfile ").append(getCurrentLogFilename()) , LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
         m_LogFile.close();

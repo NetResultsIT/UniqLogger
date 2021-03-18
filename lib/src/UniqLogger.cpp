@@ -39,7 +39,7 @@ extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
   */
 UniqLogger::UniqLogger(int nthreads)
 {
-    m_defaultTimeStampFormat = DEF_UNQL_TS_FMT;
+    m_defaultTimeStampFormat = DEF_UNQL_TSTAMP_FMT;
     m_defaultSpaceChar = ' ';
     m_defaultStartEncasingChar = '[';
     m_defaultEndEncasingChar = ']';
@@ -213,7 +213,7 @@ UniqLogger::createLogger(const QString &logname)
         l->muxMonitorVar = &muxMonitorVarMap;   //we need the friendship here
         l->m_varMonitorMap = &m_VarMonitorMap;  //we need the friendship here
 
-        if (m_defaultTimeStampFormat != DEF_UNQL_TS_FMT)
+        if (m_defaultTimeStampFormat != DEF_UNQL_TSTAMP_FMT)
             l->setTimeStampFormat(m_defaultTimeStampFormat);
         if (m_defaultSpaceChar != ' ')
             l->setSpacingString(m_defaultSpaceChar);

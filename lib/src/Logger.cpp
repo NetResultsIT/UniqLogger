@@ -18,7 +18,7 @@
 Logger::Logger()
 {
     m_logDeviceList.clear();
-    m_timeStampFormat = DEF_UNQL_TS_FMT;
+    m_timeStampFormat = DEF_UNQL_TSTAMP_FMT;
     m_moduleName = "Generic Module";
     m_logVerbosityAcceptedLevel = UNQL::LOG_INFO;
     m_logVerbosityDefaultLevel = UNQL::LOG_INFO;

@@ -81,6 +81,7 @@ HEADERS += \
     src/FileWriter.h \
     src/ConsoleWriter.h \
     src/SysLogMessageFactory.h \
+    src/TimeUtils.h \
     src/UniqLogger.h \
     src/LogMessage.h \
     src/DummyWriter.h \
@@ -93,6 +94,7 @@ SOURCES += \
     src/FileWriter.cpp \
     src/ConsoleWriter.cpp \
     src/SysLogMessageFactory.cpp \
+    src/TimeUtils.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
     src/DummyWriter.cpp \

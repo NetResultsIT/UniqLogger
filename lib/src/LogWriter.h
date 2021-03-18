@@ -18,15 +18,16 @@
 namespace UNQL {
 
 enum FileRotationNamingPolicyType {
-    StrictRotation, // New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate)
-    HigherNumbersNewer  // New logs are inserted in files with a higher number, no renaming / moving of files
+    StrictRotation,     /*!< New logs are inserted in file with lower numbers and all old logs are moved / renamed to files with a higher number (similar to logrotate) */
+    HigherNumbersNewer  /*!< New logs are inserted in files with a higher number, no renaming / moving of files */
 };
 
 enum FileRotationTimePolicyType {
     NoTimeRotation,     /*!< Do not perform any time-based rotation */
-    DailyRotation,      /*!< Rotates to a new log file every day with suffixes like: Mon, Tue, etc. */
-    HourlyRotation,     /*!< Rotates to a new log file every hour with suffixes like: h01, h12, h23, etc.*/
-    PerMinuteRotation,
+    DailyRotation,      /*!< Rotates to a new log file every day at midnight with suffix like log-2021-03-16T00:00:00 */
+    HourlyRotation,     /*!< Rotates to a new log file at the beginning of each hour with suffix like log-2021-03-16T02:00:00 */
+    PerMinuteRotation,  /*!< Rotates to a new log file at the beginning of each minute with suffix like log-2021-03-16T02:12:00 */
+    ElapsedMinutesRotation,  /*!< Rotates to a new log file when the time specified in WriterConfig::maxMinutes elapses */
 };
 
 enum NetworkProtocolType {
@@ -69,6 +70,7 @@ public:
                                 0: No compression (default)
                                 1: Creates a gzip archive
                                 2: Creates a zip archive */
+    int maxMinutes; /*!< The maximum number of minutes that can be included in a logfile, this value is considered \em only when ElapsedMinutesRotation is set */
 
 
     //Makes sense just for RemoteWriter
