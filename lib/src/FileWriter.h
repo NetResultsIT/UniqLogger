@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -12,49 +12,73 @@
 #include <QDateTime>
 #include <QQueue>
 
+class LogFileInfo
+{
+public:
+    QString path;
+    QString basename;
+    QString extension;
+    QString pattern;
+};
+
 class FileWriter: public LogWriter
 {
     Q_OBJECT
 
 private:
-    QFile m_logFile;
     int m_rotationCurFileNumber;
-    bool m_streamIsOpen, m_fileSizeExceeded;
+    QFile m_LogFile;
+    bool m_streamIsOpen;
+    LogFileInfo m_LogfileInfo;
     QString m_logfileBaseName;
-    QString m_currentLogfileName;
 
-    UNQL::TimeRotationPolicyType m_timeRotationPolicy;
     QDateTime m_lastWrittenDateTime;
-    QString lastUsedLogfilePostfix;
+    QDateTime m_currentDateTimeUsedForTest;
+
+protected:
+    //Testing functions
     QQueue<QString> m_lastUsedFilenames;
+    void overrideCurrentRotationNumber(int idx);
+    void overrideLastWrittenDateTime(QDateTime dt);
+    void setTestingCurrentDateTime(QDateTime dt);
+    void resetLastUsedFilenames();
+    QDateTime adjustDateTimeForFileSuffix(QDateTime);
 
-
-    //QString calculateCurrentFileName(int num=0);
-    void calculateLogFilePattern(const QString &filename, QString &path, QString &pattern);
-    QString calculateNextLogFileName(int offset=0);
+    //normal usage functions
+private:
+    QString calculateLogFileNameForIndex(int index);
+    QString calculateNextLogFileName();
+    QString calculatePreviousLogFileName(int index);
+    QDateTime getCurrentDateTime() const;
     void changeOutputFile(const QString&);
-    void writeToDevice();
-    void rotateFilesIfNeeded();
-    void addNumberAndTimeToFilename(QString &sl, int filenum);
+    int secsPassedSinceTimeRotationWasNeeded();
     QString compressIfNeeded( const QString& i_toCompressFilename );
 
-    void removeOldestFile();
+protected:
+    void writeToDevice();
+    LogFileInfo calculateLogFilePattern(const QString &filename);
+    int rotationSecondsForTimePolicy(UNQL::FileRotationTimePolicyType);
+    void removeOldestFiles();
+    void removeLeftoversFromPreviousRun();
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();
+    void rotateFileForTimePolicy();
+    void rotateFilesIfNeeded();
 
-    void renameOldLogFiles();
+    void renameOldLogFilesForStrictRotation();
     bool isCompressionActive() const;
 
 public:
     explicit FileWriter(const WriterConfig &);
     virtual ~FileWriter();
 
+    QString getCurrentLogFilename() const;
     void setOutputFile(const QString& filename="log.txt");
     void setLogfileMaxSize(int filesize);
     void setLogfileRotationRange(int maxfilenum);
     void stopLogging(bool erasefile=false);
     QString getBaseName() const { return m_logfileBaseName; }
-    UNQL::FileRotationPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
+    UNQL::FileRotationNamingPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
 };
 
 #endif

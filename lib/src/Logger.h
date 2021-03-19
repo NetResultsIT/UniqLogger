@@ -23,6 +23,9 @@ class UniqLogger;
 class Logger;
 class LogWriter;
 
+/*!
+ * \brief The Logger class is the base class that gives user the API for logging
+ */
 class ULOG_LIB_API Logger: public QObject
 {
     Q_OBJECT

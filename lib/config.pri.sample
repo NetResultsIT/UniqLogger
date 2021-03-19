@@ -15,3 +15,7 @@
 
 # If you want to enable debug statements in the UniqLogger library uncomment the following line
 #DEFINES += ENABLE_UNQL_DBG
+
+
+# Uncomment line below to disallow moving binary in last_build folder on iOS (due to large size)
+#IOS_NOT_MOVE = true

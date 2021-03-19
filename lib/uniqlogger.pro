@@ -2,12 +2,12 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 0.9.1
-
-# UNcomment line below to disallow moving binary in last_build folder on iOS (due to large size)
-#IOS_NOT_MOVE = true
+VERSION = 1.0.0
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
+
+#if we populate version it seems that QT does not populate VER_MAJ/MIN/PAT automatically
+VER_MAJ=$$section(VERSION, ., 0, 0)
 
 !exists($$PWD/config.pri) {
     message("No config.pri found, building UniqLogger with default options: no NETWORK and no DB support")
@@ -62,11 +62,6 @@ DEFINES -= UNICODE
 
 TEMPLATE = lib
 
-#this should work with Qt5, on Qt4 we do it manually
-#MYVER = $$split($$VERSION, .)
-MYVER = 0
-#message("$$QT_VERSION $$VERSION $$QMAKE_CXX $$QMAKESPEC")
-
 message ("UniqLogger Version: $$VERSION")
 message ("QT_VERSION $$QT_VERSION")
 
@@ -86,6 +81,7 @@ HEADERS += \
     src/FileWriter.h \
     src/ConsoleWriter.h \
     src/SysLogMessageFactory.h \
+    src/TimeUtils.h \
     src/UniqLogger.h \
     src/LogMessage.h \
     src/DummyWriter.h \
@@ -98,6 +94,7 @@ SOURCES += \
     src/FileWriter.cpp \
     src/ConsoleWriter.cpp \
     src/SysLogMessageFactory.cpp \
+    src/TimeUtils.cpp \
     src/UniqLogger.cpp \
     src/LogMessage.cpp \
     src/DummyWriter.cpp \
@@ -246,7 +243,7 @@ win32 {
     #QMAKE_POST_LINK="$$WINCMD ..\\lib\\scripts\\mkDeployDir.bat $$FINALDIR $$escape_expand(\\n\\t)exit$$escape_expand(\\n\\t)"
     CONFIG(debug, debug|release) {
         TARGET = $$join(TARGET,,,d)
-        DLL = $$join(TARGET,,$$OUT_PWD\debug\\,$$MYVER)
+        DLL = $$join(TARGET,,$$OUT_PWD\debug\\,$$VER_MAJ)
         WINEXT += pdb
     }
     CONFIG(release, debug|release) {
@@ -259,7 +256,7 @@ win32 {
         QMAKE_LFLAGS_RELEASE += /OPT:ICF
         QMAKE_LIBDIR += $$WINDOWS_SDK
 
-        DLL = $$join(TARGET,,$$OUT_PWD\release\\,$$MYVER)
+        DLL = $$join(TARGET,,$$OUT_PWD\release\\,$$VER_MAJ)
     }
     DLL = $$replace(DLL,"/","\\")
 
@@ -383,11 +380,11 @@ macx {
         TARGET = $$join(TARGET,,,_debug)
         BLDTYPE=debug
     }
+    message("MAJOR VERSION: $$VER_MAJ")
     CONFIG(release, debug|release) {
         TARGET = $$join(TARGET,,,)
         BLDTYPE=release
-        # FIXME - ASAP hardcoded major version
-        QMAKE_POST_LINK += "install_name_tool -id @rpath/libUniqLogger.0.dylib release/bin/libUniqLogger.dylib $$escape_expand(\\n\\t)"
+        QMAKE_POST_LINK += "install_name_tool -id @rpath/libUniqLogger.$${VER_MAJ}.dylib release/bin/libUniqLogger.dylib $$escape_expand(\\n\\t)"
     }
 
     DLL = $$join(TARGET,,lib,.*dylib)

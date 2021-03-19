@@ -44,7 +44,7 @@ DbWriter::setLogfileMaxSize(int filesize)
 
 /*!
   \brief sets the base name that will be used for the log files
-  \param _filename the basename of the log files
+  \param i_filename the basename of the log files
   */
 void
 DbWriter::setOutputFile(QString i_filename)

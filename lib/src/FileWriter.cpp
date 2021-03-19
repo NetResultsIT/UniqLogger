@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -11,16 +11,26 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QQueue>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 #include "NrFileCompressor.h"
+#include <TimeUtils.h>
 
 FileWriter::FileWriter(const WriterConfig &wc)
     : LogWriter(wc)
-    , m_fileSizeExceeded(false)
+    , m_rotationCurFileNumber(0)
 {
-    m_rotationCurFileNumber = 1;
     m_logfileBaseName = "uniqlogfile.txt";
     m_lastWrittenDateTime = QDateTime::currentDateTime();
+
+    //sanity check for time rotation
+    if (wc.timeRotationPolicy == UNQL::ElapsedMinutesRotation && wc.maxMinutes <= 0) {
+        QString msg = "This FileWriter was configured for time-based rotation based on elapsed minutes but maxMinutes values was set to %1: rotation will NOT happen ";
+        msg = msg.arg(m_Config.maxMinutes);
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, msg, LogMessage::getCurrentTstampString());
+        m_logMessageList.append(lm);
+    }
 }
 
 
@@ -31,8 +41,8 @@ FileWriter::~FileWriter()
 {
     //on exit, write all we've got
     this->flush();
-    m_logFile.close();
-    ULDBG << Q_FUNC_INFO << "Deleting filewriter on " << m_logFile.fileName();
+    m_LogFile.close();
+    ULDBG << Q_FUNC_INFO << "Deleting filewriter on " << m_LogFile.fileName();
 }
 
 
@@ -40,8 +50,7 @@ FileWriter::~FileWriter()
   \brief sets the maximum size (in Megabytes) allowed for a single log file
   \param filesize the max allowed file size
   */
-void
-FileWriter::setLogfileMaxSize(int filesize)
+void FileWriter::setLogfileMaxSize(int filesize)
 { m_Config.maxFileSize = filesize; }
  
 
@@ -49,173 +58,293 @@ FileWriter::setLogfileMaxSize(int filesize)
   \brief sets the number of files to be used in log rotation
   \param maxfilenum is the number of files the logger should use before doing a rotation
  */
-void
-FileWriter::setLogfileRotationRange(int maxfilenum)
+void FileWriter::setLogfileRotationRange(int maxfilenum)
 { m_Config.maxFileNum = maxfilenum; }
  
 
+/*!
+ * \brief FileWriter::overrideCurrentRotationNumber Sets a new value for m_rotationCurFileNumber member
+ * \param index the new value for m_rotationCurFileNumber
+ * \warning this function should only be used for unit testing, using in production might stop correct uniqlogger behaviour
+ */
+void FileWriter::overrideCurrentRotationNumber(int index)
+{ m_rotationCurFileNumber = index; }
+
 
 /*!
- * \brief FileWriter::addNumberAndTimeToFilename
- * \param sl
- * \param filenum
+ * \brief FileWriter::overrideLastWrittenDateTime Sets a new value for lastWrittenDateTime member
+ * \param dt the new date time that should be used
+ * \warning this function should only be used for unit testing, using in production might stop correct uniqlogger behaviour
  */
-void FileWriter::addNumberAndTimeToFilename(QString &s, int filenum)
-{
-    s += "-";
-    s += QString::number(filenum);
+void FileWriter::overrideLastWrittenDateTime(QDateTime dt)
+{ m_lastWrittenDateTime = dt; }
 
-    QDateTime now = QDateTime::currentDateTime();
+
+/*!
+ * \brief FileWriter::overrideLastWrittenDateTime Sets a new value to be used as QDateTime::getCurrentDateTime()
+ * \param dt the new date time that should be used as current DateTime
+ * \warning this function *MUST* only be used for unit testing, using in production WILL stop correct uniqlogger behaviour
+ */
+void FileWriter::setTestingCurrentDateTime(QDateTime dt)
+{ m_currentDateTimeUsedForTest = dt; }
+
+
+/*!
+ * \brief FileWriter::resetLastUsedFilenames clear the Queue containg the last used filenames
+ * \warning this is a method to be used only during testing.
+ */
+void FileWriter::resetLastUsedFilenames()
+{ m_lastUsedFilenames.clear(); }
+
+
+/*!
+ * \brief FileWriter::getCurrentDateTime a utility function that wraps QDateTime::currentDateTime and might override it for testing
+ * \return current QDateTime
+ */
+QDateTime FileWriter::getCurrentDateTime() const
+{
+    if (m_currentDateTimeUsedForTest.isValid()) {
+        ULDBG << "WARNING - using a user-set datetime: " << m_currentDateTimeUsedForTest;
+        return m_currentDateTimeUsedForTest;
+    }
+
+    return QDateTime::currentDateTime();
+}
+
+
+/*!
+ * \brief FileWriter::secsPassedSinceTimeRotationWasNeeded
+ * \return the number of seconds passed since the last time-rotation was needed (or 0 if such time did not pass)
+ */
+int FileWriter::secsPassedSinceTimeRotationWasNeeded()
+{
+    int timePassed = 0;
+
+    //use testing qdatetime if valid or the real now() if not.
+    QDateTime now = getCurrentDateTime();
 
     if (
-        m_timeRotationPolicy == UNQL::HourlyRotation
-        && m_lastWrittenDateTime.secsTo(now) > 3600
+         (m_Config.timeRotationPolicy == UNQL::HourlyRotation
+          && TimeUtils::hourTicked(m_lastWrittenDateTime, now))
+       ||
+         (m_Config.timeRotationPolicy == UNQL::DailyRotation
+          && TimeUtils::dayTicked(m_lastWrittenDateTime, now))
+       ||
+         (m_Config.timeRotationPolicy == UNQL::PerMinuteRotation
+          && TimeUtils::minuteTicked(m_lastWrittenDateTime, now))
+       ||
+         (m_Config.timeRotationPolicy == UNQL::ElapsedMinutesRotation
+          && m_Config.maxMinutes > 0
+          && m_lastWrittenDateTime.secsTo(now) >= 60 * m_Config.maxMinutes)
        )
     {
-        s += "-h" + now.toString("HH");
-        m_lastWrittenDateTime = now;
+        timePassed = m_lastWrittenDateTime.secsTo(now);
     }
-    else if (
-             (
-                 m_timeRotationPolicy == UNQL::DayOfWeekRotation
-              || m_timeRotationPolicy == UNQL::DayOfMonthRotation
-             )
-             && m_lastWrittenDateTime.addDays(1) >= now
-            )
-    {
-        QString dayPartFormat = "ddd"; //By default set as day of week
-        if (m_timeRotationPolicy == UNQL::DayOfMonthRotation)
-            dayPartFormat = "dd";
 
-        s += "-" + now.toString(dayPartFormat);
-        m_lastWrittenDateTime = now;
-    }
+    return timePassed;
 }
 
 
 /*!
  * \brief FileWriter::calculateLogFilePattern calculates the pattern (i.e. the logfilename with a placeholder for file numbering) for the logfile
- * \param i_filename the log basefilename
- * \param o_rPath the output variable containing the path where the new logfile will be
- * \param o_rPattern the pattern (i.e. containing the placeholder that will be replaced with log file number) of the logfile
+ * \param i_filename the log basefilename that will be analyzed to split into basic info and fill he LogFileInfo
+ * \return LogFileInfo class containing data about the current log file
  */
-void FileWriter::calculateLogFilePattern(const QString &i_filename, QString &o_rPath, QString &o_rPattern)
+LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
 {
     QString fullfilename = QDir::fromNativeSeparators(i_filename);
     QString filename = fullfilename.split("/").takeLast();
-    QString filepath;
 
+    LogFileInfo lfi;
 
     if (fullfilename.lastIndexOf("/") >= 0) {
-        filepath = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
+        lfi.path = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
     }
 
-    //find how many dots are there
+    //find how many dots are there within logfile name
     QStringList sl = filename.split(".");
+    //qDebug() << filename << sl;
 
-    if (sl.count() == 1) //no dots
+    if (sl.count() == 1) //no dots e.g. Mylog
     {
-        filename.append("-%1");
+        lfi.basename = filename;
     }
-    else if (sl.count() == 2) //one dot
+    else // one or more than one dot e.g. log.txt or a.long.name.with.dots.log
+         // eveything before last dot is considered filename the last part the extension
     {
-        filename = sl[0];
-        filename.append("-%1");
-        filename += ".";
-        filename += sl[1];
-    }
-    else //more than one dot
-    {
-        sl[0] += "%1";
-        filename = sl.join(".");
+        lfi.extension = sl.takeLast();
+        lfi.basename = sl.join(".");
     }
 
-    o_rPath = filepath;
-    o_rPattern = filename;
+    // Calculate the logfile pattern using %1 for the file index and a *prepended* %2 in case
+    // we're using a time-based rotation
+    lfi.pattern = "%1";
+    if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation)
+        lfi.pattern.prepend("%2");
+
+    return lfi;
 }
 
 
 /*!
-  \brief calculates the log file that is going to be used for the logging
-  \param i_fileOffset the offset from which we should start calculating (default = 0)
-  */
+ * \brief FileWriter::calculatePreviousLogFileName is simply a wrapper around calculateLogFileNameForIndex()
+ * \param index the rotation index of the logfile we want to calculate the name of
+ * \return the complete logfile name
+ */
 QString
-FileWriter::calculateNextLogFileName(int i_fileOffset)
+FileWriter::calculatePreviousLogFileName(int index)
 {
-    QString filepath, filepattern;
-    calculateLogFilePattern(m_logfileBaseName, filepath, filepattern);
+    Q_ASSERT(index>=0);
+    ULDBG << "Calculating previous log filename for index " << index;
 
-    int filenum;
+    QString tempfilename;
 
-    /*
-     *  The file with num == 0 --> no number, will not have any special extension if
-     *  compression is enabled, because it is the file we are logging on
-     */
-    if (i_fileOffset == 0) {
-        if (m_Config.rotationPolicy == UNQL::StrictRotation) {
-            return m_logfileBaseName;
+    tempfilename = calculateLogFileNameForIndex(index);
+
+    ULDBG << "calculated old log filename: " << tempfilename;
+    return tempfilename;
+}
+
+
+QDateTime
+FileWriter::adjustDateTimeForFileSuffix(QDateTime dt)
+{
+    QTime t = dt.time();
+    switch (m_Config.timeRotationPolicy) {
+    case UNQL::DailyRotation:
+        t.setHMS(0, 0, 0);
+        break;
+    case UNQL::HourlyRotation:
+        t.setHMS(t.hour(), 0, 0);
+        break;
+    case UNQL::PerMinuteRotation:
+        t.setHMS(t.hour(), t.minute(), 0);
+        break;
+    default:
+        //we do nothing for NoRotation or ElapsedMinutesRotation
+        break;
+    }
+
+    if (m_Config.timeRotationPolicy != UNQL::ElapsedMinutesRotation) {
+        dt.setTime(t);
+    }
+    return dt;
+}
+
+/*!
+ * \brief FileWriter::calculateLogFileNameForIndex calculate the full name of the log file
+ * \param index the rotation index used o calculate the new filename
+ * \return a string containing the desired logfilename
+ * This method will return the complete logfile name including its rotation index and time suffix
+ * i.e.
+ */
+QString
+FileWriter::calculateLogFileNameForIndex(int index)
+{
+    QString patt;
+    if (index == 0) {
+        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+            // If we have a time rotation we have a pattern like %2%1 so the first argument
+            // will be placed after the second one. See calculateLogFilePattern()
+            patt = m_LogfileInfo.pattern.arg("").arg(m_lastWrittenDateTime.toString(DEF_UNQL_TIME_ROTATION_SUFFIX));
         }
-
-        filenum = m_rotationCurFileNumber;
     }
     else {
-        filenum = i_fileOffset;
+        if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+            // If we have a time rotation we have a pattern like %2%1 so the first argument
+            // will be placed after the second one. See calculateLogFilePattern()
+            patt = m_LogfileInfo.pattern.arg("-" + QString::number(index)).arg(m_lastWrittenDateTime.toString(DEF_UNQL_TIME_ROTATION_SUFFIX));
+        } else {
+            patt = m_LogfileInfo.pattern.arg("-" + QString::number(index));
+        }
     }
 
-    QString filename = filepattern.arg(filenum);
 
-    return filepath + filename;
+    return m_LogfileInfo.path + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension;
+}
+
+
+/*!
+  \brief calculates the log file that is going to be used for the logging the next messages
+  */
+QString
+FileWriter::calculateNextLogFileName()
+{
+    return calculateLogFileNameForIndex(m_rotationCurFileNumber);
 }
 
 
 
 /*!
   \brief this method changes the logfile that is used for the log file
-  \param _filename the new file to be used
-  This method is used during log rotation
+  \param i_filename the new file to be used
+  This method is used during log rotation and the filename cannot change extension or path
   */
 void
-FileWriter::changeOutputFile(const QString &aFilename)
+FileWriter::changeOutputFile(const QString &i_filename)
 {
     QMutexLocker ml(&mutex);
-
-    if (m_logFile.isOpen()) //we were already logging to a file so we close it
+    ULDBG << "Setting new log file: " << i_filename;
+    if (m_LogFile.isOpen()) //we were already logging to a file so we close it
     {
-        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Closing previously opened logfile", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, QString("Closing previously opened logfile ").append(getCurrentLogFilename()) , LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
-        m_logFile.close();
+        m_LogFile.close();
     }
 
-    m_logFile.setFileName(aFilename);
-    m_logFile.open( QIODevice::WriteOnly | QIODevice::Append );
-    if (!m_logFile.isOpen()) //we were already logging to a file
+    m_LogFile.setFileName(i_filename);
+    m_LogFile.open( QIODevice::WriteOnly | QIODevice::Append );
+    if (!m_LogFile.isOpen()) //we were already logging to a file
     {
-        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_CRITICAL, "Cannot open logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_CRITICAL, "Cannot open logfile " + i_filename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
-        m_logFile.close();
+        m_LogFile.close();
         //TODO - the fallback case is not very clear, we try to log on the default file...
     }
     else
     {
         m_streamIsOpen = true;
-        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Opened logfile " + aFilename + " for writing", LogMessage::getCurrentTstampString());
+        LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Opened logfile " + i_filename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
     }
+
+
+    if (!m_lastUsedFilenames.contains(i_filename)) {
+        m_lastUsedFilenames.enqueue(i_filename);
+        ULDBG << "appended newest logfile " << i_filename << " to last used filenames that now is " << m_lastUsedFilenames ;
+    }
+    else {
+        ULDBG << m_lastUsedFilenames << " already contains " << i_filename;
+    }
 }
- 
+
+
+/*!
+ * \brief FileWriter::getCurrentLogFilename
+ * \return the name of the file we're currently logging on
+ */
+QString FileWriter::getCurrentLogFilename() const
+{ return m_LogFile.fileName(); }
+
 
 /*!
   \brief sets the base name that will be used for the log files
-  \param aFilename the basename of the log files
+  \param i_Filename the basename of the log files
   */
 void
-FileWriter::setOutputFile(const QString& aFilename)
+FileWriter::setOutputFile(const QString& i_Filename)
 {
-    m_logfileBaseName = aFilename;
+    m_logfileBaseName = i_Filename;
+    m_rotationCurFileNumber = 0;
+
+    m_LogfileInfo = calculateLogFilePattern(m_logfileBaseName);
     QString fname = calculateNextLogFileName();
     changeOutputFile(fname);
+
+    //look for possible leftovers
+    removeLeftoversFromPreviousRun();
 }
  
 
@@ -234,8 +363,9 @@ FileWriter::writeToDevice()
     {
         mutex.lock();
         int nummsg = m_logMessageList.count();
+        int writtenbytes = 0;
         for (int i=0; i<nummsg; i++)
-            if (m_logFile.isOpen()) //we could be in the middle of changing logfile
+            if (m_LogFile.isOpen()) //we could be in the middle of changing logfile
             {
                 QString terminator = "\n";
 
@@ -245,15 +375,13 @@ FileWriter::writeToDevice()
                 LogMessage lm = m_logMessageList.takeFirst();
                 QString m = lm.message();
                 QString s = m + terminator;
-#ifdef ENABLE_UNQL_DBG
-                int dddd = m_logFile.write(s.toLatin1());
-                qDebug() << "wrote " << dddd << " on " << m_logFile.fileName();
-#else
-                m_logFile.write(s.toLatin1());
-#endif
+
+                writtenbytes += m_LogFile.write(s.toLatin1());
             }
-        m_logFile.flush();
+        m_LogFile.flush();
         mutex.unlock();
+
+        ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
 
         rotateFilesIfNeeded();
     }
@@ -261,26 +389,9 @@ FileWriter::writeToDevice()
 
 
 /*!
- * \brief FileWriter::rotateFileForIncrementalNumbers
- * This will rotate the file with incremental numbering
+ * \brief FileWriter::isCompressionActive
+ * \return a boolean indicating whether we should compress old log files
  */
-void FileWriter::rotateFileForIncrementalNumbers()
-{
-    m_rotationCurFileNumber++;
-    QString currFileName = calculateNextLogFileName();
-    changeOutputFile( currFileName );
-
-    QString previousFile = calculateNextLogFileName(m_rotationCurFileNumber - 1);
-    if ( isCompressionActive() )
-    {
-        previousFile = compressIfNeeded( previousFile );
-    }
-    m_lastUsedFilenames.append(previousFile);
-
-    removeOldestFile();
-}
-
-
 bool FileWriter::isCompressionActive() const
 {
     if ( ( m_Config.compressionAlgo > 0 ) && ( m_Config.maxFileNum > 1) )
@@ -291,110 +402,298 @@ bool FileWriter::isCompressionActive() const
 
 
 /*!
- * \brief FileWriter::removeOldestFile removes the files that should no longer be used for logging
+ * \brief FileWriter::rotationSecondsForTimePolicy utility function that return the amount of seconds that surely trigger a time rotation for the specified policy
+ * \param timerotPolicy
+ * \return the amount of seconds that should have elapsed to certainly trigger a time-rotation
  */
-void FileWriter::removeOldestFile()
+int FileWriter::rotationSecondsForTimePolicy(UNQL::FileRotationTimePolicyType timerotPolicy)
 {
-    if (m_Config.maxFileNum == 0)
+    int rotation_seconds = 60;
+    if (timerotPolicy == UNQL::HourlyRotation)
+        rotation_seconds = 3600;
+    if (timerotPolicy == UNQL::DailyRotation)
+        rotation_seconds = 3600 * 24;
+    if (timerotPolicy == UNQL::NoTimeRotation)
+        rotation_seconds = 0;
+    return rotation_seconds;
+}
+
+
+/*!
+ * \brief FileWriter::removeLeftoversFromPreviousRun
+ * If the application using UniqLogger stops / crashes for any reason and then is restarted there might
+ * be leftover logfiles from previous runs if we're using time-based rotation i.e. log-SOMEDAY_IN_THE_PAST.txt
+ * So we look for those files (comparing against current configuration) and see if enough time has passed to remove
+ * them
+ * \todo this removes just old files, we do not take into account the possible numbering index i.e. log-DATE-N.txt
+ */
+void FileWriter::removeLeftoversFromPreviousRun()
+{
+    //the removal of leftovers makes sense only for time rotation
+    if (m_Config.timeRotationPolicy == UNQL::NoTimeRotation)
         return;
 
-    while (m_lastUsedFilenames.size() > m_Config.maxFileNum) {
-        QString lastfile = m_lastUsedFilenames.dequeue();
-        if (QFile::exists(lastfile)) {
-            QFile::remove(lastfile);
-        }
-        else {
-            ULDBG << lastfile << " does not exists, cannot delete";
+    ULDBG << "Removing leftovers from a possible previous run...";
+    LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Removing leftovers from a possible previous run...", LogMessage::getCurrentTstampString());
+    m_logMessageList.append(lm);
+
+    QStringList filelist = QDir(m_LogfileInfo.path).entryList(QDir::Files);
+    ULDBG << "Files found in logpath: " << filelist;
+
+    QString re_string = "-(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(-\\d+){0,1}\\.";
+    QRegularExpression re(m_LogfileInfo.basename + re_string + m_LogfileInfo.extension);
+    //qDebug() << "RE string: " << re_string << re.pattern();
+    //qDebug() << "RE isvalid: " << re.isValid();
+    QString remove_msg = "Removing leftover logfile %1 since %2 secs passed and timerotation policy is %3 meaning we should rotate every %4 seconds.";
+    QString leave_msg = "leftover file %1 is deemed too recent to be removed";
+    QString leftovermsg;
+    foreach (QString f, filelist) {
+        QRegularExpressionMatch match = re.match(f);
+        if (match.hasMatch()) {
+            //qDebug() << f << " matched our RE";
+            //qDebug() << match.captured(1);
+            QDateTime dt = QDateTime::fromString(match.captured(1), DEF_UNQL_TIME_ROTATION_FMT);
+            int seconds_between_dtimes = qAbs(dt.secsTo(getCurrentDateTime()));
+            int should_rotate_every_n_secs = rotationSecondsForTimePolicy(m_Config.timeRotationPolicy);
+            if (seconds_between_dtimes > should_rotate_every_n_secs) {
+                leftovermsg = remove_msg.arg(f).arg(seconds_between_dtimes).arg(m_Config.timeRotationPolicy).arg(should_rotate_every_n_secs);
+                QFile::remove(f);
+            } else {
+                leftovermsg = leave_msg.arg(f);
+            }
+            ULDBG << leftovermsg;
+            LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, leftovermsg, LogMessage::getCurrentTstampString());
+            m_logMessageList.append(lm);
+        } else {
+            //qDebug() << f << " DID NOT match our RE";
         }
     }
 }
 
 
 /*!
- * \brief FileWriter::renameOldLogFiles
- * In case of strict rotation this method will rename all involved files accordingly (i.e. log-2 -> log-3, log-1 -> log-2 and log -> log-1)
+ * \brief FileWriter::removeOldestFile removes the files that should no longer be used for logging
+ * This will scan the last used files queue and remove oldest files that exceed the maximum defined queue length
  */
-void FileWriter::renameOldLogFiles()
+void FileWriter::removeOldestFiles()
 {
-    for (int i = m_Config.maxFileNum-2; i>=0; i--) {
-        QString olderfile = calculateNextLogFileName(i);
-        QString newerfile = calculateNextLogFileName(i+1);
+    ULDBG << "Checking whether there are some old logfiles to be removed";
+    if (m_Config.maxFileNum == 0) {
+        ULDBG << "There is no rotation, ignoring";
+        return;
+    }
 
-        if ( isCompressionActive() && i != 0) {
+    ULDBG << "Last used file names is currently: " << m_lastUsedFilenames;
+    while (m_lastUsedFilenames.size() > m_Config.maxFileNum) {
+        QString lastfile = m_lastUsedFilenames.dequeue();
+        if (isCompressionActive()) {
+            ULDBG << "Compression is active, adding compressed extension to " << lastfile;
+            lastfile = NrFileCompressor::getCompressedFilename(lastfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+        }
+        if (QFile::exists(lastfile)) {
+            ULDBG << "about to remove old logfile: " << lastfile;
+            QFile::remove(lastfile);
+        } else {
+            ULDBG << lastfile << " does not seem to exist, cannot delete it ";
+        }
+    }
+
+    ULDBG << "Last used file names is NOW: " << m_lastUsedFilenames;
+}
+
+
+/*!
+ * \brief FileWriter::renameOldLogFilesForStrictRotation
+ * In case of strict rotation this method will rename all involved files accordingly
+ * (i.e. log-2 -> log-3, log-1 -> log-2 and log -> log-1)
+ * \note this will rename only files that have the same basename, so if we changed basename (i.e. we manualy changed the
+ * logfile basename OR time rotation is involved) the previous file will not be renamed (as they should have their correct naming)
+ */
+void FileWriter::renameOldLogFilesForStrictRotation()
+{
+    ULDBG << "last used files Q has " << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
+
+    //now we shall rename each file
+    for (int i = m_rotationCurFileNumber; i > 0; i--)
+    {
+        //qDebug() << "Processing renaming cycle " << i ;
+        QString olderfile = calculatePreviousLogFileName(i);
+        QString newerfile = calculatePreviousLogFileName(i-1);
+
+        // We do not calculate the compressed filenames when i==1 because i=0 is the base logfilename and we already compressed
+        // from (i.e.) log.txt to log-1.txt.gz in rotateFileForStrictRotation()
+        if ( isCompressionActive() && i != 1) {
             olderfile = NrFileCompressor::getCompressedFilename(olderfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
             newerfile = NrFileCompressor::getCompressedFilename(newerfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         }
 
-
-        if (QFile::exists(olderfile)) {
-            if (QFile::exists(newerfile)) {
-                if (!QFile::remove(newerfile)) {
-                    qCritical() << Q_FUNC_INFO << "Unable to remove older log file " << newerfile;
-                    //TODO - log this message to writer
-                }
+        ULDBG << "renaming " << newerfile << " into " << olderfile;
+        QFile newer(newerfile);
+        QFile older(olderfile);
+        if (older.exists()) {
+            ULDBG << "target file " << olderfile << " exists, removing it before renaming";
+            if (!older.remove()) {
+                ULDBG << "error renaming file: " << older.errorString();
             }
-            ULDBG << "renaming " << olderfile << " to " << newerfile;
-            if (!QFile::rename(olderfile, newerfile)) {
-                qCritical() << Q_FUNC_INFO << "Unable to move log file " << olderfile << " to " << newerfile;
-                //TODO - log this message to writer
-            } else {
-                newerfile = compressIfNeeded(newerfile);
-            }
-            //Add the file to last used
-            if (!m_lastUsedFilenames.contains(newerfile))
-                m_lastUsedFilenames.append(newerfile);
         }
-        else {//TODO - log this message to writer
-            ULDBG << olderfile << " does not exists: cannot rename it into " << newerfile;
+        bool b = newer.rename(olderfile);
+        if (!b) {
+            ULDBG << "error renaming file: " << newer.errorString();
         }
+        Q_ASSERT(b);
     }
+    ULDBG << "finished renaming files";
+    ULDBG << "last used files Q has AFTER renaming" << m_lastUsedFilenames.size() << " elements to rename:" << m_lastUsedFilenames;
 }
 
 
 /*!
- * \brief FileWriter::rotateFileForStrictRotation
- * rotate logfiles when we're logging always in the same set of files (i.e. log-1.txt -> log-2.txt and log.txt -> log-1.txt)
+ * \brief FileWriter::rotateFileForIncrementalNumbers
+ * This will log into a file with a higher number, previous will be zipped (if enabled) and the oldest eventually deleted
+ * i.e. log.txt will be deleted, log-1.txt will be zipped (if needed) and new messages will go into log-2.txt (newly created)
+ */
+void FileWriter::rotateFileForIncrementalNumbers()
+{
+    QString previousFile = m_LogFile.fileName();
+    m_rotationCurFileNumber++;
+    QString currFileName = calculateNextLogFileName();
+    changeOutputFile( currFileName );
+
+    if ( isCompressionActive() )
+    {
+        ULDBG << "Compressing " << previousFile << " for incrementalnumbers rotation";
+        previousFile = compressIfNeeded( previousFile );
+    }
+
+    removeOldestFiles();
+}
+
+/*!
+ * \brief FileWriter::rotateFileForStrictRotation will perform a logrotate-style of rotation
+ * Rotate logfiles when we're logging always in the same set of files (i.e. log-1.txt -> log-2.txt and log.txt -> log-1.txt)
+ * the file without suffix contains always the newest logs
  */
 void FileWriter::rotateFileForStrictRotation()
 {
+    ULDBG << "Rotating files for STRICT rotation...";
     //Close current logfile
-    m_logFile.flush();
-    m_logFile.close();
+    m_LogFile.flush();
+    m_LogFile.close();
+
+    //increment the rotation number and calculate the max rotation filename
+    if (m_rotationCurFileNumber < m_Config.maxFileNum - 1) {
+        //ULDBG << "Incrementing m_rotationCurFileNumber from " << m_rotationCurFileNumber << " to " << m_rotationCurFileNumber + 1;
+        m_rotationCurFileNumber++;
+    }
+
+    QString renamedlogfile = calculatePreviousLogFileName(m_rotationCurFileNumber);
+    //we insert the name the current file will be renamed to at the beginning of last used file Q to be rotated
+    ULDBG << "INSERTING " << renamedlogfile << " to lastUsedFilenames";
+    if (!m_lastUsedFilenames.contains(renamedlogfile)) {
+        QString previousFile = calculatePreviousLogFileName(m_rotationCurFileNumber - 1);
+        //ULDBG << "Calculating the file that contains log before this: " << previousFile;
+        int pos = m_lastUsedFilenames.indexOf(previousFile);
+        //ULDBG << "found " << m_LogFile.fileName() << " in " << m_lastUsedFilenames << " at pos " << pos;
+        m_lastUsedFilenames.insert(pos, renamedlogfile);
+    } else {
+        ULDBG << "NOT INSERTING since it's already there";
+    }
+    //ULDBG << "now last Q is: " << m_lastUsedFilenames;
+
+    //check if there are any file to remove
+    removeOldestFiles();
 
     //now move the other files starting from the one b4 last
-    renameOldLogFiles(); /* loop to rename old rotated files */
+    renameOldLogFilesForStrictRotation(); /* loop to rename old rotated files */
 
-    //Set the new file to log to.
-    QString currFileName = calculateNextLogFileName();
-    changeOutputFile( currFileName );
+    if ( isCompressionActive() )
+    {
+        //we always need to compress the first file (i.e. log-1.txt) after rotation of ex-current mainfile (i.e. log.txt)
+        QString previousFile = calculatePreviousLogFileName(1);
+        ULDBG << "Compressing " << previousFile << " after strict rotation...";
+        compressIfNeeded( previousFile );
+    }
+
+    //Set the same logfile to restart logging.
+    changeOutputFile( m_LogFile.fileName() );
+}
+
+
+/*!
+ * \brief FileWriter::rotateFileForTimePolicy will rotate the log files following the selected time policy
+ * If the user selected "log.txt" as log file then we will write to log-yyyy-MM-ddTHH:mm:ss.txt log file and rotate
+ * (if enabled) by size using the usual policies (HigherNumbersNewer, StrictRotation)
+ */
+void FileWriter::rotateFileForTimePolicy()
+{
+    QString newlogfilename;
+    int secsPassedSinceLastWrittenLog = secsPassedSinceTimeRotationWasNeeded();
+
+    ULDBG << "Seconds passed since rotation is needed (current time is " << getCurrentDateTime()
+             << "): " << secsPassedSinceLastWrittenLog;
+
+    if (secsPassedSinceLastWrittenLog > 0) {
+        ULDBG << "File rotation for TIME policy IS needed";
+        QString previousFile = m_LogFile.fileName();
+        //we need to reset the rotation index before calculating the new logfile name
+        m_rotationCurFileNumber = 0;
+        ULDBG << "Currently logging to " << previousFile;
+        //we need to update the written date time before calculating the new logfile name
+        m_lastWrittenDateTime = getCurrentDateTime();
+        newlogfilename = calculateNextLogFileName();
+        //qDebug() << "time passed and new name should be: " << newlogfilename;
+        changeOutputFile(newlogfilename);
+        ULDBG << "Current1 last used files: " << m_lastUsedFilenames;
+
+        if ( isCompressionActive() )
+        {
+            ULDBG << "Compressing " << previousFile << " for time rotation";
+            previousFile = compressIfNeeded( previousFile );
+        }
+
+        removeOldestFiles();
+    } else {
+        ULDBG << "File rotation for TIME policy was NOT needed";
+    }
+    ULDBG << "Current last used files: " << m_lastUsedFilenames;
 }
 
 
 /*!
  * \brief FileWriter::rotateFilesIfNeeded
- * check whether the current log file needs to be rotated (i.e. size or time) and rotates alllog files involved
+ * check whether the current log file needs to be rotated (i.e. size or time) and rotates all log files involved
  */
 void
 FileWriter::rotateFilesIfNeeded()
 {
-    //check if we need to change file for its size
-    if ( (m_Config.maxFileSize > 0) && ( (m_logFile.size() / 1000000.0) > m_Config.maxFileSize) )
+    ULDBG << "Checking if file " << m_LogFile.fileName() << " needs to be rotated";
+    //first we check if we need to change the file due to time rotation
+    if (m_Config.timeRotationPolicy != UNQL::NoTimeRotation) {
+        ULDBG << "Checking if File rotation is needed due to TIME policy...";
+        rotateFileForTimePolicy();
+    }
+    //check if we need to change file for its size, NOTE: if we rotated the file for time above its size will be 0 at first run
+    ULDBG << "Checking if File rotation is needed due to SIZE policy...";
+    if ( (m_Config.maxFileSize > 0) && ( (m_LogFile.size() / 1E6) > m_Config.maxFileSize) )
     {
+        ULDBG << "File rotation needed due to SIZE policy";
         switch (m_Config.rotationPolicy)
         {
-        case UNQL::IncrementalNumbers:
+        case UNQL::HigherNumbersNewer:
             rotateFileForIncrementalNumbers();
             break;
         case UNQL::StrictRotation:
             rotateFileForStrictRotation();
             break;
-        default:
-            break;
         } /* switch( rotation policy ) */
+    } else {
+        if (m_Config.maxFileSize == 0) {
+            ULDBG << "Filesize checking is disabled... ignoring";
+        } else {
+            ULDBG << "File rotation due to SIZE NOT needed: accepted size is " << m_Config.maxFileSize << "MB and file "
+                  << m_LogFile.fileName() << " is big " << m_LogFile.size() << " bytes ("<<  (m_LogFile.size() / 1E6) << "MB)";
+        }
     }
-
-    //TODO
-    //check if we need to change the file due to timestamp
 }
 
 
@@ -411,8 +710,8 @@ FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
          !i_fileToBeCompressed.endsWith(".zip") )
     {
         QString compressedfileName = NrFileCompressor::getCompressedFilename(i_fileToBeCompressed, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
-        ULDBG << "uncompress filename: " << i_fileToBeCompressed;
-        ULDBG << "compressed filename:  " << compressedfileName;
+        ULDBG << "uncompressed filename: " << i_fileToBeCompressed;
+        ULDBG << "compressed   filename:  " << compressedfileName;
         mutex.lock();
         int ret = NrFileCompressor::fileCompress(i_fileToBeCompressed,
                                      static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),

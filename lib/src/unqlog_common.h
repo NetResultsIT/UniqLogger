@@ -57,19 +57,12 @@ enum ErrorType
     UnqlErrorImpossibleToCreateWriter   = -21
 };
 
-
-enum RotationPolicy
-{
-    WeekDaysRotaion,
-    MonthDayRotation
-};
-
-
-
-
-#define DEF_UNQL_TS_FMT "yyyy-MM-dd HH:mm:ss"
+#define DEF_UNQL_TSTAMP_FMT "yyyy-MM-dd HH:mm:ss"
 #define DEF_UNQL_LOG_STR "UniqLogger"
 
+// Used for FileWriter when timerotation is enabled
+#define DEF_UNQL_TIME_ROTATION_FMT "yyyy-MM-ddTHH:mm:ss"
+#define DEF_UNQL_TIME_ROTATION_SUFFIX "-yyyy-MM-ddTHH:mm:ss"
 }
 
 #endif

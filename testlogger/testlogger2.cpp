@@ -56,17 +56,20 @@ testlogger_cli::testlogger_cli(QObject *parent)
 #if(TEST_FILE_ROTATION)
     millis = 20;
     WriterConfig wc2, wc4;
-    wc2.maxFileNum      = 3; //we're going to use 3 files
-    wc2.maxFileSize     = 1; //up to 1MB each
+    wc2.maxFileNum      = 7; //we're going to use 3 files
+    wc2.maxFileSize     = 0; //up to 1MB each
     wc2.writerFlushSecs = 1; //flush contents to disk every second
-    wc2.compressionAlgo = 1; //Use Gzip
+    //wc2.compressionAlgo = 1; //Use Gzip
     //wc2.compressionLevel = 1;
-    //wc2.rotationPolicy = IncrementalNumbers;
+    wc2.rotationPolicy = UNQL::StrictRotation;
+    wc2.timeRotationPolicy = UNQL::PerMinuteRotation;
+    wc2.maxMinutes = 1;
+    wc2.timeRotationPolicy = UNQL::ElapsedMinutesRotation;
 
     loggerF1 = ul->createFileLogger("test", "log.txt", wc2);
     loggerF1->setModuleName("FILE1");
-    loggerF2 = ul->createFileLogger("test", "log.txt", wc4);
-    loggerF2->setModuleName("FILE2");
+    //loggerF2 = ul->createFileLogger("test", "log2.txt", wc4);
+    //loggerF2->setModuleName("FILE2");
 #endif
 
 
@@ -230,24 +233,24 @@ testlogger_cli::timedLog()
     intlist.append(small);
 
     loggerF1->printToQDebug(true);
-
+/*
     *loggerF1 << "Writing a small number: " << small++ << UNQL::EOM;
     *loggerF1 << "Writing a big number:" << big++ << UNQL::EOM;
     *loggerF1 << "Writing a qbig number:" << bigq++ << UNQL::EOM;
     *loggerF1 << "Writing a ulbig number:" << ulnum++ << UNQL::EOM;
     *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
     *loggerF1 << "Writing a boolean:" << bb << UNQL::EOM;
-    *loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
+    //*loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
+*/
 
-
-    qDebug() << "written " << i * 2 << "KB to file...";
-    qDebug() << "is loggerF1 printing to qdebug()? " << loggerF1->printToQDebug();
+    //qDebug() << "written " << i * 2 << "KB to file...";
+    //qDebug() << "is loggerF1 printing to qdebug()? " << loggerF1->printToQDebug();
     loggerF1->printToQDebug(false);
-    qDebug() << "is loggerF2 printing to qdebug()? " << loggerF2->printToStdOut();
-    loggerF2->printToStdOut(true);
+    //qDebug() << "is loggerF2 printing to qdebug()? " << loggerF2->printToStdOut();
+    //loggerF2->printToStdOut(true);
     loggerF1->log(UNQL::LOG_INFO, ( QString("file text iteration ") + QString::number(i) + " " + QString().fill('a', 1500) ).toLatin1().constData() );
-    loggerF2->log(UNQL::LOG_INFO, ( QString("file2 text iteration") + QString::number(i) + " " + QString().fill('b', 500) ).toLatin1().constData() );
-    *loggerF2 << UNQL::LOG_WARNING << "Do you see me?" << UNQL::EOM;
+    //loggerF2->log(UNQL::LOG_INFO, ( QString("file2 text iteration") + QString::number(i) + " " + QString().fill('b', 500) ).toLatin1().constData() );
+    //*loggerF2 << UNQL::LOG_WARNING << "Do you see me?" << UNQL::EOM;
 #endif
 
 

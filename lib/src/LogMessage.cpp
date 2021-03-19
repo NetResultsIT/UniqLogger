@@ -49,5 +49,5 @@ LogMessage::message() const
  */
 QString LogMessage::getCurrentTstampString()
 {
-    return QDateTime::currentDateTime().toString(DEF_UNQL_TS_FMT);
+    return QDateTime::currentDateTime().toString(DEF_UNQL_TSTAMP_FMT);
 }
