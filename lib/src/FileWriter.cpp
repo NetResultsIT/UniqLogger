@@ -11,6 +11,8 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QQueue>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 #include "NrFileCompressor.h"
 #include <TimeUtils.h>
@@ -340,6 +342,9 @@ FileWriter::setOutputFile(const QString& i_Filename)
     m_LogfileInfo = calculateLogFilePattern(m_logfileBaseName);
     QString fname = calculateNextLogFileName();
     changeOutputFile(fname);
+
+    //look for possible leftovers
+    removeLeftoversFromPreviousRun();
 }
  
 
@@ -397,7 +402,78 @@ bool FileWriter::isCompressionActive() const
 
 
 /*!
+ * \brief FileWriter::rotationSecondsForTimePolicy utility function that return the amount of seconds that surely trigger a time rotation for the specified policy
+ * \param timerotPolicy
+ * \return the amount of seconds that should have elapsed to certainly trigger a time-rotation
+ */
+int FileWriter::rotationSecondsForTimePolicy(UNQL::FileRotationTimePolicyType timerotPolicy)
+{
+    int rotation_seconds = 60;
+    if (timerotPolicy == UNQL::HourlyRotation)
+        rotation_seconds = 3600;
+    if (timerotPolicy == UNQL::DailyRotation)
+        rotation_seconds = 3600 * 24;
+    if (timerotPolicy == UNQL::NoTimeRotation)
+        rotation_seconds = 0;
+    return rotation_seconds;
+}
+
+
+/*!
+ * \brief FileWriter::removeLeftoversFromPreviousRun
+ * If the application using UniqLogger stops / crashes for any reason and then is restarted there might
+ * be leftover logfiles from previous runs if we're using time-based rotation i.e. log-SOMEDAY_IN_THE_PAST.txt
+ * So we look for those files (comparing against current configuration) and see if enough time has passed to remove
+ * them
+ * \todo this removes just old files, we do not take into account the possible numbering index i.e. log-DATE-N.txt
+ */
+void FileWriter::removeLeftoversFromPreviousRun()
+{
+    //the removal of leftovers makes sense only for time rotation
+    if (m_Config.timeRotationPolicy == UNQL::NoTimeRotation)
+        return;
+
+    ULDBG << "Removing leftovers from a possible previous run...";
+    LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "Removing leftovers from a possible previous run...", LogMessage::getCurrentTstampString());
+    m_logMessageList.append(lm);
+
+    QStringList filelist = QDir(m_LogfileInfo.path).entryList(QDir::Files);
+    ULDBG << "Files found in logpath: " << filelist;
+
+    QString re_string = "-(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(-\\d+){0,1}\\.";
+    QRegularExpression re(m_LogfileInfo.basename + re_string + m_LogfileInfo.extension);
+    //qDebug() << "RE string: " << re_string << re.pattern();
+    //qDebug() << "RE isvalid: " << re.isValid();
+    QString remove_msg = "Removing leftover logfile %1 since %2 secs passed and timerotation policy is %3 meaning we should rotate every %4 seconds.";
+    QString leave_msg = "leftover file %1 is deemed too recent to be removed";
+    QString leftovermsg;
+    foreach (QString f, filelist) {
+        QRegularExpressionMatch match = re.match(f);
+        if (match.hasMatch()) {
+            //qDebug() << f << " matched our RE";
+            //qDebug() << match.captured(1);
+            QDateTime dt = QDateTime::fromString(match.captured(1), DEF_UNQL_TIME_ROTATION_FMT);
+            int seconds_between_dtimes = qAbs(dt.secsTo(getCurrentDateTime()));
+            int should_rotate_every_n_secs = rotationSecondsForTimePolicy(m_Config.timeRotationPolicy);
+            if (seconds_between_dtimes > should_rotate_every_n_secs) {
+                leftovermsg = remove_msg.arg(f).arg(seconds_between_dtimes).arg(m_Config.timeRotationPolicy).arg(should_rotate_every_n_secs);
+                QFile::remove(f);
+            } else {
+                leftovermsg = leave_msg.arg(f);
+            }
+            ULDBG << leftovermsg;
+            LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, leftovermsg, LogMessage::getCurrentTstampString());
+            m_logMessageList.append(lm);
+        } else {
+            //qDebug() << f << " DID NOT match our RE";
+        }
+    }
+}
+
+
+/*!
  * \brief FileWriter::removeOldestFile removes the files that should no longer be used for logging
+ * This will scan the last used files queue and remove oldest files that exceed the maximum defined queue length
  */
 void FileWriter::removeOldestFiles()
 {
@@ -545,7 +621,7 @@ void FileWriter::rotateFileForStrictRotation()
 
 /*!
  * \brief FileWriter::rotateFileForTimePolicy will rotate the log files following the selected time policy
- * If the user selected "log.txt" as log file then we will write to log-yyyy-MM-ddThh:mm:ss.txt log file and rotate
+ * If the user selected "log.txt" as log file then we will write to log-yyyy-MM-ddTHH:mm:ss.txt log file and rotate
  * (if enabled) by size using the usual policies (HigherNumbersNewer, StrictRotation)
  */
 void FileWriter::rotateFileForTimePolicy()

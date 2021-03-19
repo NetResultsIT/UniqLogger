@@ -16,7 +16,7 @@ using namespace UNQL;
 static void test_logger_leak()
 {
     UniqLogger *ul = UniqLogger::instance("LOGGER_LEAK_TEST");
-    ul->setTimeStampFormat("yyyy.MM.dd-hh:mm:ss:zzz");
+    ul->setTimeStampFormat("yyyy.MM.dd-HH:mm:ss:zzz");
 
     QSharedPointer<Logger> m_clog;
     QSharedPointer<Logger> m_flog;

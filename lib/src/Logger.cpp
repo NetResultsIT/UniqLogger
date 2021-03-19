@@ -97,8 +97,8 @@ Logger::setVerbosityDefaultLevel(const int &v)
 
 /*!
   \brief change the timestamp format for this logger
-  \param s is the string reprensenting the timestamp format, the default is hh:mm:ss (hour:minutes:seconds)
-  \note for valid format see Qt::QDateTime valid formats. Most common is: yyyy-MM-dd hh:mm:ss.zzz
+  \param s is the string reprensenting the timestamp format, the default is HH:mm:ss (hour:minutes:seconds)
+  \note for valid format see Qt::QDateTime valid formats. Most common is: yyyy-MM-dd HH:mm:ss.zzz
   */
 void
 Logger::setTimeStampFormat(const QString &s)

@@ -26,6 +26,7 @@ private slots: //switch to public to ignore some
     void testRenameOldFiles();
     void testCalculateLogInfo();
     void testRemoveOldestFiles();
+    void testRemoveLeftovers();
 
     //time rotation (simple) tests
     void testRotateWithPerMinuteRotation(int compressionAlg=0);

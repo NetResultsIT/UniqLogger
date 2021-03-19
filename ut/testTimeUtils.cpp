@@ -30,7 +30,7 @@ void testTimeUtils::testDayTicked()
 
 void testTimeUtils::testHourTicked()
 {
-    QDateTime past = QDateTime::fromString("1974-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
+    QDateTime past = QDateTime::fromString("1974-03-16T02:00:00", "yyyy-MM-ddTHH:mm:ss");
     QDateTime now = QDateTime::currentDateTime();
     QVERIFY(past.isValid());
 
@@ -57,7 +57,7 @@ void testTimeUtils::testHourTicked()
 
 void testTimeUtils::testMinuteTicked()
 {
-    QDateTime past = QDateTime::fromString("1974-03-16T02:00:00", "yyyy-MM-ddThh:mm:ss");
+    QDateTime past = QDateTime::fromString("1974-03-16T02:00:00", "yyyy-MM-ddTHH:mm:ss");
     QDateTime now = QDateTime::currentDateTime();
     QVERIFY(past.isValid());
 

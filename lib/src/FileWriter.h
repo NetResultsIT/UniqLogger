@@ -42,6 +42,7 @@ protected:
     void overrideLastWrittenDateTime(QDateTime dt);
     void setTestingCurrentDateTime(QDateTime dt);
     void resetLastUsedFilenames();
+    QDateTime adjustDateTimeForFileSuffix(QDateTime);
 
     //normal usage functions
 private:
@@ -55,9 +56,10 @@ private:
 
 protected:
     void writeToDevice();
-    QDateTime adjustDateTimeForFileSuffix(QDateTime);
     LogFileInfo calculateLogFilePattern(const QString &filename);
+    int rotationSecondsForTimePolicy(UNQL::FileRotationTimePolicyType);
     void removeOldestFiles();
+    void removeLeftoversFromPreviousRun();
     void rotateFileForIncrementalNumbers();
     void rotateFileForStrictRotation();
     void rotateFileForTimePolicy();

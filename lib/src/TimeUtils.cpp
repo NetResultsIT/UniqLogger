@@ -8,7 +8,13 @@ TimeUtils::TimeUtils()
 }
 
 
-bool TimeUtils::minuteTicked(const QDateTime&past, const QDateTime &now)
+/*!
+ * \brief TimeUtils::minuteTicked
+ * \param past older datetime
+ * \param now newer datetime
+ * \return true if at least a minute passed since past and now
+ */
+bool TimeUtils::minuteTicked(const QDateTime &past, const QDateTime &now)
 {
     //qDebug() << "Comparing " << past << " to " << now;
     bool b = false;
@@ -22,7 +28,14 @@ bool TimeUtils::minuteTicked(const QDateTime&past, const QDateTime &now)
     return b;
 }
 
-bool TimeUtils::hourTicked(const QDateTime&past, const QDateTime &now)
+
+/*!
+ * \brief TimeUtils::hourTicked
+ * \param past older datetime
+ * \param now newer datetime
+ * \return true if at least 1 hour passed since past and now
+ */
+bool TimeUtils::hourTicked(const QDateTime &past, const QDateTime &now)
 {
     //qDebug() << "Comparing " << past << " to " << now;
     bool b = false;
@@ -37,7 +50,14 @@ bool TimeUtils::hourTicked(const QDateTime&past, const QDateTime &now)
     return b;
 }
 
-bool TimeUtils::dayTicked(const QDateTime&past, const QDateTime &now)
+
+/*!
+ * \brief TimeUtils::dayTicked
+ * \param past older datetime
+ * \param now newer datetime
+ * \return true if at least a day passed since past and now
+ */
+bool TimeUtils::dayTicked(const QDateTime &past, const QDateTime &now)
 {
     //qDebug() << "Comparing " << past << " to " << now;
     bool b = false;

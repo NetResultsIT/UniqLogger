@@ -172,6 +172,59 @@ testFileWriter::testRemoveOldestFiles()
 }
 
 
+void
+testFileWriter::testRemoveLeftovers()
+{
+    int maxfiles = 4;
+    QList<QDateTime> dtlist;
+
+    QString initialdatetime = "2021-03-19T01:57:32";
+    UNQL::FileRotationTimePolicyType timerotPolicy = UNQL::HourlyRotation;
+
+    QDateTime dt = QDateTime::fromString(initialdatetime, DEF_UNQL_TIME_ROTATION_FMT);
+    QVERIFY(dt.isValid());
+
+    //config
+    m_Config.maxFileNum = 3;
+    m_Config.maxFileSize = 0;
+    //m_Config.rotationPolicy = UNQL::HigherNumbersNewer;
+    m_Config.timeRotationPolicy = timerotPolicy;
+    //m_Config.compressionAlgo = compressionAlg;
+    m_Config.maxMinutes = 1;
+
+    dt = adjustDateTimeForFileSuffix(dt);
+
+    int rotation_seconds = 60;
+    if (timerotPolicy == UNQL::HourlyRotation)
+        rotation_seconds = 3600;
+    if (timerotPolicy == UNQL::DailyRotation)
+        rotation_seconds = 3600 * 24;
+
+    QStringList filenames;
+    //define the filenames each more in the future than previous
+    for (int i=0; i<maxfiles; i++) {
+        dtlist << dt.addSecs(i * rotation_seconds); //add one minute, hour or day
+        QVERIFY(dtlist[i].isValid());
+        filenames << "log" + dtlist[i].toString(DEF_UNQL_TIME_ROTATION_SUFFIX) + ".txt";
+        createFile(filenames[i]);
+    }
+
+    //go ahead in the future 3 hours
+    setTestingCurrentDateTime(dt.addSecs(3*rotation_seconds));
+    //we configured that we want just 3 files so when we set the new output file we should get rid of
+    //the first two entries of filenames
+    setOutputFile("log.txt");
+    removeLeftoversFromPreviousRun();
+    QVERIFY(!QFile::exists(filenames[0]));
+    QVERIFY(!QFile::exists(filenames[1]));
+    qDebug() << "Looking for file " << filenames[2];
+    QVERIFY(QFile::exists(filenames[2]));
+    QVERIFY(QFile::exists(filenames[3]));
+    cleanup(filenames);
+}
+
+
+
 //TODO - check if there is a way to test renaming without exposing the last used file Q
 void
 testFileWriter::testRenameOldFiles()
@@ -277,6 +330,7 @@ void testFileWriter::testRotateForTimePolicy(int compressionAlg, UNQL::FileRotat
     qDebug() << filenames;
 
     overrideLastWrittenDateTime(dtlist[0]);
+    setTestingCurrentDateTime(dtlist[0]);
     setOutputFile("log.txt");
 
     QVERIFY(QFileInfo::exists(filenames[0]));
