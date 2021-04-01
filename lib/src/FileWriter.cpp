@@ -456,8 +456,14 @@ void FileWriter::removeLeftoversFromPreviousRun()
             int seconds_between_dtimes = qAbs(dt.secsTo(getCurrentDateTime()));
             int should_rotate_every_n_secs = rotationSecondsForTimePolicy(m_Config.timeRotationPolicy);
             if (seconds_between_dtimes > should_rotate_every_n_secs) {
-                leftovermsg = remove_msg.arg(f).arg(seconds_between_dtimes).arg(m_Config.timeRotationPolicy).arg(should_rotate_every_n_secs);
-                QFile::remove(f);
+                QString filefullpath = m_LogfileInfo.path + QDir::separator() + f;
+                leftovermsg = remove_msg.arg(filefullpath).arg(seconds_between_dtimes).arg(m_Config.timeRotationPolicy).arg(should_rotate_every_n_secs);
+                bool b = QFile::remove(filefullpath);
+                if (!b) {
+                    ULDBG << "ERROR ERROR - Could not delete file " << f;
+                    LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, "Could not remove leftover file " + filefullpath, LogMessage::getCurrentTstampString());
+                    m_logMessageList.append(lm);
+                }
             } else {
                 leftovermsg = leave_msg.arg(f);
             }

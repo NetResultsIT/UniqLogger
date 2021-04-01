@@ -200,12 +200,15 @@ testFileWriter::testRemoveLeftovers()
     if (timerotPolicy == UNQL::DailyRotation)
         rotation_seconds = 3600 * 24;
 
+    QDir::current().mkdir("testsubfolder");
+    QString path = QDir::currentPath() + "/testsubfolder";
+
     QStringList filenames;
     //define the filenames each more in the future than previous
     for (int i=0; i<maxfiles; i++) {
         dtlist << dt.addSecs(i * rotation_seconds); //add one minute, hour or day
         QVERIFY(dtlist[i].isValid());
-        filenames << "log" + dtlist[i].toString(DEF_UNQL_TIME_ROTATION_SUFFIX) + ".txt";
+        filenames << path + "/log" + dtlist[i].toString(DEF_UNQL_TIME_ROTATION_SUFFIX) + ".txt";
         createFile(filenames[i]);
     }
 
@@ -213,14 +216,18 @@ testFileWriter::testRemoveLeftovers()
     setTestingCurrentDateTime(dt.addSecs(3*rotation_seconds));
     //we configured that we want just 3 files so when we set the new output file we should get rid of
     //the first two entries of filenames
-    setOutputFile("log.txt");
+    setOutputFile("testsubfolder/log.txt");
     removeLeftoversFromPreviousRun();
+    qDebug() << "Looking for file (should not exist) " << filenames[0];
     QVERIFY(!QFile::exists(filenames[0]));
+    qDebug() << "Looking for file (should not exist) " << filenames[1];
     QVERIFY(!QFile::exists(filenames[1]));
     qDebug() << "Looking for file " << filenames[2];
     QVERIFY(QFile::exists(filenames[2]));
+    qDebug() << "Looking for file " << filenames[3];
     QVERIFY(QFile::exists(filenames[3]));
     cleanup(filenames);
+    QDir::current().rmdir("testsubfolder");
 }
 
 
