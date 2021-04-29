@@ -1,16 +1,14 @@
 # 00-compile
 # project: uniqlogger
 
-- clone the repository using (optionally) a valid git <user>:
-  > git clone https://<user>@gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
-      i.e. git clone https://gitlab.netresults.intranet:10443/netresults/utils/uniqlogger.git
-- insert the password for the <user>
-- if no <user> is specified on the git URL both username and password will be asked on the cli
+- clone the repository:
+  > git clone https://github.com/netresultsit/uniqlogger.git
+      i.e. git clone https://github.com/netresultsit/uniqlogger.git
 
 > cd uniqlogger/lib
 - [optional] chechout the branch/tag to build:
   > git checkout tags/<version_no>
-      i.e. git checkout tags/0.6.0
+      i.e. git checkout tags/1.0.0
 > cd lib
 > export UNQLPATH=${PWD}
 

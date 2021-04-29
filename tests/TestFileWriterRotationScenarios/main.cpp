@@ -5,7 +5,7 @@
 #define NRDBG qDebug()
 #define NRDBG2 qDebug
 
-#include <testFileWriter.h>
+#include <tst_FileWriterRotations.h>
 
 QTEST_MAIN(testFileWriter)
 

@@ -3,8 +3,7 @@ QT -= gui
 
 CONFIG += c++11
 
-TARGET = ut
-CONFIG += console
+CONFIG += qt console warn_on depend_includepath testcase
 CONFIG -= app_bundle
 
 TEMPLATE = app
@@ -14,11 +13,11 @@ UNQLPATH = $$PWD/../../lib
 
 INCLUDEPATH += $$UNQLPATH/src
 
-SOURCES += main.cpp \
-    testFileWriter.cpp
+SOURCES += \
+    tst_FileWriterRotations.cpp
 
 HEADERS += \
-    testFileWriter.h
+    tst_FileWriterRotations.h
 
 LIBS += -L$$UNQLPATH/last_build
 
@@ -38,10 +37,10 @@ macx {
         LIBS += -lUniqLogger_debug
     }
 
-    LIBS += -L/$$UNQLPATH
+    LIBS += -L/$$UNQLPATH/last_build
 
     QMAKE_LFLAGS += \
-                -Wl,-rpath $$UNQLPATH/
+                -Wl,-rpath $$UNQLPATH/last_build
 }
 
 

@@ -1,13 +1,13 @@
-#ifndef TESTFILEWRITER_H
-#define TESTFILEWRITER_H
+#ifndef TST_FILEWRITERROTATIONS_H
+#define TST_FILEWRITERROTATIONS_H
 
 #include <QObject>
 #include <FileWriter.h>
-class testFileWriter : public FileWriter
+class FileWriterRotations : public FileWriter
 {
     Q_OBJECT
 public:
-    explicit testFileWriter(WriterConfig wc=WriterConfig());
+    explicit FileWriterRotations(WriterConfig wc=WriterConfig());
     void cleanup(QStringList);
 
 signals:
@@ -79,4 +79,4 @@ private slots: //switch to public to ignore some
     void testRotateWithDailyRotationAndSizeStrictZipCompressed();
 };
 
-#endif // TESTFILEWRITER_H
+#endif // TST_FILEWRITERROTATIONS_H

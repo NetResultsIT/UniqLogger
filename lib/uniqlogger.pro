@@ -385,6 +385,8 @@ macx {
         TARGET = $$join(TARGET,,,)
         BLDTYPE=release
         QMAKE_POST_LINK += "install_name_tool -id @rpath/libUniqLogger.$${VER_MAJ}.dylib release/bin/libUniqLogger.dylib $$escape_expand(\\n\\t)"
+    } else {
+        QMAKE_POST_LINK += "install_name_tool -id @rpath/libUniqLogger_debug.$${VER_MAJ}.dylib debug/bin/libUniqLogger_debug.dylib $$escape_expand(\\n\\t)"
     }
 
     DLL = $$join(TARGET,,lib,.*dylib)

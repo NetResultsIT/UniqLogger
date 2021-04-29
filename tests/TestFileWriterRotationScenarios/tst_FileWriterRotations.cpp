@@ -1,4 +1,4 @@
-#include "testFileWriter.h"
+#include "tst_FileWriterRotations.h"
 
 #include <FileWriter.h>
 
@@ -7,7 +7,7 @@
 
 #include <QtTest/QtTest>
 
-testFileWriter::testFileWriter(WriterConfig wc)
+FileWriterRotations::FileWriterRotations(WriterConfig wc)
     : FileWriter(wc)
 {
 
@@ -71,7 +71,7 @@ QString getCompressedFilename(QString fname, int compressionAlg)
 
 //END OF UTILITY FUNX
 
-void testFileWriter::init()
+void FileWriterRotations::init()
 {
     qDebug() << Q_FUNC_INFO;
     resetLastUsedFilenames();
@@ -79,7 +79,7 @@ void testFileWriter::init()
     m_Config = WriterConfig();
 }
 
-void testFileWriter::cleanup(QStringList filenames) {
+void FileWriterRotations::cleanup(QStringList filenames) {
     foreach (QString s, filenames) {
         deleteFile(s);
     }
@@ -87,7 +87,7 @@ void testFileWriter::cleanup(QStringList filenames) {
 
 
 void
-testFileWriter::testCalculateLogInfo()
+FileWriterRotations::testCalculateLogInfo()
 {
     LogFileInfo lfi;
     //this->setOutputFile("log.txt");
@@ -137,7 +137,7 @@ testFileWriter::testCalculateLogInfo()
 
 
 void
-testFileWriter::testRemoveOldestFiles()
+FileWriterRotations::testRemoveOldestFiles()
 {
     //QSKIP("Adjusting code...");
 
@@ -173,7 +173,7 @@ testFileWriter::testRemoveOldestFiles()
 
 
 void
-testFileWriter::testRemoveLeftovers()
+FileWriterRotations::testRemoveLeftovers()
 {
     int maxfiles = 4;
     QList<QDateTime> dtlist;
@@ -234,7 +234,7 @@ testFileWriter::testRemoveLeftovers()
 
 //TODO - check if there is a way to test renaming without exposing the last used file Q
 void
-testFileWriter::testRenameOldFiles()
+FileWriterRotations::testRenameOldFiles()
 {
     //QSKIP("skipping for now");
 
@@ -299,7 +299,7 @@ testFileWriter::testRenameOldFiles()
  *  TESTS FOR  TIME ROTATION SIMPLE
  *  *********************************/
 
-void testFileWriter::testRotateForTimePolicy(int compressionAlg, UNQL::FileRotationTimePolicyType timerotPolicy, QString initialdatetime)
+void FileWriterRotations::testRotateForTimePolicy(int compressionAlg, UNQL::FileRotationTimePolicyType timerotPolicy, QString initialdatetime)
 {
     //QSKIP("adjusting code");
     int maxfiles = 4;
@@ -395,83 +395,83 @@ void testFileWriter::testRotateForTimePolicy(int compressionAlg, UNQL::FileRotat
 }
 
 
-void testFileWriter::testRotateWithPerMinuteRotationGzipCompressed()
+void FileWriterRotations::testRotateWithPerMinuteRotationGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithPerMinuteRotation(1);
 }
 
 
-void testFileWriter::testRotateWithPerMinuteRotationZipCompressed()
+void FileWriterRotations::testRotateWithPerMinuteRotationZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithPerMinuteRotation(2);
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationGzipCompressed()
+void FileWriterRotations::testRotateWithElapsedMinutesRotationGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithElapsedMinutesRotation(1);
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationZipCompressed()
+void FileWriterRotations::testRotateWithElapsedMinutesRotationZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithElapsedMinutesRotation(2);
 }
 
 
-void testFileWriter::testRotateWithHourlyRotationGzipCompressed()
+void FileWriterRotations::testRotateWithHourlyRotationGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithHourlyRotation(1);
 }
 
 
-void testFileWriter::testRotateWithHourlyRotationZipCompressed()
+void FileWriterRotations::testRotateWithHourlyRotationZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithHourlyRotation(2);
 }
 
-void testFileWriter::testRotateWithDailyRotationGzipCompressed()
+void FileWriterRotations::testRotateWithDailyRotationGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithDailyRotation(1);
 }
 
 
-void testFileWriter::testRotateWithDailyRotationZipCompressed()
+void FileWriterRotations::testRotateWithDailyRotationZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithDailyRotation(2);
 }
 
 
-void testFileWriter::testRotateWithPerMinuteRotation(int compressionAlg)
+void FileWriterRotations::testRotateWithPerMinuteRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicy(compressionAlg, UNQL::PerMinuteRotation, "2021-03-16T23:00:12");
 }
 
 
-void testFileWriter::testRotateWithHourlyRotation(int compressionAlg)
+void FileWriterRotations::testRotateWithHourlyRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicy(compressionAlg, UNQL::HourlyRotation, "2021-03-16T23:15:12");
 }
 
 
-void testFileWriter::testRotateWithDailyRotation(int compressionAlg)
+void FileWriterRotations::testRotateWithDailyRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicy(compressionAlg, UNQL::DailyRotation, "2021-03-16T21:42:12");
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotation(int compressionAlg)
+void FileWriterRotations::testRotateWithElapsedMinutesRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicy(compressionAlg, UNQL::ElapsedMinutesRotation, "2021-03-16T23:00:12");
@@ -484,7 +484,7 @@ void testFileWriter::testRotateWithElapsedMinutesRotation(int compressionAlg)
  *  *************************************/
 
 
-void testFileWriter::testRotateWithPerMinuteRotationAndSizeHigherNewer(int compressionAlg)
+void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::PerMinuteRotation, "2021-03-16T23:00:12");
@@ -492,82 +492,82 @@ void testFileWriter::testRotateWithPerMinuteRotationAndSizeHigherNewer(int compr
 
 
 
-void testFileWriter::testRotateWithHourlyRotationAndSizeHigherNewer(int compressionAlg)
+void FileWriterRotations::testRotateWithHourlyRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::HourlyRotation, "2021-03-16T23:15:12");
 }
 
 
-void testFileWriter::testRotateWithDailyRotationAndSizeHigherNewer(int compressionAlg)
+void FileWriterRotations::testRotateWithDailyRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::DailyRotation, "2021-03-16T21:42:12");
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationAndSizeHigherNewer(int compressionAlg)
+void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::ElapsedMinutesRotation, "2021-03-16T23:00:12");
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationAndSizeHigherNewerGzipCompressed()
+void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeHigherNewerGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithElapsedMinutesRotationAndSizeHigherNewer(1);
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationAndSizeHigherNewerZipCompressed()
+void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeHigherNewerZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithElapsedMinutesRotationAndSizeHigherNewer(2);
 }
 
 
-void testFileWriter::testRotateWithHourlyRotationAndSizeHigherNewerGzipCompressed()
+void FileWriterRotations::testRotateWithHourlyRotationAndSizeHigherNewerGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithHourlyRotationAndSizeHigherNewer(1);
 }
 
 
-void testFileWriter::testRotateWithHourlyRotationAndSizeHigherNewerZipCompressed()
+void FileWriterRotations::testRotateWithHourlyRotationAndSizeHigherNewerZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithHourlyRotationAndSizeHigherNewer(2);
 }
 
-void testFileWriter::testRotateWithDailyRotationAndSizeHigherNewerGzipCompressed()
+void FileWriterRotations::testRotateWithDailyRotationAndSizeHigherNewerGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithDailyRotationAndSizeHigherNewer(1);
 }
 
 
-void testFileWriter::testRotateWithDailyRotationAndSizeHigherNewerZipCompressed()
+void FileWriterRotations::testRotateWithDailyRotationAndSizeHigherNewerZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithDailyRotationAndSizeHigherNewer(2);
 }
 
 
-void testFileWriter::testRotateWithPerMinuteRotationAndSizeHigherNewerGzipCompressed()
+void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeHigherNewerGzipCompressed()
 {
     //QSKIP("");
     testRotateWithPerMinuteRotationAndSizeHigherNewer(1);
 }
 
 
-void testFileWriter::testRotateWithPerMinuteRotationAndSizeHigherNewerZipCompressed()
+void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeHigherNewerZipCompressed()
 {
     //QSKIP("");
     testRotateWithPerMinuteRotationAndSizeHigherNewer(2);
 }
 
-void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer(int compressionAlg, UNQL::FileRotationTimePolicyType timerotPolicy, QString initialdatetime)
+void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compressionAlg, UNQL::FileRotationTimePolicyType timerotPolicy, QString initialdatetime)
 {
     //QSKIP("adjusting code");
 
@@ -686,7 +686,7 @@ void testFileWriter::testRotateForTimePolicyAndSizeHigherNewer(int compressionAl
 
 
 
-void testFileWriter::testRotateForTimePolicyAndSizeStrict(int compressionAlg, UNQL::FileRotationTimePolicyType timerotPolicy, QString initialdatetime)
+void FileWriterRotations::testRotateForTimePolicyAndSizeStrict(int compressionAlg, UNQL::FileRotationTimePolicyType timerotPolicy, QString initialdatetime)
 {
     //QSKIP("adjusting code");
 
@@ -791,80 +791,80 @@ void testFileWriter::testRotateForTimePolicyAndSizeStrict(int compressionAlg, UN
     }
 }
 
-void testFileWriter::testRotateWithPerMinuteRotationAndSizeStrict(int compressionAlg)
+void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::PerMinuteRotation, "2021-03-16T23:00:12");
 }
 
-void testFileWriter::testRotateWithPerMinuteRotationAndSizeStrictGzipCompressed()
+void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeStrictGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithPerMinuteRotationAndSizeStrict(1);
 }
 
 
-void testFileWriter::testRotateWithPerMinuteRotationAndSizeStrictZipCompressed()
+void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeStrictZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithPerMinuteRotationAndSizeStrict(2);
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationAndSizeStrict(int compressionAlg)
+void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::ElapsedMinutesRotation, "2021-03-16T23:00:12");
 }
 
-void testFileWriter::testRotateWithElapsedMinutesRotationAndSizeStrictGzipCompressed()
+void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeStrictGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithElapsedMinutesRotationAndSizeStrict(1);
 }
 
 
-void testFileWriter::testRotateWithElapsedMinutesRotationAndSizeStrictZipCompressed()
+void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeStrictZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithElapsedMinutesRotationAndSizeStrict(2);
 }
 
 
-void testFileWriter::testRotateWithHourlyRotationAndSizeStrict(int compressionAlg)
+void FileWriterRotations::testRotateWithHourlyRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::HourlyRotation, "2021-03-16T23:00:12");
 }
 
-void testFileWriter::testRotateWithHourlyRotationAndSizeStrictGzipCompressed()
+void FileWriterRotations::testRotateWithHourlyRotationAndSizeStrictGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithHourlyRotationAndSizeStrict(1);
 }
 
 
-void testFileWriter::testRotateWithHourlyRotationAndSizeStrictZipCompressed()
+void FileWriterRotations::testRotateWithHourlyRotationAndSizeStrictZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithHourlyRotationAndSizeStrict(2);
 }
 
 
-void testFileWriter::testRotateWithDailyRotationAndSizeStrict(int compressionAlg)
+void FileWriterRotations::testRotateWithDailyRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
     testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::DailyRotation, "2021-03-16T23:00:12");
 }
 
-void testFileWriter::testRotateWithDailyRotationAndSizeStrictGzipCompressed()
+void FileWriterRotations::testRotateWithDailyRotationAndSizeStrictGzipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithDailyRotationAndSizeStrict(1);
 }
 
 
-void testFileWriter::testRotateWithDailyRotationAndSizeStrictZipCompressed()
+void FileWriterRotations::testRotateWithDailyRotationAndSizeStrictZipCompressed()
 {
     //QSKIP("Adjusting code");
     testRotateWithDailyRotationAndSizeStrict(2);
@@ -874,7 +874,7 @@ void testFileWriter::testRotateWithDailyRotationAndSizeStrictZipCompressed()
  * TESTS FOR SIZE BASED ROTATION
  * *********************************/
 
-void testFileWriter::testRotateForIncrementalNumbers(int compressionAlgorithm)
+void FileWriterRotations::testRotateForIncrementalNumbers(int compressionAlgorithm)
 {
     //QSKIP("adjusting code");
 
@@ -932,18 +932,18 @@ void testFileWriter::testRotateForIncrementalNumbers(int compressionAlgorithm)
     }
 }
 
-void testFileWriter::testRotateForIncrementalNumbersGzipCompressed()
+void FileWriterRotations::testRotateForIncrementalNumbersGzipCompressed()
 {
     testRotateForIncrementalNumbers(1);
 }
 
 
-void testFileWriter::testRotateForIncrementalNumbersZipCompressed()
+void FileWriterRotations::testRotateForIncrementalNumbersZipCompressed()
 {
     testRotateForIncrementalNumbers(2);
 }
 
-void testFileWriter::testRotateForStrictNumbers(int compressionAlgorithm)
+void FileWriterRotations::testRotateForStrictNumbers(int compressionAlgorithm)
 {
     //QSKIP("adjusting code");
 
@@ -1000,13 +1000,22 @@ void testFileWriter::testRotateForStrictNumbers(int compressionAlgorithm)
 
 
 
-void testFileWriter::testRotateForStrictNumbersGzipCompressed()
+void FileWriterRotations::testRotateForStrictNumbersGzipCompressed()
 {
     testRotateForStrictNumbers(1);
 }
 
 
-void testFileWriter::testRotateForStrictNumbersZipCompressed()
+void FileWriterRotations::testRotateForStrictNumbersZipCompressed()
 {
     testRotateForStrictNumbers(2);
 }
+
+
+
+
+QTEST_GUILESS_MAIN(FileWriterRotations)
+
+// the pattern "moc_*" is for when Q_OBJECT macro in a .h file (and included by Makefile)
+// if we have just the .cpp we would have a .moc file to include (FL)
+//#include "tst_FileWriterRotations.moc"
