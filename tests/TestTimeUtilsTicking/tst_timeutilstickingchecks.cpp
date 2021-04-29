@@ -1,13 +1,33 @@
-#include "testTimeUtils.h"
+#include <QtTest>
 
+// add necessary includes here
 #include "TimeUtils.h"
 
-testTimeUtils::testTimeUtils()
+class TimeUtilsTickingChecks : public QObject
+{
+    Q_OBJECT
+
+public:
+    TimeUtilsTickingChecks();
+    ~TimeUtilsTickingChecks();
+
+private slots:
+    void testDayTicked();
+    void testHourTicked();
+    void testMinuteTicked();
+};
+
+TimeUtilsTickingChecks::TimeUtilsTickingChecks()
 {
 
 }
 
-void testTimeUtils::testDayTicked()
+TimeUtilsTickingChecks::~TimeUtilsTickingChecks()
+{
+
+}
+
+void TimeUtilsTickingChecks::testDayTicked()
 {
     QDateTime past = QDateTime::fromString("1974-03-16", "yyyy-MM-dd");
     QDateTime now = QDateTime::currentDateTime();
@@ -28,7 +48,7 @@ void testTimeUtils::testDayTicked()
     QVERIFY(!TimeUtils::dayTicked(past, past.addSecs((59 * 60) + (23 * 3600))));
 }
 
-void testTimeUtils::testHourTicked()
+void TimeUtilsTickingChecks::testHourTicked()
 {
     QDateTime past = QDateTime::fromString("1974-03-16T02:00:00", "yyyy-MM-ddTHH:mm:ss");
     QDateTime now = QDateTime::currentDateTime();
@@ -55,7 +75,7 @@ void testTimeUtils::testHourTicked()
     QVERIFY(!TimeUtils::hourTicked(past, past.addSecs(1 * 60)));
 }
 
-void testTimeUtils::testMinuteTicked()
+void TimeUtilsTickingChecks::testMinuteTicked()
 {
     QDateTime past = QDateTime::fromString("1974-03-16T02:00:00", "yyyy-MM-ddTHH:mm:ss");
     QDateTime now = QDateTime::currentDateTime();
@@ -85,3 +105,9 @@ void testTimeUtils::testMinuteTicked()
     QVERIFY(!TimeUtils::minuteTicked(past, past.addSecs(10)));
     QVERIFY(!TimeUtils::minuteTicked(past, past.addSecs(1)));
 }
+
+
+
+QTEST_APPLESS_MAIN(TimeUtilsTickingChecks)
+
+#include "tst_timeutilstickingchecks.moc"

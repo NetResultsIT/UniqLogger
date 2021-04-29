@@ -10,17 +10,15 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 
-UNQLPATH = $$PWD/../lib
+UNQLPATH = $$PWD/../../lib
 
 INCLUDEPATH += $$UNQLPATH/src
 
 SOURCES += main.cpp \
-    testFileWriter.cpp \
-    testTimeUtils.cpp
+    testFileWriter.cpp
 
 HEADERS += \
-    testFileWriter.h \
-    testTimeUtils.h
+    testFileWriter.h
 
 LIBS += -L$$UNQLPATH/last_build
 
