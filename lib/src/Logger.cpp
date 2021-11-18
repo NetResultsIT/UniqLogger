@@ -446,7 +446,6 @@ Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
 }
 
 
-
 Logger&
 Logger::operator<< ( const QVariant& v )
 {
@@ -496,7 +495,7 @@ Logger::operator<< ( const QMap<int, QList<int> >& amap )
     }
     return *this;
 }
-
+/**/
 /* Previous implementation is still here commented since there was bit of a hack for android that need to be tested
 Logger&
 Logger::operator<< ( double d )
@@ -528,3 +527,85 @@ Logger::operator<< ( unsigned long d )
     muxMessages.unlock();
     return *this;
 }
+
+Logger&
+Logger::operator<< ( signed long d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( unsigned int d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( signed int d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< (quint64 d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( qint64 d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( double d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( bool b )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(b ? "true" : "false");
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( const char* s )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString(s));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( char c )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QChar(c));
+    muxMessages.unlock();
+    return *this;
+}
+

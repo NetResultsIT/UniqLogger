@@ -97,6 +97,15 @@ public:
     Logger& operator<< ( const QMap<int, QList<int> >&  );
     Logger& operator<< ( const QVariant& v              );
     Logger& operator<< ( unsigned long                  );
+    Logger& operator<< ( signed long                    );
+    Logger& operator<< ( unsigned int                   );
+    Logger& operator<< ( signed int                     );
+    Logger& operator<< ( quint64                        );
+    Logger& operator<< ( qint64                         );
+    Logger& operator<< ( double                         );
+    Logger& operator<< ( bool                           );
+    Logger& operator<< ( const char *                   );
+    Logger& operator<< ( char                           );
 
     /* VS2010 does not allow a default template argument for non-template classes
     // Use SFINAE with second default template param to validate numeric types

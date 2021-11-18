@@ -222,26 +222,34 @@ testlogger_cli::timedLog()
 
 #if(TEST_FILE_ROTATION)
     static int small = 100;
-    static long long big = 1000000;
+    static unsigned long long big = 1000000;
+    static int smallN = -100;
+    static long long bigN = -1000000;
     static quint64 bigq = 1E7;
     double dnum = big * 3.1459163 *1E6;
     static unsigned long int ulnum = 12345678890;
+    static long int ulnumN = -12345678890;
     static bool bb = true;
     static QList<int> intlist;
+    char c = 'c';
 
     bb = !bb;
     intlist.append(small);
 
     loggerF1->printToQDebug(true);
-/*
+/**/
     *loggerF1 << "Writing a small number: " << small++ << UNQL::EOM;
     *loggerF1 << "Writing a big number:" << big++ << UNQL::EOM;
+    *loggerF1 << "Writing a small negative number: " << smallN-- << UNQL::EOM;
+    *loggerF1 << "Writing a big negative number:" << bigN-- << UNQL::EOM;
     *loggerF1 << "Writing a qbig number:" << bigq++ << UNQL::EOM;
     *loggerF1 << "Writing a ulbig number:" << ulnum++ << UNQL::EOM;
+    *loggerF1 << "Writing a ulbig negative number:" << ulnumN-- << UNQL::EOM;
     *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
     *loggerF1 << "Writing a boolean:" << bb << UNQL::EOM;
-    //*loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
-*/
+    *loggerF1 << "Writing a char:" << c << UNQL::EOM;
+    *loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
+/**/
 
     //qDebug() << "written " << i * 2 << "KB to file...";
     //qDebug() << "is loggerF1 printing to qdebug()? " << loggerF1->printToQDebug();
