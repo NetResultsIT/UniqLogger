@@ -35,6 +35,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
     dummy    = nullptr; //This will be a dummy logger;
 
     QTimer *timer = new QTimer();
+    m_eltimer = new QElapsedTimer();
     int millis = 2000;
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
@@ -232,9 +233,13 @@ testlogger_cli::timedLog()
     static bool bb = true;
     static QList<int> intlist;
     char c = 'c';
+    static QMap<int, QList<int> > intlistmap;
 
     bb = !bb;
     intlist.append(small);
+    intlistmap.insert(small, intlist);
+    int listsize = intlist.size();
+    int mapsize = intlistmap.size();
 
     loggerF1->printToQDebug(true);
 /**/
@@ -248,7 +253,13 @@ testlogger_cli::timedLog()
     *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
     *loggerF1 << "Writing a boolean:" << bb << UNQL::EOM;
     *loggerF1 << "Writing a char:" << c << UNQL::EOM;
-    *loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
+    m_eltimer->restart();
+    *loggerF1 << "Writing a " << listsize << " elem int list :" << intlist << UNQL::EOM;
+    qDebug() << "time to write a " << listsize << " elem intlist:" << m_eltimer->nsecsElapsed() << "ns";
+    m_eltimer->restart();
+    *loggerF1 << "Writing a " << mapsize << " elem qmap of int list:" << intlistmap << UNQL::EOM;
+    qDebug() << "time to write a " << mapsize << " elem intlistmap:" << m_eltimer->nsecsElapsed() << "ns";
+    //qDebug() << intlistmap;
 /**/
 
     //qDebug() << "written " << i * 2 << "KB to file...";

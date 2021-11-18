@@ -467,7 +467,7 @@ Logger::operator<< ( const QStringList& sl )
     return *this;
 }
 
-
+/** /
 Logger&
 Logger::operator<< ( const QList<int>& vl )
 {
@@ -478,23 +478,24 @@ Logger::operator<< ( const QList<int>& vl )
     muxMessages.unlock();
     return *this;
 }
+/ ** /
 
-
+/ ** /
 Logger&
 Logger::operator<< ( const QMap<int, QList<int> >& amap )
 {
     foreach (int mk, amap.keys()) {
         QString liststr = "(";
         foreach (int v, amap.value(mk)) {
-            liststr.append(QString::number(v));
+            liststr.append(QString::number(v) + " ");
         }
         liststr += ")";
         muxMessages.lock();
-            m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(mk) + " -> " + liststr);
+            m_bufferedStreamMessages[QThread::currentThread()].append("[" + QString::number(mk) + " -> " + liststr + "]");
         muxMessages.unlock();
     }
     return *this;
-}
+}/ ** /
 /**/
 /* Previous implementation is still here commented since there was bit of a hack for android that need to be tested
 Logger&

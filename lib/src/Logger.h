@@ -93,8 +93,8 @@ public:
     Logger& operator<< ( const UNQL::LogMessagePriorityType& d      );
     Logger& operator<< ( const UNQL::LogStreamManipType& d          );
     Logger& operator<< ( const QStringList& sl          );
-    Logger& operator<< ( const QList<int>& vl           );
-    Logger& operator<< ( const QMap<int, QList<int> >&  );
+    //Logger& operator<< ( const QList<int>& vl           );
+    //Logger& operator<< ( const QMap<int, QList<int> >&  );
     Logger& operator<< ( const QVariant& v              );
     Logger& operator<< ( unsigned long                  );
     Logger& operator<< ( signed long                    );
@@ -106,6 +106,22 @@ public:
     Logger& operator<< ( bool                           );
     Logger& operator<< ( const char *                   );
     Logger& operator<< ( char                           );
+    template <typename T>
+    Logger& operator<<(const QList<T> &x)  {
+        foreach(T v, x) {
+            *this << v;
+        }
+        return *this;
+    }
+
+    template <typename K, typename V>
+    Logger& operator<<(const QMap<K, V> &m)  {
+        *this << "[";
+        foreach(K mk, m.keys()) {
+            *this << "(" << mk << "->" << m[mk] << ")";
+        }
+        return *this << "]";
+    }
 
     /* VS2010 does not allow a default template argument for non-template classes
     // Use SFINAE with second default template param to validate numeric types
