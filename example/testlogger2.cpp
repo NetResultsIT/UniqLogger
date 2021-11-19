@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QDateTime>
+#include <QHash>
 
 #define TEST_FILE_ROTATION 1
 #define TEST_CONSOLE_COLOR 0
@@ -234,12 +235,18 @@ testlogger_cli::timedLog()
     static QList<int> intlist;
     char c = 'c';
     static QMap<int, QList<int> > intlistmap;
+    static QVector<bool> boolvec;
+    static QSet<double> doubleset;
+    static QHash<QString, bool> stringhash;
 
     bb = !bb;
     intlist.append(small);
     intlistmap.insert(small, intlist);
     int listsize = intlist.size();
     int mapsize = intlistmap.size();
+    boolvec.append(bb);
+    doubleset.insert(dnum);
+    stringhash.insert(QString::number(small), bb);
 
     loggerF1->printToQDebug(true);
 /**/
@@ -253,13 +260,18 @@ testlogger_cli::timedLog()
     *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
     *loggerF1 << "Writing a boolean:" << bb << UNQL::EOM;
     *loggerF1 << "Writing a char:" << c << UNQL::EOM;
+/*
     m_eltimer->restart();
     *loggerF1 << "Writing a " << listsize << " elem int list :" << intlist << UNQL::EOM;
     qDebug() << "time to write a " << listsize << " elem intlist:" << m_eltimer->nsecsElapsed() << "ns";
     m_eltimer->restart();
     *loggerF1 << "Writing a " << mapsize << " elem qmap of int list:" << intlistmap << UNQL::EOM;
     qDebug() << "time to write a " << mapsize << " elem intlistmap:" << m_eltimer->nsecsElapsed() << "ns";
-    //qDebug() << intlistmap;
+*/
+
+    *loggerF1 << "Writing a " << boolvec.size() << " elem bool vector:" << boolvec << UNQL::EOM;
+    *loggerF1 << "Writing a " << doubleset.size() << " elem double set:" << doubleset << UNQL::EOM;
+    *loggerF1 << "Writing a " << stringhash.size() << " elem string hash:" << stringhash << UNQL::EOM;
 /**/
 
     //qDebug() << "written " << i * 2 << "KB to file...";

@@ -147,7 +147,7 @@ int FileWriter::secsPassedSinceTimeRotationWasNeeded()
 
 /*!
  * \brief FileWriter::calculateLogFilePattern calculates the pattern (i.e. the logfilename with a placeholder for file numbering) for the logfile
- * \param i_filename the log basefilename that will be analyzed to split into basic info and fill he LogFileInfo
+ * \param i_filename the log basefilename that will be analyzed to split into basic info and fill the LogFileInfo
  * \return LogFileInfo class containing data about the current log file
  */
 LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
