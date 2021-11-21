@@ -123,6 +123,16 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 }
  
 
+/*!
+ * \brief UniqLogger::setDefaultLogLevel sets the default loglevel accepted by newly created loggers
+ * \param loglevel the default loge level that will be the minimum accepted by all newly created loggers
+ * \note all existing logger will be unaffected
+ * \version 1.1.0
+ */
+void
+UniqLogger::setDefaultLogLevel(UNQL::LogMessagePriorityType loglevel)
+{ m_defaultLogLevel = loglevel; }
+
 
 /*!
   \brief register a logwriter in the internal list
@@ -222,6 +232,8 @@ UniqLogger::createLogger(const QString &logname)
 
         //after having set the various strings we set the module name
         l->setModuleName(logname);
+
+        l->setVerbosityDefaultLevel(m_defaultLogLevel);
 
         bool b = connect(l, SIGNAL(writersToDelete(const QList<LogWriter*>)), this, SLOT(writerFinished(const QList<LogWriter*>)), Qt::DirectConnection);
         Q_ASSERT(b);

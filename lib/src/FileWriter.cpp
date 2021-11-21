@@ -147,7 +147,7 @@ int FileWriter::secsPassedSinceTimeRotationWasNeeded()
 
 /*!
  * \brief FileWriter::calculateLogFilePattern calculates the pattern (i.e. the logfilename with a placeholder for file numbering) for the logfile
- * \param i_filename the log basefilename that will be analyzed to split into basic info and fill he LogFileInfo
+ * \param i_filename the log basefilename that will be analyzed to split into basic info and fill the LogFileInfo
  * \return LogFileInfo class containing data about the current log file
  */
 LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
@@ -441,6 +441,9 @@ void FileWriter::removeLeftoversFromPreviousRun()
 
     QStringList filelist = QDir(m_LogfileInfo.path).entryList(QDir::Files);
     ULDBG << "Files found in logpath: " << filelist;
+
+    //remove current logfile
+    filelist.removeAll(m_LogFile.fileName());
 
     QString re_string = "-(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(-\\d+){0,1}\\.";
     QRegularExpression re(m_LogfileInfo.basename + re_string + m_LogfileInfo.extension);

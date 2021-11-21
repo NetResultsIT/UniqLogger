@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2015 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -446,7 +446,6 @@ Logger::operator<< ( const UNQL::LogStreamManipType& lsm )
 }
 
 
-
 Logger&
 Logger::operator<< ( const QVariant& v )
 {
@@ -465,35 +464,6 @@ Logger::operator<< ( const QStringList& sl )
         m_bufferedStreamMessages[QThread::currentThread()].append(s);
     }
     muxMessages.unlock();
-    return *this;
-}
-
-
-Logger&
-Logger::operator<< ( const QList<int>& vl )
-{
-    muxMessages.lock();
-    foreach (int v,vl) {
-        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(v));
-    }
-    muxMessages.unlock();
-    return *this;
-}
-
-
-Logger&
-Logger::operator<< ( const QMap<int, QList<int> >& amap )
-{
-    foreach (int mk, amap.keys()) {
-        QString liststr = "(";
-        foreach (int v, amap.value(mk)) {
-            liststr.append(QString::number(v));
-        }
-        liststr += ")";
-        muxMessages.lock();
-            m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(mk) + " -> " + liststr);
-        muxMessages.unlock();
-    }
     return *this;
 }
 
@@ -528,3 +498,85 @@ Logger::operator<< ( unsigned long d )
     muxMessages.unlock();
     return *this;
 }
+
+Logger&
+Logger::operator<< ( signed long d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( unsigned int d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( signed int d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< (quint64 d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( qint64 d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( double d )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString::number(d));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( bool b )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(b ? "true" : "false");
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( const char* s )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QString(s));
+    muxMessages.unlock();
+    return *this;
+}
+
+Logger&
+Logger::operator<< ( char c )
+{
+    muxMessages.lock();
+        m_bufferedStreamMessages[QThread::currentThread()].append(QChar(c));
+    muxMessages.unlock();
+    return *this;
+}
+

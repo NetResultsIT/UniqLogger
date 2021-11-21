@@ -70,6 +70,7 @@ class ULOG_LIB_API UniqLogger : public QObject
     QMutex muxDeviceCounter, muxMonitorVarMap;
     QString m_defaultTimeStampFormat;
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
+    UNQL::LogMessagePriorityType m_defaultLogLevel;
 
 protected:
     UniqLogger(int nthreads);
@@ -120,6 +121,7 @@ public:
         void setEncasingChars       ( const QChar& aStartChar, const QChar &aEndChar        );
         void setSpacingChar         ( const QChar& aSpaceChar                               );
         void setTimeStampFormat     ( const QString&                                        );
+        void setDefaultLogLevel     (UNQL::LogMessagePriorityType loglevel                  );
 
         void flushAllWriters();
 };

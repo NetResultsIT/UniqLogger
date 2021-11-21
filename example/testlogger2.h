@@ -2,7 +2,7 @@
 #define CLI_TESTLOGGER_H
 
 #include <QObject>
-
+#include <QElapsedTimer>
 #include "UniqLogger.h"
 
 
@@ -48,6 +48,7 @@ public slots:
 class testlogger_cli : public QObject
 {
     Q_OBJECT
+    QElapsedTimer *m_eltimer;
     Logger  *loggerF1, *loggerF2, *loggerN2, *loggerN1, *loggerRS1, *loggerRS2;
     Logger  *loggerCy, *loggerCg, *loggerCr, *loggerCm, *dummy, *loggerD;
 

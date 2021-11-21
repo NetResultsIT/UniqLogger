@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QDateTime>
+#include <QHash>
 
 #define TEST_FILE_ROTATION 1
 #define TEST_CONSOLE_COLOR 0
@@ -35,11 +36,13 @@ testlogger_cli::testlogger_cli(QObject *parent)
     dummy    = nullptr; //This will be a dummy logger;
 
     QTimer *timer = new QTimer();
+    m_eltimer = new QElapsedTimer();
     int millis = 2000;
     connect(timer, SIGNAL(timeout()), this, SLOT(timedLog()));
 
 
     UniqLogger *ul = UniqLogger::instance("TESTER", 1);
+    ul->setDefaultLogLevel(UNQL::LOG_DBG);
 
 #if(TEST_FORMATTING)
     ul->setEncasingChars( '(' , ')' );
@@ -222,26 +225,55 @@ testlogger_cli::timedLog()
 
 #if(TEST_FILE_ROTATION)
     static int small = 100;
-    static long long big = 1000000;
+    static unsigned long long big = 1000000;
+    static int smallN = -100;
+    static long long bigN = -1000000;
     static quint64 bigq = 1E7;
     double dnum = big * 3.1459163 *1E6;
     static unsigned long int ulnum = 12345678890;
+    static long int ulnumN = -12345678890;
     static bool bb = true;
     static QList<int> intlist;
+    char c = 'c';
+    static QMap<int, QList<int> > intlistmap;
+    static QVector<bool> boolvec;
+    static QSet<double> doubleset;
+    static QHash<QString, bool> stringhash;
 
     bb = !bb;
     intlist.append(small);
+    intlistmap.insert(small, intlist);
+    int listsize = intlist.size();
+    int mapsize = intlistmap.size();
+    boolvec.append(bb);
+    doubleset.insert(dnum);
+    stringhash.insert(QString::number(small), bb);
 
     loggerF1->printToQDebug(true);
-/*
+/**/
     *loggerF1 << "Writing a small number: " << small++ << UNQL::EOM;
     *loggerF1 << "Writing a big number:" << big++ << UNQL::EOM;
+    *loggerF1 << "Writing a small negative number: " << smallN-- << UNQL::EOM;
+    *loggerF1 << "Writing a big negative number:" << bigN-- << UNQL::EOM;
     *loggerF1 << "Writing a qbig number:" << bigq++ << UNQL::EOM;
     *loggerF1 << "Writing a ulbig number:" << ulnum++ << UNQL::EOM;
+    *loggerF1 << "Writing a ulbig negative number:" << ulnumN-- << UNQL::EOM;
     *loggerF1 << "Writing a qbig double:" << dnum << UNQL::EOM;
     *loggerF1 << "Writing a boolean:" << bb << UNQL::EOM;
-    //*loggerF1 << "Writing an int list:" << intlist << UNQL::EOM;
+    *loggerF1 << "Writing a char:" << c << UNQL::EOM;
+/*
+    m_eltimer->restart();
+    *loggerF1 << "Writing a " << listsize << " elem int list :" << intlist << UNQL::EOM;
+    qDebug() << "time to write a " << listsize << " elem intlist:" << m_eltimer->nsecsElapsed() << "ns";
+    m_eltimer->restart();
+    *loggerF1 << "Writing a " << mapsize << " elem qmap of int list:" << intlistmap << UNQL::EOM;
+    qDebug() << "time to write a " << mapsize << " elem intlistmap:" << m_eltimer->nsecsElapsed() << "ns";
 */
+
+    *loggerF1 << "Writing a " << boolvec.size() << " elem bool vector:" << boolvec << UNQL::EOM;
+    *loggerF1 << "Writing a " << doubleset.size() << " elem double set:" << doubleset << UNQL::EOM;
+    *loggerF1 << "Writing a " << stringhash.size() << " elem string hash:" << stringhash << UNQL::EOM;
+/**/
 
     //qDebug() << "written " << i * 2 << "KB to file...";
     //qDebug() << "is loggerF1 printing to qdebug()? " << loggerF1->printToQDebug();

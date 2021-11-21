@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -93,10 +93,62 @@ public:
     Logger& operator<< ( const UNQL::LogMessagePriorityType& d      );
     Logger& operator<< ( const UNQL::LogStreamManipType& d          );
     Logger& operator<< ( const QStringList& sl          );
-    Logger& operator<< ( const QList<int>& vl           );
-    Logger& operator<< ( const QMap<int, QList<int> >&  );
     Logger& operator<< ( const QVariant& v              );
     Logger& operator<< ( unsigned long                  );
+    Logger& operator<< ( signed long                    );
+    Logger& operator<< ( unsigned int                   );
+    Logger& operator<< ( signed int                     );
+    Logger& operator<< ( quint64                        );
+    Logger& operator<< ( qint64                         );
+    Logger& operator<< ( double                         );
+    Logger& operator<< ( bool                           );
+    Logger& operator<< ( const char *                   );
+    Logger& operator<< ( char                           );
+
+    //Template functions for containers
+    template <typename T>
+    Logger& operator<<(const QList<T> &x)  {
+        foreach(T v, x) {
+            *this << v;
+        }
+        return *this;
+    }
+
+    template <typename T>
+    Logger& operator<<(const QSet<T> &x)  {
+        foreach(T v, x) {
+            *this << v;
+        }
+        return *this;
+    }
+
+    template <typename T>
+    Logger& operator<<(const QVector<T> &x)  {
+        foreach(T v, x) {
+            *this << v;
+        }
+        return *this;
+    }
+
+    template <typename K, typename V>
+    Logger& operator<<(const QMap<K, V> &m)  {
+        *this << "[";
+        foreach(K mk, m.keys()) {
+            *this << "(" << mk << "->" << m[mk] << ")";
+        }
+        return *this << "]";
+    }
+
+    template <typename K, typename V>
+    Logger& operator<<(const QHash<K, V> &m)  {
+        *this << "[";
+        foreach(K mk, m.keys()) {
+            *this << "(" << mk << "->" << m[mk] << ")";
+        }
+        return *this << "]";
+    }
+
+
 
     /* VS2010 does not allow a default template argument for non-template classes
     // Use SFINAE with second default template param to validate numeric types

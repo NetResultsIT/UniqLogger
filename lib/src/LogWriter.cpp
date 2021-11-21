@@ -114,7 +114,9 @@ LogWriter::LogWriter(const WriterConfig &wc)
     , m_logIsPaused(false)
 {
     LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, "LogWriter Started", LogMessage::getCurrentTstampString());
+    LogMessage lm2(DEF_UNQL_LOG_STR, UNQL::LOG_DBG, "Opened with WriterConfig:\n" + wc.toString(), LogMessage::getCurrentTstampString());
     m_logMessageList.append(lm);
+    m_logMessageList.append(lm2);
     m_logTimer = new QTimer(this);
 }
  
