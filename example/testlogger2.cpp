@@ -42,6 +42,7 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
 
     UniqLogger *ul = UniqLogger::instance("TESTER", 1);
+    ul->setDefaultLogLevel(UNQL::LOG_DBG);
 
 #if(TEST_FORMATTING)
     ul->setEncasingChars( '(' , ')' );

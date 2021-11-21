@@ -123,6 +123,10 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 }
  
 
+void
+UniqLogger::setDefaultLogLevel(UNQL::LogMessagePriorityType loglevel)
+{ m_defaultLogLevel = loglevel; }
+
 
 /*!
   \brief register a logwriter in the internal list
@@ -222,6 +226,8 @@ UniqLogger::createLogger(const QString &logname)
 
         //after having set the various strings we set the module name
         l->setModuleName(logname);
+
+        l->setVerbosityDefaultLevel(m_defaultLogLevel);
 
         bool b = connect(l, SIGNAL(writersToDelete(const QList<LogWriter*>)), this, SLOT(writerFinished(const QList<LogWriter*>)), Qt::DirectConnection);
         Q_ASSERT(b);
