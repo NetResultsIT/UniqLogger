@@ -100,7 +100,7 @@ FileWriterRotations::testCalculateLogInfo()
     QVERIFY(lfi.basename == "log");
     QVERIFY(lfi.basename != "XXX");
     QVERIFY(lfi.extension == "txt");
-    QVERIFY(lfi.path == "");
+    QVERIFY(lfi.path == QDir::currentPath() + "/");
 
     lfi = this->calculateLogFilePattern("/Users/lamonica/testlog.txt");
     qDebug() << "basename: " << lfi.basename;
@@ -346,7 +346,7 @@ void FileWriterRotations::testRotateForTimePolicy(int compressionAlg, UNQL::File
 
     setTestingCurrentDateTime(dtlist[1]);
     rotateFileForTimePolicy();
-
+    qDebug() << "Examining if " << QDir::currentPath() + "/" + getCompressedFilename(filenames[0], compressionAlg) << "exists...";
     QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
     qDebug() << "Examining if " << filenames[1] << "exists...";
     QVERIFY(QFileInfo::exists(filenames[1]));
@@ -629,6 +629,7 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compress
 
     writeToFile(filenames[0], 2);
     rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
+    qDebug() << "verify that exists " << getCompressedFilename(filenames[0], compressionAlg);
     QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
     QVERIFY(QFileInfo::exists(filenames[1]));
     QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
@@ -940,6 +941,7 @@ void FileWriterRotations::testRotateForIncrementalNumbersGzipCompressed()
 
 void FileWriterRotations::testRotateForIncrementalNumbersZipCompressed()
 {
+    //QSKIP("");
     testRotateForIncrementalNumbers(2);
 }
 
@@ -1008,6 +1010,7 @@ void FileWriterRotations::testRotateForStrictNumbersGzipCompressed()
 
 void FileWriterRotations::testRotateForStrictNumbersZipCompressed()
 {
+    //QSKIP("");
     testRotateForStrictNumbers(2);
 }
 
