@@ -159,6 +159,8 @@ LogFileInfo FileWriter::calculateLogFilePattern(const QString &i_filename)
 
     if (fullfilename.lastIndexOf("/") >= 0) {
         lfi.path = fullfilename.left(fullfilename.lastIndexOf("/")) + "/";
+    } else {
+        lfi.path = QDir::currentPath() + "/";
     }
 
     //find how many dots are there within logfile name
@@ -260,7 +262,7 @@ FileWriter::calculateLogFileNameForIndex(int index)
     }
 
 
-    return m_LogfileInfo.path + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension;
+    return m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension;
 }
 
 
@@ -717,9 +719,11 @@ FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
     {
         QString compressedfileName = NrFileCompressor::getCompressedFilename(i_fileToBeCompressed, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         ULDBG << "uncompressed filename: " << i_fileToBeCompressed;
-        ULDBG << "compressed   filename:  " << compressedfileName;
+        ULDBG << "compressed   filename: " << compressedfileName;
         mutex.lock();
         int ret = NrFileCompressor::fileCompress(i_fileToBeCompressed,
+                                                 m_LogfileInfo.path,
+                                                 m_LogfileInfo.path,
                                      static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
                                      m_Config.compressionLevel);
         if (ret != 0) {
