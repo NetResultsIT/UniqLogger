@@ -123,6 +123,12 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 }
  
 
+/*!
+ * \brief UniqLogger::setDefaultLogLevel sets the default loglevel accepted by newly created loggers
+ * \param loglevel the default loge level that will be the minimum accepted by all newly created loggers
+ * \note all existing logger will be unaffected
+ * \version 1.1.0
+ */
 void
 UniqLogger::setDefaultLogLevel(UNQL::LogMessagePriorityType loglevel)
 { m_defaultLogLevel = loglevel; }

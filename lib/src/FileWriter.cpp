@@ -442,6 +442,9 @@ void FileWriter::removeLeftoversFromPreviousRun()
     QStringList filelist = QDir(m_LogfileInfo.path).entryList(QDir::Files);
     ULDBG << "Files found in logpath: " << filelist;
 
+    //remove current logfile
+    filelist.removeAll(m_LogFile.fileName());
+
     QString re_string = "-(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(-\\d+){0,1}\\.";
     QRegularExpression re(m_LogfileInfo.basename + re_string + m_LogfileInfo.extension);
     //qDebug() << "RE string: " << re_string << re.pattern();
