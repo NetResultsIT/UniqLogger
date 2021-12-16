@@ -433,7 +433,7 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
                 ULDBG << "WriterConfigs are incompatible";
                 ok = UNQL::UnqlErrorWriterConfigIncompatible;
             }
-            ULDBG << "Existing Filewriter found! ------------------->><<-------" << fw;
+            ULDBG << "Existing Filewriter for " << i_filename << " found! ------------------->><<-------" << fw;
             muxDeviceCounter.unlock();
             return *fw;
         }

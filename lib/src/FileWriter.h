@@ -53,6 +53,7 @@ private:
     void changeOutputFile(const QString&);
     int secsPassedSinceTimeRotationWasNeeded();
     QString compressIfNeeded( const QString& i_toCompressFilename );
+    QString removeLogPath(const QString &);
 
 protected:
     void writeToDevice();
@@ -73,7 +74,7 @@ public:
     virtual ~FileWriter();
 
     QString getCurrentLogFilename() const;
-    void setOutputFile(const QString& filename="log.txt");
+    void setOutputFile(const QString& filename);
     void setLogfileMaxSize(int filesize);
     void setLogfileRotationRange(int maxfilenum);
     void stopLogging(bool erasefile=false);
