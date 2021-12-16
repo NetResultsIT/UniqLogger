@@ -45,9 +45,9 @@ void deleteFile(QString fname)
 }
 
 
-QString getFileWithFullPath(const QString filename)
+QString getFileWithFullPath(const QString filename, QString path=(QDir::currentPath() + QDir::separator()))
 {
-    return QDir::currentPath() + QDir::separator() + filename;
+    return path + filename;
 }
 
 
@@ -634,58 +634,62 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compress
 
     overrideLastWrittenDateTime(dt);
     setTestingCurrentDateTime(dt);
-    setOutputFile("log.txt");
 
-    QVERIFY(QFileInfo::exists(filenames[0]));
+    //in this test we use a subfolder
+    QString path = QDir::currentPath() + "/test_subfolder";
+    setOutputFile(path + "log.txt");
 
-    writeToFile(filenames[0], 2);
+    QVERIFY(QFileInfo::exists(getFileWithFullPath(filenames[0], path)));
+
+    writeToFile(path + filenames[0], 2);
     rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
     qDebug() << "verify that exists " << getCompressedFilename(filenames[0], compressionAlg);
-    QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
-    QVERIFY(QFileInfo::exists(filenames[1]));
-    QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
-    QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+getCompressedFilename(filenames[0], compressionAlg)));
+    QVERIFY(QFileInfo::exists(getFileWithFullPath(filenames[1], path)));
+    QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[2], compressionAlg)));
+    QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[3], compressionAlg)));
     if (compressionAlg != 0) { //verify that uncompressed files are not there
-            QVERIFY(!QFileInfo::exists(filenames[0]));
-            QVERIFY(!QFileInfo::exists(filenames[2]));
-            QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
-            QVERIFY(!QFileInfo::exists(filenames[3]));
+            QVERIFY(!QFileInfo::exists(path+filenames[0]));
+            QVERIFY(!QFileInfo::exists(path+filenames[2]));
+            QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[1], compressionAlg)));
+            QVERIFY(!QFileInfo::exists(path+filenames[3]));
     }
-    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[1]));
+    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[1], path));
 
 
-    writeToFile(filenames[1], 2);
+    writeToFile(path+filenames[1], 2);
     rotateFilesIfNeeded(); //or rotateFileForIncrementalNumbers();
-    QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
-    QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
-    QVERIFY(QFileInfo::exists(filenames[2]));
-    QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+getCompressedFilename(filenames[0], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+getCompressedFilename(filenames[1], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+filenames[2]));
+    QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[3], compressionAlg)));
     if (compressionAlg != 0) { //verify that uncompressed files are not there
-            QVERIFY(!QFileInfo::exists(filenames[0]));
-            QVERIFY(!QFileInfo::exists(filenames[1]));
-            QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
-            QVERIFY(!QFileInfo::exists(filenames[3]));
+            QVERIFY(!QFileInfo::exists(path+filenames[0]));
+            QVERIFY(!QFileInfo::exists(path+filenames[1]));
+            QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[2], compressionAlg)));
+            QVERIFY(!QFileInfo::exists(path+filenames[3]));
     }
-    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[2]));
+    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[2], path));
 
 
     setTestingCurrentDateTime(dtlist[1]);
     rotateFilesIfNeeded(); //or rotateFileForTimePolicy();
-    QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[0], compressionAlg)));
-    QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[1], compressionAlg)));
-    QVERIFY(QFileInfo::exists(getCompressedFilename(filenames[2], compressionAlg)));
-    QVERIFY(QFileInfo::exists(filenames[3]));
+    QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[0], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+getCompressedFilename(filenames[1], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+getCompressedFilename(filenames[2], compressionAlg)));
+    QVERIFY(QFileInfo::exists(path+filenames[3]));
     if (compressionAlg != 0) { //verify that uncompressed files are not there
-            QVERIFY(!QFileInfo::exists(filenames[0]));
-            QVERIFY(!QFileInfo::exists(filenames[1]));
-            QVERIFY(!QFileInfo::exists(getCompressedFilename(filenames[3], compressionAlg)));
-            QVERIFY(!QFileInfo::exists(filenames[2]));
+            QVERIFY(!QFileInfo::exists(path+filenames[0]));
+            QVERIFY(!QFileInfo::exists(path+filenames[1]));
+            QVERIFY(!QFileInfo::exists(path+getCompressedFilename(filenames[3], compressionAlg)));
+            QVERIFY(!QFileInfo::exists(path+filenames[2]));
     }
-    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[3]));
+    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[3], path));
 
 
     foreach (QString s, filenames) {
-        deleteFile(getCompressedFilename(s, compressionAlg));
+        deleteFile(path + getCompressedFilename(s, compressionAlg));
+        deleteFile(path + s);
     }
     cleanup(filenames);
 }
@@ -971,43 +975,46 @@ void FileWriterRotations::testRotateForStrictNumbers(int compressionAlgorithm)
     m_Config.compressionAlgo = compressionAlgorithm;
 
     QString compressedExt = getCompressedExten(compressionAlgorithm);
+    //in this test we use a subfolder
+    QString path = QDir::currentPath() + "/test_subfolder";
 
     //create base file
-    setOutputFile(filenames[0]);
+    setOutputFile(path + filenames[0]);
 
     //write to log.txt more than allowed size and rotate
-    writeToFile(filenames[0], 2);
+    writeToFile(path + filenames[0], 2);
     rotateFileForStrictRotation();
 
     //verify we created the new file
-    QVERIFY(QFileInfo::exists(filenames[0]));
-    QVERIFY(QFileInfo::exists(filenames[1] + compressedExt));
-    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[0]));
+    QVERIFY(QFileInfo::exists(path + filenames[0]));
+    QVERIFY(QFileInfo::exists(path + filenames[1] + compressedExt));
+    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[0], path));
 
 
     //write to log more than allowed size and rotate
-    writeToFile(filenames[0], 2);
+    writeToFile(path + filenames[0], 2);
     rotateFileForStrictRotation();
 
-    QVERIFY(QFileInfo::exists(filenames[0]));
-    QVERIFY(QFileInfo::exists(filenames[1] + compressedExt));
-    QVERIFY(QFileInfo::exists(filenames[2] + compressedExt));
-    QVERIFY(!QFileInfo::exists(filenames[3] + compressedExt));
-    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[0]));
+    QVERIFY(QFileInfo::exists(path + filenames[0]));
+    QVERIFY(QFileInfo::exists(path + filenames[1] + compressedExt));
+    QVERIFY(QFileInfo::exists(path + filenames[2] + compressedExt));
+    QVERIFY(!QFileInfo::exists(path + filenames[3] + compressedExt));
+    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[0], path));
 
 
     //write to log more than allowed size and rotate
-    writeToFile(filenames[0], 2);
+    writeToFile(path + filenames[0], 2);
     rotateFileForStrictRotation();
 
-    QVERIFY(!QFileInfo::exists(filenames[3] + compressedExt));
-    QVERIFY(QFileInfo::exists(filenames[2] + compressedExt));
-    QVERIFY(QFileInfo::exists(filenames[1] + compressedExt));
-    QVERIFY(QFileInfo::exists(filenames[0]));
-    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[0]));
+    QVERIFY(!QFileInfo::exists(path + filenames[3] + compressedExt));
+    QVERIFY(QFileInfo::exists(path + filenames[2] + compressedExt));
+    QVERIFY(QFileInfo::exists(path + filenames[1] + compressedExt));
+    QVERIFY(QFileInfo::exists(path + filenames[0]));
+    QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[0], path));
 
     foreach (QString s, filenames) {
-        deleteFile(s + compressedExt);
+        deleteFile(path + s + compressedExt);
+        deleteFile(path + s);
     }
     cleanup(filenames);
 }
