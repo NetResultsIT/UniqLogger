@@ -636,6 +636,7 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compress
     setTestingCurrentDateTime(dt);
 
     //in this test we use a subfolder
+    QDir::current().mkdir("test_subfolder");
     QString path = QDir::currentPath() + "/test_subfolder";
     setOutputFile(path + "log.txt");
 
@@ -692,6 +693,7 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compress
         deleteFile(path + s);
     }
     cleanup(filenames);
+    QDir::current().rmdir("test_subfolder");
 }
 
 
@@ -976,6 +978,7 @@ void FileWriterRotations::testRotateForStrictNumbers(int compressionAlgorithm)
 
     QString compressedExt = getCompressedExten(compressionAlgorithm);
     //in this test we use a subfolder
+    QDir::current().mkdir("test_subfolder");
     QString path = QDir::currentPath() + "/test_subfolder";
 
     //create base file
@@ -1017,6 +1020,7 @@ void FileWriterRotations::testRotateForStrictNumbers(int compressionAlgorithm)
         deleteFile(path + s);
     }
     cleanup(filenames);
+    QDir::current().rmdir("test_subfolder");
 }
 
 
