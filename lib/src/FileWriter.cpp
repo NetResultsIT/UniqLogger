@@ -521,12 +521,19 @@ void FileWriter::removeOldestFiles()
 }
 
 
+/*!
+ * \brief FileWriter::removeLogPath removes (if present at the beginning) the logpath from the string passed as parameter
+ * \param filefullpath the string to be modified
+ * \return a modified string where the logparh specified in m_LogInfo if present at the beginning of the passed string is removed
+ */
 QString FileWriter::removeLogPath(const QString &filefullpath)
 {
     QString s = filefullpath;
-    return s.replace(m_LogfileInfo.path, "");
-}
+    if (s.startsWith(m_LogfileInfo.path))
+        return s.replace(m_LogfileInfo.path, "");
 
+    return s;
+}
 
 
 /*!
@@ -736,8 +743,7 @@ FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
          !i_fileToBeCompressed.endsWith(".gz") &&
          !i_fileToBeCompressed.endsWith(".zip") )
     {
-        QString file2compress = i_fileToBeCompressed;
-        file2compress=file2compress.replace(m_LogfileInfo.path, "");
+        QString file2compress = removeLogPath(i_fileToBeCompressed);
 
         QString compressedfileName = m_LogfileInfo.path + NrFileCompressor::getCompressedFilename(file2compress, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         ULDBG << "uncompressed filename: " << i_fileToBeCompressed;
