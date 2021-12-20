@@ -261,13 +261,14 @@ FileWriter::calculateLogFileNameForIndex(int index)
         }
     }
 
-
-    return m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension;
+    bool separatorPresent = (m_LogfileInfo.path.endsWith(QDir::separator()) || m_LogfileInfo.basename.startsWith(QDir::separator()));
+    return QString(m_LogfileInfo.path + (separatorPresent?QString(""):QDir::separator()) + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension);
 }
 
 
 /*!
   \brief calculates the log file that is going to be used for the logging the next messages
+  This will return the log file name with all its full path to be used for logging
   */
 QString
 FileWriter::calculateNextLogFileName()
@@ -289,6 +290,7 @@ FileWriter::changeOutputFile(const QString &i_filename)
     ULDBG << "Setting new log file: " << i_filename;
     if (m_LogFile.isOpen()) //we were already logging to a file so we close it
     {
+        ULDBG << "closing logfile already opened: " << m_LogFile.fileName();
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, QString("Closing previously opened logfile ").append(getCurrentLogFilename()) , LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
@@ -296,9 +298,11 @@ FileWriter::changeOutputFile(const QString &i_filename)
     }
 
     m_LogFile.setFileName(i_filename);
+    ULDBG << "Opening new logfile " << i_filename;
     m_LogFile.open( QIODevice::WriteOnly | QIODevice::Append );
     if (!m_LogFile.isOpen()) //we were already logging to a file
     {
+        ULDBG << "ERROR - Cannot open new logfile " << i_filename;
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_CRITICAL, "Cannot open logfile " + i_filename + " for writing", LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
@@ -342,7 +346,9 @@ FileWriter::setOutputFile(const QString& i_Filename)
     m_rotationCurFileNumber = 0;
 
     m_LogfileInfo = calculateLogFilePattern(m_logfileBaseName);
+    ULDBG << "Calculated logfileinfo: path=" << m_LogfileInfo.path << " - basename=" << m_LogfileInfo.basename;
     QString fname = calculateNextLogFileName();
+    ULDBG << "Calculated filename: " << fname;
     changeOutputFile(fname);
 
     //look for possible leftovers
@@ -356,10 +362,12 @@ FileWriter::setOutputFile(const QString& i_Filename)
 void
 FileWriter::writeToDevice()
 {
-    ULDBG << "Writing to file";
+    ULDBG << "Writing to file " << m_LogFile.fileName();
 
-    if (!m_streamIsOpen)
-        setOutputFile();
+    if (!m_streamIsOpen) {
+        ULDBG << "Stream to file is not open";
+        setOutputFile(m_LogFile.fileName());
+    }
 
     if (!m_logIsPaused)
     {
@@ -499,7 +507,7 @@ void FileWriter::removeOldestFiles()
         QString lastfile = m_lastUsedFilenames.dequeue();
         if (isCompressionActive()) {
             ULDBG << "Compression is active, adding compressed extension to " << lastfile;
-            lastfile = NrFileCompressor::getCompressedFilename(lastfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+            lastfile = m_LogfileInfo.path + NrFileCompressor::getCompressedFilename(removeLogPath(lastfile), static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         }
         if (QFile::exists(lastfile)) {
             ULDBG << "about to remove old logfile: " << lastfile;
@@ -510,6 +518,21 @@ void FileWriter::removeOldestFiles()
     }
 
     ULDBG << "Last used file names is NOW: " << m_lastUsedFilenames;
+}
+
+
+/*!
+ * \brief FileWriter::removeLogPath removes (if present at the beginning) the logpath from the string passed as parameter
+ * \param filefullpath the string to be modified
+ * \return a modified string where the logparh specified in m_LogInfo if present at the beginning of the passed string is removed
+ */
+QString FileWriter::removeLogPath(const QString &filefullpath)
+{
+    QString s = filefullpath;
+    if (s.startsWith(m_LogfileInfo.path))
+        return s.replace(m_LogfileInfo.path, "");
+
+    return s;
 }
 
 
@@ -534,8 +557,8 @@ void FileWriter::renameOldLogFilesForStrictRotation()
         // We do not calculate the compressed filenames when i==1 because i=0 is the base logfilename and we already compressed
         // from (i.e.) log.txt to log-1.txt.gz in rotateFileForStrictRotation()
         if ( isCompressionActive() && i != 1) {
-            olderfile = NrFileCompressor::getCompressedFilename(olderfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
-            newerfile = NrFileCompressor::getCompressedFilename(newerfile, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+            olderfile = m_LogfileInfo.path + NrFileCompressor::getCompressedFilename(removeLogPath(olderfile), static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+            newerfile = m_LogfileInfo.path + NrFileCompressor::getCompressedFilename(removeLogPath(newerfile), static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         }
 
         ULDBG << "renaming " << newerfile << " into " << olderfile;
@@ -654,7 +677,7 @@ void FileWriter::rotateFileForTimePolicy()
         newlogfilename = calculateNextLogFileName();
         //qDebug() << "time passed and new name should be: " << newlogfilename;
         changeOutputFile(newlogfilename);
-        ULDBG << "Current1 last used files: " << m_lastUsedFilenames;
+        ULDBG << "Current last used files: " << m_lastUsedFilenames;
 
         if ( isCompressionActive() )
         {
@@ -710,8 +733,8 @@ FileWriter::rotateFilesIfNeeded()
 
 /*!
  * \brief FileWriter::compressIfNeeded if the passed file is not already compressed (checks the filename extension) and compression algorithm is set then compresses the file
- * \param i_fileToBeCompressed the file that possibly will be compressed
- * \return name of compressed file
+ * \param i_fileToBeCompressed the filename with full path that possibly will be compressed
+ * \return name of compressed file with fullpath
  */
 QString
 FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
@@ -720,11 +743,14 @@ FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
          !i_fileToBeCompressed.endsWith(".gz") &&
          !i_fileToBeCompressed.endsWith(".zip") )
     {
-        QString compressedfileName = NrFileCompressor::getCompressedFilename(i_fileToBeCompressed, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
+        QString file2compress = removeLogPath(i_fileToBeCompressed);
+
+        QString compressedfileName = m_LogfileInfo.path + NrFileCompressor::getCompressedFilename(file2compress, static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo));
         ULDBG << "uncompressed filename: " << i_fileToBeCompressed;
         ULDBG << "compressed   filename: " << compressedfileName;
+        ULDBG << "working dir: " << m_LogfileInfo.path << " file: " << file2compress;
         mutex.lock();
-        int ret = NrFileCompressor::fileCompress(i_fileToBeCompressed,
+        int ret = NrFileCompressor::fileCompress(file2compress,
                                                  m_LogfileInfo.path,
                                                  m_LogfileInfo.path,
                                      static_cast<NrFileCompressor::compressedFileFormatEnum>(m_Config.compressionAlgo),
