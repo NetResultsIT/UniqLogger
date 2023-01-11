@@ -20,7 +20,7 @@ SUFFIX = "debug"
 }
 
 CONFIG(debug, debug|release) {
-    LIBS += -lUniqLogger_$$SUFFIX
+    LIBS += -lUniqLogger1_$$SUFFIX
 } else {
-    LIBS += -lUniqLogger
+    LIBS += -lUniqLogger1
 }

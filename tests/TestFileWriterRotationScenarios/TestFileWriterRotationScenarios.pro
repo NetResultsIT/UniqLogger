@@ -22,9 +22,11 @@ HEADERS += \
 LIBS += -L$$UNQLPATH/last_build
 
 CONFIG(release, debug|release) {
-    LIBS += -lUniqLogger
+    LIBS += -lUniqLogger1
 }
 
+
+message ("Libs: $$LIBS")
 
 unix:!macx {
     CONFIG(debug, debug|release) {
