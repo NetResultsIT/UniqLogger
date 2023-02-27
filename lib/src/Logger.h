@@ -130,16 +130,6 @@ public:
         return *this;
     }
 
-    #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    template <typename T>
-    Logger& operator<<(const QList<T> &x)  {
-        foreach(T v, x) {
-            *this << v;
-        }
-        return *this;
-    }
-    #endif
-
     template <typename K, typename V>
     Logger& operator<<(const QMap<K, V> &m)  {
         *this << "[";
