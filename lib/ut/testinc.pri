@@ -19,8 +19,17 @@ macx {
 SUFFIX = "debug"
 }
 
+win32 {
+
+    CONFIG(debug, debug|release) {
+        LIBS += -lUniqLogger1_$$SUFFIX
+    } else {
+        LIBS += -lUniqLogger1
+    }
+}
+
 CONFIG(debug, debug|release) {
-    LIBS += -lUniqLogger1_$$SUFFIX
+    LIBS += -lUniqLogger_$$SUFFIX
 } else {
-    LIBS += -lUniqLogger1
+    LIBS += -lUniqLogger
 }

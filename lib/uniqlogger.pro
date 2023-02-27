@@ -187,7 +187,7 @@ win32-msvc2017 {
     COMPILER=VC2017
 }
 
-win64-msvc2019 {
+win32-msvc2019 {
     message("Using VC++ 2019")
     COMPILER=VC2019
 }

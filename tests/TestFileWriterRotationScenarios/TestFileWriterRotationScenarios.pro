@@ -22,7 +22,13 @@ HEADERS += \
 LIBS += -L$$UNQLPATH/last_build
 
 CONFIG(release, debug|release) {
-    LIBS += -lUniqLogger1
+    LIBS += -lUniqLogger
+}
+
+win32 {
+    CONFIG(release, debug|release) {
+        LIBS += -lUniqLogger1
+    }
 }
 
 
