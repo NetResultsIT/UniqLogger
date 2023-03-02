@@ -58,6 +58,11 @@ CONFIG += warn_on dll
 CONFIG += debug_and_release
 CONFIG -= flat
 
+versionAtLeast(QT_VERSION, 6.0.0): {
+    CONFIG += c++17
+}
+
+
 DEFINES -= UNICODE
 
 TEMPLATE = lib
