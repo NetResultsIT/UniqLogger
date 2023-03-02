@@ -122,6 +122,16 @@ public:
         return *this;
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    template <typename T>
+       Logger& operator<<(const QVector<T> &x)  {
+           foreach(T v, x) {
+               *this << v;
+           }
+           return *this;
+       }
+#endif
+
     template <typename T>
     Logger& operator<<(const QSet<T> &x)  {
         foreach(T v, x) {
