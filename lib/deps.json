@@ -3,17 +3,20 @@
         {
             "name": "FileCompressor",
             "rel_dest_dir": "src/ext/filecompressor",
-            "url": "https://github.com/netresultsit/filecompressor"
+            "url": "https://github.com/netresultsit/filecompressor",
+            "branch_or_tag": "v2.0.0"
         },
         {
             "name": "DbHandler",
             "rel_dest_dir": "src/ext/dbhandler",
-            "url": "https://github.com/netresultsit/qt-dbhandler"
+            "url": "https://github.com/netresultsit/qt-dbhandler",
+            "branch_or_tag": "1.3"
         },
         {
             "name": "Threadpool",
             "rel_dest_dir": "src/ext/threadpool",
-            "url": "https://github.com/netresultsit/qt-threadpool"
+            "url": "https://github.com/netresultsit/qt-threadpool",
+            "branch_or_tag": "1.3"
         }
     ]
 }
