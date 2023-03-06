@@ -18,10 +18,18 @@
 
 #define UNQL_ERRMSG_SIZE 5000
 
-
 class UniqLogger;
 class Logger;
 class LogWriter;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    #ifndef OPAQUE_LogWriter
+    #define OPAQUE_LogWriter
+    //To avoid Qt6 error: Type argument of Q_PROPERTY must be fully defined
+    //cf https://www.qt.io/blog/whats-new-in-qmetatype-qvariant
+    Q_DECLARE_OPAQUE_POINTER(LogWriter*)
+    #endif //OPAQUE_LogWriter
+#endif
 
 /*!
  * \brief The Logger class is the base class that gives user the API for logging
@@ -114,16 +122,18 @@ public:
         return *this;
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     template <typename T>
-    Logger& operator<<(const QSet<T> &x)  {
-        foreach(T v, x) {
-            *this << v;
-        }
-        return *this;
-    }
+       Logger& operator<<(const QVector<T> &x)  {
+           foreach(T v, x) {
+               *this << v;
+           }
+           return *this;
+       }
+#endif
 
     template <typename T>
-    Logger& operator<<(const QVector<T> &x)  {
+    Logger& operator<<(const QSet<T> &x)  {
         foreach(T v, x) {
             *this << v;
         }

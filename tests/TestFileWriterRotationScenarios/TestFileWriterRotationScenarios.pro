@@ -25,6 +25,14 @@ CONFIG(release, debug|release) {
     LIBS += -lUniqLogger
 }
 
+win32 {
+    CONFIG(release, debug|release) {
+        LIBS += -lUniqLogger1
+    }
+}
+
+
+message ("Libs: $$LIBS")
 
 unix:!macx {
     CONFIG(debug, debug|release) {

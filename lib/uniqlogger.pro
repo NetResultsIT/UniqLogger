@@ -58,6 +58,11 @@ CONFIG += warn_on dll
 CONFIG += debug_and_release
 CONFIG -= flat
 
+versionAtLeast(QT_VERSION, 6.0.0): {
+    CONFIG += c++17
+}
+
+
 DEFINES -= UNICODE
 
 TEMPLATE = lib
@@ -155,42 +160,39 @@ else {
 # --------
 
 #Set our default compiler (Linux & Mac)
-COMPILER = g++
+COMPILER = $$QMAKE_CC
 
-win32-msvc2008 {
-    message("Using VC++ 2008")
-    COMPILER=VC2008
-}
-
-win32-msvc2010 {
-    message("Using VC++ 2010")
-    COMPILER=VC2010
-}
-
-win32-msvc2012 {
-    message("Using VC++ 2012")
-    COMPILER=VC2012
-}
-
-win32-msvc2013 {
-    message("Using VC++ 2013")
-    COMPILER=VC2013
-}
-
-win32-msvc2015 {
-    message("Using VC++ 2015")
-    COMPILER=VC2015
-}
-
-win32-msvc2017 {
-    message("Using VC++ 2017")
-    COMPILER=VC2017
+#message($$QMAKE_CC $$QMAKE_MSC_VER)
+win32-msvc {
+    message("Using VisualStudio compiler for UniqLogger, detecting version...")
+    greaterThan(QMAKE_MSC_VER, 1929) {
+        message("Using at least VC 2022")
+        COMPILER=VC2022
+    } else {
+        greaterThan(QMAKE_MSC_VER, 1919) {
+            message("Using VC 2019")
+            COMPILER=VC2019
+        } else {
+            greaterThan(QMAKE_MSC_VER, 1909) {
+                message("Using VC 2017")
+                COMPILER=VC2017
+            } else {
+                greaterThan(QMAKE_MSC_VER, 1899) {
+                    message("Using VC 2015")
+                    COMPILER=VC2015
+                } else {
+                    message("WARNING: Using an old unsupported VC compiler")
+                    COMPILER=VC_OBSOLETE
+                }
+            }
+        }
+    }
 }
 
 message("COMPILER: $$COMPILER")
 
 DSTDIR = $$PWD/last_build/
-FINALDIR = $$join(COMPILER,,$${VERSION}_,_qt-$$QT_VERSION)
+FINALDIR = $$join(COMPILER,,$${VERSION}_$${QT_ARCH}_,_qt-$$QT_VERSION)
 INCLUDE_DIR = $$DSTDIR/include/
 DLLPATH = bin/
 
@@ -210,11 +212,19 @@ message ("Library will be copied also in $$DSTDIR")
 message ("Actual library will be in $$FINALDIR$$DLLPATH")
 
 win32 {
-    message("Building UniqLogger library for Win32")
+    contains(QT_ARCH, i386) {
+        message("$$QT_ARCH 32-bit")
+        message("Building UniqLogger library for Win322")
+    } else {
+        message("$$QT_ARCH 64-bit")
+        message("Building UniqLogger library for Win64")
+    }
+
     #message("NOW USING COMPILER: $$COMPILER $$DSTDIR final: $$FINALDIR")
     CONFIG += flat
 
     contains(IDE,VS) {
+      message("Creating VC Project for Uniqlogger... use VS to compile")
       TEMPLATE = vclib
     }
 
