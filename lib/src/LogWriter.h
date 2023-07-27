@@ -87,7 +87,7 @@ class LogWriter: public QObject
     volatile bool m_stillClosing;
 
 protected:
-    QTimer *m_logTimer;
+    QTimer *m_pLogTimer;
     QList<LogMessage> m_logMessageList;
     WriterConfig m_Config;
     bool m_logIsPaused;

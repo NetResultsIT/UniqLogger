@@ -24,7 +24,7 @@ class RemoteWriter: public LogWriter
     void writeCompressedMessages();
 
 protected:
-    QTcpSocket *m_Socket;
+    QTcpSocket *m_pTcpSocket;
     QUdpSocket *m_pUdpSocket;
     QTimer *m_pReconnectionTimer;
     QString m_serverAddress;

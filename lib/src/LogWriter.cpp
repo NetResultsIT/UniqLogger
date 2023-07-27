@@ -120,7 +120,7 @@ LogWriter::LogWriter(const WriterConfig &wc)
     LogMessage lm2(DEF_UNQL_LOG_STR, UNQL::LOG_DBG, "Opened with WriterConfig:\n" + wc.toString(), LogMessage::getCurrentTstampString());
     m_logMessageList.append(lm);
     m_logMessageList.append(lm2);
-    m_logTimer = new QTimer(this);
+    m_pLogTimer = new QTimer(this);
 }
  
 
@@ -131,8 +131,8 @@ LogWriter::LogWriter(const WriterConfig &wc)
 LogWriter::~LogWriter()
 {
     m_logMessageList.clear();
-    m_logTimer->stop();
-    disconnect(m_logTimer);
+    m_pLogTimer->stop();
+    disconnect(m_pLogTimer);
     ULDBG << Q_FUNC_INFO;
 }
 
@@ -192,7 +192,7 @@ void
 LogWriter::priv_startLogTimer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
-    m_logTimer->start(m_Config.writerFlushSecs * 1000);
+    m_pLogTimer->start(m_Config.writerFlushSecs * 1000);
 }
 
 
@@ -214,9 +214,9 @@ LogWriter::setWriterConfig(const WriterConfig &wconf)
 void
 LogWriter::run()
 {
-    connect(m_logTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
+    connect(m_pLogTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
 
-    ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();
+    ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_pLogTimer->thread() << "current thread" << QThread::currentThread();
 
     //We need to start the timer from the thread this object has been moved not from the one calling this method
     QMetaObject::invokeMethod(this, "priv_startLogTimer");
@@ -240,7 +240,7 @@ void
 LogWriter::setSleepingMilliSecs(int msec)
 {
     m_Config.writerFlushSecs = msec / 1000;
-    m_logTimer->setInterval(msec);
+    m_pLogTimer->setInterval(msec);
 } 
  
 

@@ -30,7 +30,7 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, c
 
     m_serverPort = aServerPort;
 
-    m_Socket = new QTcpSocket(this);
+    m_pTcpSocket = new QTcpSocket(this);
     m_pUdpSocket = new QUdpSocket(this);
     m_pReconnectionTimer = new QTimer(this);
 }
@@ -57,7 +57,7 @@ RemoteWriter::writeToDevice()
     if (!m_logIsPaused) {
         if (m_Config.netProtocol == UNQL::UDP) {
             writeMessages();
-        } else if (m_Socket->state() == QAbstractSocket::ConnectedState) {
+        } else if (m_pTcpSocket->state() == QAbstractSocket::ConnectedState) {
             writeMessages();
         }
     }
@@ -75,8 +75,8 @@ RemoteWriter::connectToServer()
 {
     ULDBG << Q_FUNC_INFO << QDateTime::currentDateTime().toString("hh.mm.ss.zzz")
           << "executed in thread" << QThread::currentThread();
-    m_Socket->connectToHost(m_serverAddress, m_serverPort);
-    bool b = m_Socket->waitForConnected(10000);
+    m_pTcpSocket->connectToHost(m_serverAddress, m_serverPort);
+    bool b = m_pTcpSocket->waitForConnected(10000);
     if (b)
         return 0;
 
@@ -136,8 +136,8 @@ RemoteWriter::run()
     LogWriter::run();
 
     connect (m_pReconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
-    connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
-    connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
+    connect (m_pTcpSocket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
+    connect (m_pTcpSocket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
     if (m_Config.netProtocol != UNQL::UDP) {
         QMetaObject::invokeMethod(this, "connectToServer");
@@ -155,7 +155,7 @@ void RemoteWriter::write(const QString &i_msg)
     if (m_Config.netProtocol == UNQL::UDP) {
         m_pUdpSocket->writeDatagram(i_msg.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
     } else {
-        m_Socket->write(i_msg.toLatin1() + "\r\n");
+        m_pTcpSocket->write(i_msg.toLatin1() + "\r\n");
     }
 }
 
