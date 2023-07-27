@@ -153,7 +153,7 @@ RemoteWriter::run()
 void RemoteWriter::write(const QString &i_msg)
 {
     if (m_Config.netProtocol == UNQL::UDP) {
-        m_pUdpSocket->writeDatagram(i_msg.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort)
+        m_pUdpSocket->writeDatagram(i_msg.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
     } else {
         m_Socket->write(i_msg.toLatin1() + "\r\n");
     }

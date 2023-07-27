@@ -54,7 +54,7 @@ public:
     int maxMessageNum;      /*!< Maximum number of still unwritten messages that the writer will hold before discarding, 0 means infinite */
     int writerFlushSecs;    /*!< The number of seconds between a write operation from the LogWriter */
     bool writeIdleMark;     /*!< Whether the LogWriter should add a MARK string to show it's alive in case nothing is being logged */
-    bool compressMessages;  /*!< If true, compress all subsequent messages, which are equals, as unique line */
+    bool compressMessages;  /*!< If true, compress all identical and consecutive messages on a single line */
 
     //Makes sense just for FileWriter
     int maxFileSize;        /*!< The maximum file size (in MB) of a single file written by the FileWriter */
