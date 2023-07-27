@@ -18,14 +18,17 @@ class RemoteWriter: public LogWriter
 {
     Q_OBJECT
 
+    void write(const QString &i_msg);
+    void writeMessages();
+    void writeUncompressedMessages();
+    void writeCompressedMessages();
+
+protected:
     QTcpSocket *m_Socket;
     QUdpSocket *m_pUdpSocket;
     QTimer *m_pReconnectionTimer;
     QString m_serverAddress;
     quint16 m_serverPort;
-
-protected:
-    virtual QString getMessage();
 
 protected slots:
     void writeToDevice();

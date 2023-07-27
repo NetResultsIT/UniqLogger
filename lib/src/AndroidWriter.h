@@ -12,6 +12,8 @@ class AndroidWriter : public LogWriter
 
     QMap<UNQL::LogMessagePriorityType, android_LogPriority> androidPriorityMap;
 
+    void writeUncompressedMessages();
+    void writeCompressedMessages();
 public:
     AndroidWriter(const WriterConfig &wc);
 

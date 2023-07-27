@@ -21,6 +21,7 @@ WriterConfig::WriterConfig()
     : maxMessageNum      ( 0 )                        // unlimited
     , writerFlushSecs    ( 5 )                        // each writer will flush data every 5 seconds
     , writeIdleMark      ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
+    , compressMessages   ( false )                    // No compression of messages
     , maxFileSize        ( 0 )                        // unlimited MB size of logfile
     , maxFileNum         ( 1 )                        // log on just one file by default
     , rotationPolicy     ( UNQL::StrictRotation )     // We use the higher-numbers-are-older rotation policy by default
@@ -63,6 +64,7 @@ WriterConfig::toString() const
     sl << "COMMON PARAMS"
        << "\nMax queued messages: " << ((maxMessageNum==0) ? "unlimited" : "0") << "\nFlushing seconds: " << QString::number(writerFlushSecs)
        << "\nLog idle mark: " << (writeIdleMark ? "true" : "false")
+       << "\nCompress messages: " << (compressMessages ? "true" : "false")
        << "\nFILE ONLY PARAMS"
        << "\nMax file size (MB): " << QString::number(maxFileSize) << "\nMax number of files: " << QString::number(maxFileNum)
        << "\nRotationNamingPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
@@ -89,7 +91,8 @@ WriterConfig::operator ==(const WriterConfig& rhs) const
          timeRotationPolicy == rhs.timeRotationPolicy &&
          compressionLevel   == rhs.compressionLevel   &&
          reconnectionSecs   == rhs.reconnectionSecs   &&
-         netProtocol        == rhs.netProtocol
+         netProtocol        == rhs.netProtocol        &&
+         compressMessages   == rhs.compressMessages
         )
     {
         return true;

@@ -62,3 +62,31 @@ RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LogMessagePriorityType logLevel
     //by default return INFO
     return 6;
 }
+
+/*!
+  \brief writes the messages in the queue on the socket if logger is not paused
+  */
+void
+RSyslogWriter::writeToDevice()
+{
+    ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
+
+    QString s;
+    mutex.lock();
+    if (!m_logIsPaused) {
+        if (m_Config.netProtocol == UNQL::UDP) {
+            int msgcount = m_logMessageList.count();
+            for (int i=0; i<msgcount; i++) {
+                s = getMessage();
+                int wb = m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
+            }
+        } else if (m_Socket->state() == QAbstractSocket::ConnectedState) {
+            int msgcount = m_logMessageList.count();
+            for (int i=0; i<msgcount; i++) {
+                s = getMessage();
+                m_Socket->write(s.toLatin1() + "\r\n");
+            }
+        }
+    }
+    mutex.unlock();
+}

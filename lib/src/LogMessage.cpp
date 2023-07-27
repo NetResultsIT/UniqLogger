@@ -35,7 +35,8 @@ LogMessage::message() const
     if (UnqlPriorityLevelNamesMap.contains(m_level))
         priolev = UnqlPriorityLevelNamesMap[m_level];
 
-    msg.reserve(3*2 + 4 + m_tstamp.size() + m_loggerName.size() + m_msg.size() + priolev.size());
+    //We have 3 start encasing char and 3 end encasing char (3*2) and 4 space (m_formatting.spacingSize() * 4)
+    msg.reserve(3*2 + (m_formatting.spacingSize() * 4) + m_tstamp.size() + m_loggerName.size() + m_msg.size() + priolev.size());
 
     msg = sc + m_tstamp + ec + spc + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg;
 
@@ -51,3 +52,37 @@ QString LogMessage::getCurrentTstampString()
 {
     return QDateTime::currentDateTime().toString(DEF_UNQL_TSTAMP_FMT);
 }
+
+QString LogMessage::message(const QString &i_initTstamp,
+                            const QString &i_endTstamp,
+                            int i_count) const
+{
+    QString msg,spc,n;
+    QChar sc,ec;
+
+    sc = m_formatting.startEncasingChar();
+    ec = m_formatting.endEncasingChar();
+    spc = m_formatting.spacingString();
+    n = "repeated " + QString::number(i_count) + " times";
+
+    QString priolev = "UNKNOWN";
+    if (UnqlPriorityLevelNamesMap.contains(m_level))
+        priolev = UnqlPriorityLevelNamesMap[m_level];
+
+    //We have 4 start encasing char and 4 end encasing char (3*2) and 7 space (m_formatting.spacingSize() * 7)
+    msg.reserve(4*2 + (m_formatting.spacingSize() * 7) + i_initTstamp.size() + i_endTstamp.size()
+                + m_loggerName.size() + m_msg.size() + priolev.size() + n.size());
+
+    msg = sc + i_initTstamp + spc + "-" + spc + i_endTstamp + ec + spc
+          + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg + spc + sc + n + ec;
+
+    return msg;
+}
+
+
+
+
+
+
+
+

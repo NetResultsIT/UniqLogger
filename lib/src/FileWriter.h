@@ -55,6 +55,9 @@ private:
     QString compressIfNeeded( const QString& i_toCompressFilename );
     QString removeLogPath(const QString &);
 
+    int writeUncompressedMessages();
+    int writeCompressedMessages();
+
 protected:
     void writeToDevice();
     LogFileInfo calculateLogFilePattern(const QString &filename);
