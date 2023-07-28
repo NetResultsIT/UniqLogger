@@ -84,7 +84,6 @@ class LogWriter: public QObject
     Q_OBJECT
 
     QString m_lastMessage;
-    volatile bool m_stillClosing;
 
 protected:
     QTimer *m_pLogTimer;

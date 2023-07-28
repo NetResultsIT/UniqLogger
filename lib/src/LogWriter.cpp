@@ -148,7 +148,7 @@ LogWriter::getWriterConfig() const
 
 /*!
  * \brief LogWriter::isLoggingPaused
- * \return whether or not the logging is puased on this writer
+ * \return whether or not the logging is paused on this writer
  */
 bool
 LogWriter::isLoggingPaused() const

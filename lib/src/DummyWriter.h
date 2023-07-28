@@ -3,8 +3,8 @@
  *  (c) 2013 NetResults srl
  */
 
-#ifndef _DUMMY_WRITER_H_
-#define _DUMMY_WRITER_H_
+#ifndef UNQL_DUMMY_WRITER_H
+#define UNQL_DUMMY_WRITER_H
 
 #include "LogWriter.h"
 
