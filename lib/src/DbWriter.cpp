@@ -17,6 +17,7 @@ DbWriter::DbWriter(const QString &dbFileName, const WriterConfig &wconf)
     m_fileSizeExceeded = false;
     m_maxFileSizeMB = 1;
     m_logfileBaseName = dbFileName;
+    m_Config.compressMessages = false; //force to not compress messages
     this->setOutputFile(dbFileName); //this will create the DbHandler Object
 }
 

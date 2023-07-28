@@ -8,6 +8,7 @@ RSyslogWriter::RSyslogWriter(const QString &i_id, quint8 i_facility, const QStri
     , m_mid(i_id)
     , m_facility(i_facility)
 {
+    m_Config.compressMessages = false; //force to not compress messages
     m_SyslogMessageFactory.m_hostname = QHostInfo::localHostName();
     m_SyslogMessageFactory.m_appname = QCoreApplication::applicationName();
     m_SyslogMessageFactory.m_pid = QString::number(QCoreApplication::applicationPid());

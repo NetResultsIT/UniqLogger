@@ -189,6 +189,9 @@ LogWriter::priv_writeToDevice()
         mutex.unlock();
     }
 
+    if (m_Config.compressMessages)
+        compressMessages();
+
     writeToDevice();
 }
 
@@ -279,3 +282,64 @@ LogWriter::pauseLogging(bool status)
     m_logIsPaused = status;
 }
  
+void
+LogWriter::compressMessages()
+{
+    int nummsg = m_logMessageList.count();
+    int i = 0;
+    int j = 1;
+
+    if (nummsg > 1)
+    {
+        QList<LogMessage> supportMsgList;
+        QString endTstamp = m_logMessageList.at(i).endTstamp();
+        unsigned int repetitions = m_logMessageList.at(i).repetitions(); //number of susbsequent messages
+        while (j < nummsg)
+        {
+            if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
+                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
+            {
+                //subsequent messages, save end timestamp and look at next element
+                if (m_logMessageList.at(j).endTstamp().isEmpty())
+                {
+                    endTstamp = m_logMessageList.at(j).initTstamp();
+                }
+                else
+                {
+                    endTstamp = m_logMessageList.at(j).endTstamp();
+                }
+
+                ++j;
+                repetitions += m_logMessageList.at(j).repetitions();
+            }
+            else
+            {
+                QString loggerName = m_logMessageList.at(i).loggerName();
+                UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
+                QString rawMsg = m_logMessageList.at(i).rawMessage();
+                QString initTstamp = m_logMessageList.at(i).initTstamp();
+
+                LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                supportMsgList.append(msg);
+                i = j;
+                ++j;
+                endTstamp = m_logMessageList.at(i).endTstamp();
+                repetitions = m_logMessageList.at(i).repetitions();
+            }
+
+            if (j == nummsg)
+            {
+                //Don't want to skip last element
+                QString loggerName = m_logMessageList.at(i).loggerName();
+                UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
+                QString rawMsg = m_logMessageList.at(i).rawMessage();
+                QString initTstamp = m_logMessageList.at(i).initTstamp();
+
+                LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                supportMsgList.append(msg);
+            }
+        }
+        m_logMessageList = supportMsgList;
+    }
+}
+

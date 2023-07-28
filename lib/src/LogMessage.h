@@ -36,23 +36,24 @@ class LogMessage
     LogMessageFormatting m_formatting;
     QString m_msg, m_loggerName;
     UNQL::LogMessagePriorityType m_level;
-    QString m_tstamp;
+    QString m_initTstamp, m_endTstamp;
+    unsigned int m_repetitions;
 
+    QString repeatedMessage() const;
+    QString singleMessage() const;
 public:
-    LogMessage(const QString &aLoggerName, UNQL::LogMessagePriorityType level, const QString &aMsg, const QString &aTstamp);
+    LogMessage(const QString &aLoggerName, UNQL::LogMessagePriorityType level,
+               const QString &aMsg, const QString &aInitTstamp, const QString &aEndTstamp = "", unsigned int repetitions = 1);
 
     static QString getCurrentTstampString();
 
-
     QString message() const;
-    QString message(const QString &i_initTstamp,
-                    const QString &i_endTstamp,
-                    int i_count) const;
-    QString loggerName() const  { return m_loggerName;  }
-    QString rawMessage() const  { return m_msg;         }
-    QString tstamp() const      { return m_tstamp;      }
-    UNQL::LogMessagePriorityType level() const
-                                { return m_level;       }
+    QString loggerName() const { return m_loggerName;  }
+    QString rawMessage() const { return m_msg;         }
+    QString initTstamp() const { return m_initTstamp;  }
+    QString endTstamp()  const { return m_endTstamp;   }
+    unsigned int repetitions() const { return m_repetitions; }
+    UNQL::LogMessagePriorityType level() const { return m_level; }
 
     void setFormatting(const LogMessageFormatting& aMessageFormat) { m_formatting = aMessageFormat; }
 };

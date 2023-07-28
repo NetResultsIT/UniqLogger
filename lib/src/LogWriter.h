@@ -92,6 +92,8 @@ protected:
     bool m_logIsPaused;
     QMutex mutex;
 
+    void compressMessages();
+
 protected slots:
     virtual void writeToDevice()=0;
     void priv_writeToDevice();
