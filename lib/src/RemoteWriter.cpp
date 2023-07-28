@@ -54,13 +54,13 @@ RemoteWriter::writeToDevice()
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
 
     mutex.lock();
-    if (!m_logIsPaused) {
+
         if (m_Config.netProtocol == UNQL::UDP) {
             writeMessages();
         } else if (m_pTcpSocket->state() == QAbstractSocket::ConnectedState) {
             writeMessages();
         }
-    }
+
     mutex.unlock();
 }
 

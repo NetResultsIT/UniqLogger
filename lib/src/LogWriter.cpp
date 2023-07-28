@@ -176,6 +176,11 @@ LogWriter::priv_writeToDevice()
 {
     ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
 
+    if (m_logIsPaused) {
+        ULDBG << "Not writing since logwritrer is paused";
+        return;
+    }
+
     if (m_Config.writeIdleMark) {
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, " -- MARK -- ", LogMessage::getCurrentTstampString());
         mutex.lock();

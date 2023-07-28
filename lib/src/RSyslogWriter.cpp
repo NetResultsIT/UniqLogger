@@ -73,7 +73,6 @@ RSyslogWriter::writeToDevice()
 
     QString s;
     mutex.lock();
-    if (!m_logIsPaused) {
         if (m_Config.netProtocol == UNQL::UDP) {
             int msgcount = m_logMessageList.count();
             for (int i=0; i<msgcount; i++) {
@@ -87,6 +86,5 @@ RSyslogWriter::writeToDevice()
                 m_pTcpSocket->write(s.toLatin1() + "\r\n");
             }
         }
-    }
     mutex.unlock();
 }

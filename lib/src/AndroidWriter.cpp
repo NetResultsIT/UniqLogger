@@ -25,13 +25,11 @@ AndroidWriter::~AndroidWriter()
 void AndroidWriter::writeToDevice()
 {
     mutex.lock();
-    if (!m_logIsPaused) {
         if (m_Config.compressMessages) {
             writeCompressedMessages();
         } else {
             writeUncompressedMessages();
         }
-    }
     mutex.unlock();
 }
 

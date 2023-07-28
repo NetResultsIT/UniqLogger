@@ -54,21 +54,18 @@ QString ConsoleWriter::getColorCode(const UNQL::LogMessagePriorityType &i_level)
 void
 ConsoleWriter::writeToDevice()
 {
-    if (!m_logIsPaused)
+    mutex.lock();
+
+    if (m_Config.compressMessages)
     {
-        mutex.lock();
-
-        if (m_Config.compressMessages)
-        {
-            writeCompressedMessages();
-        }
-        else
-        {
-            writeUncompressedMessages();
-        }
-
-        mutex.unlock();
+        writeCompressedMessages();
     }
+    else
+    {
+        writeUncompressedMessages();
+    }
+
+    mutex.unlock();
 }
  
 /*!

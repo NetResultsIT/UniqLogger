@@ -75,9 +75,6 @@ DbWriter::writeToDevice()
 {
     ULDBG << "Writing to db";
 
-    if (m_logIsPaused)
-        return;
-
     mutex.lock();
     int nummsg = m_logMessageList.count();
     for (int i=0; i<nummsg; i++) {

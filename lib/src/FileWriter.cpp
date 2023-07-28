@@ -369,25 +369,23 @@ FileWriter::writeToDevice()
         setOutputFile(m_LogFile.fileName());
     }
 
-    if (!m_logIsPaused)
+
+    mutex.lock();
+    int writtenbytes = 0;
+    if (!m_Config.compressMessages)
     {
-        mutex.lock();
-        int writtenbytes = 0;
-        if (!m_Config.compressMessages)
-        {
-            writtenbytes = writeUncompressedMessages();
-        }
-        else
-        {
-            writtenbytes = writeCompressedMessages();
-        }
-        m_LogFile.flush();
-        mutex.unlock();
-
-        ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
-
-        rotateFilesIfNeeded();
+        writtenbytes = writeUncompressedMessages();
     }
+    else
+    {
+        writtenbytes = writeCompressedMessages();
+    }
+    m_LogFile.flush();
+    mutex.unlock();
+
+    ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
+
+    rotateFilesIfNeeded();
 }
 
 
