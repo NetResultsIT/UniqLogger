@@ -46,6 +46,17 @@ RemoteWriter::~RemoteWriter()
 }
 
 /*!
+ * \brief RemoteWriter::getMessage composes and returns the next message string to be printed by this writer
+ * This is an internal method that is supposed to be called within the mutex.lock()
+ * \return the composed message string
+ */
+QString
+RemoteWriter::getMessage()
+{
+    return m_logMessageList.takeFirst().message();
+}
+
+/*!
   \brief writes the messages in the queue on the socket if logger is not paused
   */
 void
@@ -55,11 +66,19 @@ RemoteWriter::writeToDevice()
 
     mutex.lock();
 
-        if (m_Config.netProtocol == UNQL::UDP) {
-            writeMessages();
-        } else if (m_pTcpSocket->state() == QAbstractSocket::ConnectedState) {
-            writeMessages();
+    if (m_Config.netProtocol == UNQL::UDP) {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            s = this->getMessage();
+            int wb = m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
         }
+    } else if (m_Socket->state() == QAbstractSocket::ConnectedState) {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            s = this->getMessage();
+            m_Socket->write(s.toLatin1() + "\r\n");
+        }
+    }
 
     mutex.unlock();
 }
@@ -144,119 +163,5 @@ RemoteWriter::run()
     } else {
         qDebug() << "NOT CONNECTING since we're using UDP";
     }
-}
-
-/*!
- * \brief write a message based on protocol
- * \param i_msg message to write
- */
-void RemoteWriter::write(const QString &i_msg)
-{
-    if (m_Config.netProtocol == UNQL::UDP) {
-        m_pUdpSocket->writeDatagram(i_msg.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
-    } else {
-        m_pTcpSocket->write(i_msg.toLatin1() + "\r\n");
-    }
-}
-
-/*!
- * \internal
- * \brief write messages
- */
-void RemoteWriter::writeMessages()
-{
-    if (m_Config.compressMessages) {
-        writeCompressedMessages();
-    } else {
-        writeUncompressedMessages();
-    }
-}
-
-/*!
- * \internal
- * \brief Write messages uncompressed, each message on a single line.
- */
-void RemoteWriter::writeUncompressedMessages()
-{
-    QString s;
-    int msgcount = m_logMessageList.count();
-    for (int i=0; i<msgcount; i++) {
-        s = m_logMessageList.takeFirst().message();
-        write(s);
-    }
-}
-
-/*!
- * \internal
- * \brief Write messages in compressed way, if there are multiple
- *        messages with the same body, write all in a unique line.
- */
-void RemoteWriter::writeCompressedMessages()
-{
-    int nummsg = m_logMessageList.count();
-    int i = 0;
-    int j = 1;
-
-    if (nummsg == 1)
-    {
-        //just one element, write it
-        QString s = m_logMessageList.takeFirst().message();
-        write(s);
-    }
-    else
-    {
-        QString endTstamp = "";
-        int counter = 1; //number of susbsequent messages
-        while (j < nummsg)
-        {
-            if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
-                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
-            {
-                //subsequent messages, save end timestamp and look at next element
-                endTstamp = m_logMessageList.at(j).tstamp();
-                ++j;
-                ++counter;
-            }
-            else
-            {
-                QString s;
-                if (endTstamp.isEmpty())
-                {
-                    //No subsequent messages, just write the message
-                    s = m_logMessageList.at(i).message();
-                }
-                else
-                {
-                    //End of subsequent messages, write all as unique string
-                    s = m_logMessageList.at(i).message(m_logMessageList.at(i).tstamp(), endTstamp, counter);
-                }
-
-                write(s);
-
-                i = j;
-                ++j;
-                counter = 1;
-                endTstamp = "";
-            }
-
-            if (j == nummsg)
-            {
-                //Don't want to skip last element
-                QString s;
-                if (endTstamp.isEmpty())
-                {
-                    s = m_logMessageList.at(i).message();
-                }
-                else
-                {
-                    s = m_logMessageList.at(i).message(m_logMessageList.at(i).tstamp(), endTstamp, counter);
-                }
-
-                write(s);
-            }
-        }
-    }
-
-    m_logMessageList.clear();
 }
 

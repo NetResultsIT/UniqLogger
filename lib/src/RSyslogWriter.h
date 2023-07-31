@@ -11,10 +11,7 @@ class RSyslogWriter: public RemoteWriter
     quint8 m_facility;
     SysLogMessageFactory m_SyslogMessageFactory;
 
-    QString getMessage();
-
-protected slots:
-    void writeToDevice() override;
+    QString getMessage() override;
 
 public:
     RSyslogWriter(const QString &i_id, quint8 i_facility, const QString &aServerAddress, quint16 aServerPort, const WriterConfig &wconf);

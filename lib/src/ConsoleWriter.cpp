@@ -55,127 +55,34 @@ void
 ConsoleWriter::writeToDevice()
 {
     mutex.lock();
-
-    if (m_Config.compressMessages)
-    {
-        writeCompressedMessages();
-    }
-    else
-    {
-        writeUncompressedMessages();
-    }
-
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            LogMessage log = m_logMessageList.takeFirst();
+            write(log);
+        }
     mutex.unlock();
 }
  
 /*!
  * \internal
- * \brief Write messages uncompressed, each message on a single line.
- */
-void
-ConsoleWriter::writeUncompressedMessages()
-{
-    int msgcount = m_logMessageList.count();
-    for (int i=0; i<msgcount; i++) {
-        LogMessage log = m_logMessageList.takeFirst();
-        write(log.message(), log.level());
-    }
-}
-
-/*!
- * \internal
- * \brief Write messages in compressed way, if there are multiple
- *        messages with the same body, write all in a unique line.
- */
-void
-ConsoleWriter::writeCompressedMessages()
-{
-    int nummsg = m_logMessageList.count();
-    int i = 0;
-    int j = 1;
-
-    if (nummsg == 1)
-    {
-        //just one element, write it
-        LogMessage log = m_logMessageList.takeFirst();
-        write(log.message(), log.level());
-    }
-    else
-    {
-        QString endTstamp = "";
-        int counter = 1; //number of susbsequent messages
-        while (j < nummsg)
-        {
-            if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
-                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
-            {
-                //subsequent messages, save end timestamp and look at next element
-                endTstamp = m_logMessageList.at(j).tstamp();
-                ++j;
-                ++counter;
-            }
-            else
-            {
-                QString m;
-                if (counter <= 1)
-                {
-                    //No subsequent messages, just write the message
-                    m = m_logMessageList.at(i).message();
-                }
-                else
-                {
-                    //End of subsequent messages, write all as unique string
-                    m = m_logMessageList.at(i).message(m_logMessageList.at(i).tstamp(), endTstamp, counter);
-                }
-
-                write(m, m_logMessageList.at(i).level());
-                i = j;
-                ++j;
-                counter = 1;
-                endTstamp = "";
-            }
-
-            if (j == nummsg)
-            {
-                //Don't want to skip last element
-                QString m;
-                if (counter <= 1)
-                {
-                    m = m_logMessageList.at(i).message();
-                }
-                else
-                {
-                    m = m_logMessageList.at(i).message(m_logMessageList.at(i).tstamp(), endTstamp, counter);
-                }
-
-                write(m, m_logMessageList.at(i).level());
-            }
-        }
-    }
-
-    m_logMessageList.clear();
-}
-
-/*!
- * \internal
  * \brief write to console
- * \param i_msg message to write
- * \param i_level priority level of the message
+ * \param log message to write
  */
 void
-ConsoleWriter::write(const QString& i_msg,
-                     const UNQL::LogMessagePriorityType &i_level)
+ConsoleWriter::write(const LogMessage &log)
 {
     ConsoleWriter::m_consoleMux.lock();
+
 #if !defined(WIN32) && !defined(Q_OS_IOS)
-    std::cerr << getColorCode( i_level).toLatin1().constData();
+    std::cerr << getColorCode(log).toLatin1().constData();
 #endif
-    std::cerr << i_msg.toLatin1().constData();
+    std::cerr << log.message().toLatin1().constData();
 
     //windows console does not support color codes
 #if !defined(WIN32) && !defined(Q_OS_IOS)
     std::cerr << "\033[0m";
 #endif
     std::cerr << std::endl;
+
     ConsoleWriter::m_consoleMux.unlock();
 }

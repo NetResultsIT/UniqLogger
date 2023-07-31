@@ -39,7 +39,7 @@ void TestMessagesCompression::test_FileWriterMessagesCompression()
 
     WriterConfig wc;
 
-    wc.writerFlushSecs = 5;
+    wc.writerFlushSecs = 80;
     wc.compressMessages = true;
 
     int ok;
@@ -70,8 +70,8 @@ void TestMessagesCompression::test_FileWriterMessagesCompression()
         QTest::qSleep(1000);
     }
 
-    logger ->flush();
     ul->flushAllWriters();
+
 
     QFile logFile(filename);
     QVERIFY(logFile.open(QIODevice::ReadOnly | QIODevice::Text));

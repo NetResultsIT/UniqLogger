@@ -162,6 +162,8 @@ LogWriter::isLoggingPaused() const
 void
 LogWriter::flush()
 {
+    if (m_Config.compressMessages)
+        compressMessages();
     this->writeToDevice();
 }
 
@@ -308,9 +310,8 @@ LogWriter::compressMessages()
                 {
                     endTstamp = m_logMessageList.at(j).endTstamp();
                 }
-
-                ++j;
                 repetitions += m_logMessageList.at(j).repetitions();
+                ++j;
             }
             else
             {
@@ -339,6 +340,7 @@ LogWriter::compressMessages()
                 supportMsgList.append(msg);
             }
         }
+
         m_logMessageList = supportMsgList;
     }
 }

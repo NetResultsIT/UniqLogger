@@ -371,16 +371,23 @@ FileWriter::writeToDevice()
 
 
     mutex.lock();
-    int writtenbytes = 0;
-    if (!m_Config.compressMessages)
-    {
-        writtenbytes = writeUncompressedMessages();
-    }
-    else
-    {
-        writtenbytes = writeCompressedMessages();
-    }
-    m_LogFile.flush();
+        int nummsg = m_logMessageList.count();
+        int writtenbytes = 0;
+        for (int i=0; i<nummsg; i++)
+            if (m_LogFile.isOpen()) //we could be in the middle of changing logfile
+            {
+                QString terminator = "\n";
+
+    #ifdef WIN32
+                terminator.prepend("\r");
+    #endif
+                LogMessage lm = m_logMessageList.takeFirst();
+                QString m = lm.message();
+                QString s = m + terminator;
+
+                writtenbytes += m_LogFile.write(s.toLatin1());
+            }
+        m_LogFile.flush();
     mutex.unlock();
 
     ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
@@ -769,129 +776,3 @@ FileWriter::compressIfNeeded( const QString& i_fileToBeCompressed )
     //return unmodified filename
     return i_fileToBeCompressed;
 }
-
-/*!
- * \internal
- * \brief Write messages uncompressed, each message on a single line.
- * \return Number of bytes written
- */
-int
-FileWriter::writeUncompressedMessages()
-{
-    int nummsg = m_logMessageList.count();
-    int writtenbytes = 0;
-    QString terminator = "\n";
-
-#ifdef WIN32
-    terminator.prepend("\r");
-#endif
-
-    for (int i=0; i<nummsg; i++)
-    {
-        if (m_LogFile.isOpen()) //we could be in the middle of changing logfile
-        {
-            LogMessage lm = m_logMessageList.takeFirst();
-            QString m = lm.message();
-            QString s = m + terminator;
-
-            writtenbytes += m_LogFile.write(s.toLatin1());
-        }
-    }
-    return writtenbytes;
-}
-
-/*!
- * \internal
- * \brief Write messages in compressed way, if there are multiple
- *        messages with the same body, write all in a unique line.
- * \return Number of bytes written
- */
-int
-FileWriter::writeCompressedMessages()
-{
-    int nummsg = m_logMessageList.count();
-    QString terminator = "\n";
-
-#ifdef WIN32
-    terminator.prepend("\r");
-#endif
-
-    int writtenbytes = 0;
-    int i = 0;
-    int j = 1;
-
-    if (nummsg == 1)
-    {
-        //just one element, write it
-        LogMessage lm = m_logMessageList.takeFirst();
-        QString m = lm.message();
-        QString s = m + terminator;
-
-        writtenbytes += m_LogFile.write(s.toLatin1());
-    }
-    else
-    {
-        QString endTstamp = "";
-        int counter = 1; //number of susbsequent messages
-        while (j < nummsg)
-        {
-            if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
-                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
-            {
-                //subsequent messages, save end timestamp and look at next element
-                endTstamp = m_logMessageList.at(j).tstamp();
-                ++j;
-                ++counter;
-            }
-            else
-            {
-                QString m;
-                if (counter <= 1)
-                {
-                    //No subsequent messages, just write the message
-                    m = m_logMessageList.at(i).message();
-                }
-                else
-                {
-                    //End of subsequent messages, write all as unique string
-                    m = m_logMessageList.at(i).message(m_logMessageList.at(i).tstamp(), endTstamp, counter);
-                }
-
-                QString s = m + terminator;
-                writtenbytes += m_LogFile.write(s.toLatin1());
-
-                i = j;
-                ++j;
-                counter = 1;
-                endTstamp = "";
-            }
-
-            if (j == nummsg)
-            {
-                //Don't want to skip last element
-                QString m;
-                if (counter <= 1)
-                {
-                    m = m_logMessageList.at(i).message();
-                }
-                else
-                {
-                    m = m_logMessageList.at(i).message(m_logMessageList.at(i).tstamp(), endTstamp, counter);
-                }
-
-                QString s = m + terminator;
-
-                writtenbytes += m_LogFile.write(s.toLatin1());
-            }
-        }
-    }
-
-    m_logMessageList.clear();
-    return writtenbytes;
-}
-
-
-
-
-
-

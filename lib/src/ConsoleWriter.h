@@ -22,7 +22,7 @@ class ConsoleWriter: public LogWriter
 
     void writeCompressedMessages();
     void writeUncompressedMessages();
-    void write(const QString& i_msg, const UNQL::LogMessagePriorityType &i_level);
+    void write(const LogMessage &log);
 
 protected slots:
     void writeToDevice();
