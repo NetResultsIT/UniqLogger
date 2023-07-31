@@ -284,6 +284,12 @@ LogWriter::pauseLogging(bool status)
     m_logIsPaused = status;
 }
  
+/*!
+ * \internal
+ * \brief Compress all identical subsequent message (same raw message and
+ *        same log level) inside the log message list, into a
+ *        single log message
+ */
 void
 LogWriter::compressMessages()
 {

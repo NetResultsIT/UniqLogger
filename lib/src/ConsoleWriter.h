@@ -19,9 +19,6 @@ class ConsoleWriter: public LogWriter
     static QMutex m_consoleMux;
 
     QString getColorCode(const UNQL::LogMessagePriorityType &i_level);
-
-    void writeCompressedMessages();
-    void writeUncompressedMessages();
     void write(const LogMessage &log);
 
 protected slots:

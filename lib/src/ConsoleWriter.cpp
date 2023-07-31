@@ -74,7 +74,7 @@ ConsoleWriter::write(const LogMessage &log)
     ConsoleWriter::m_consoleMux.lock();
 
 #if !defined(WIN32) && !defined(Q_OS_IOS)
-    std::cerr << getColorCode(log).toLatin1().constData();
+    std::cerr << getColorCode(log.level()).toLatin1().constData();
 #endif
     std::cerr << log.message().toLatin1().constData();
 

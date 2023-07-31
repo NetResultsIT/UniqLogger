@@ -22,7 +22,13 @@ LogMessage::LogMessage(const QString &aLoggerName, UNQL::LogMessagePriorityType 
     (repetitions < 1) ? (m_repetitions = 1) : (m_repetitions = repetitions);
 }
 
-
+/*!
+ * \internal
+ * \brief Get the message string
+ * \return The message string; this method builds
+ *         a repeated message string or a single message
+ *         string based on m_repetitions value
+ */
 QString
 LogMessage::message() const
 {
@@ -42,6 +48,11 @@ QString LogMessage::getCurrentTstampString()
     return QDateTime::currentDateTime().toString(DEF_UNQL_TSTAMP_FMT);
 }
 
+/*!
+ * \internal
+ * \brief Get the message string in case of multiple subsequential messages
+ * \return The message string as a single line
+ */
 QString LogMessage::repeatedMessage() const
 {
     QString msg,spc,n;
@@ -66,6 +77,11 @@ QString LogMessage::repeatedMessage() const
     return msg;
 }
 
+/*!
+ * \internal
+ * \brief Get the message string in case of no subsequential message
+ * \return The message string
+ */
 QString LogMessage::singleMessage() const
 {
     QString msg,spc;
