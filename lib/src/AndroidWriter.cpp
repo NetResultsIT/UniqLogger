@@ -25,7 +25,6 @@ AndroidWriter::~AndroidWriter()
 void AndroidWriter::writeToDevice()
 {
     mutex.lock();
-    if (!m_logIsPaused) {
         int count = m_logMessageList.count();
         for (int i = 0; i < count; i++) {
             LogMessage message = m_logMessageList.takeFirst();
@@ -35,7 +34,5 @@ void AndroidWriter::writeToDevice()
                 __android_log_write(priority, message.loggerName().toUtf8(), message.message().toUtf8());
             }
         }
-    }
     mutex.unlock();
 }
-

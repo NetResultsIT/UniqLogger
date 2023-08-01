@@ -21,6 +21,7 @@ WriterConfig::WriterConfig()
     : maxMessageNum      ( 0 )                        // unlimited
     , writerFlushSecs    ( 5 )                        // each writer will flush data every 5 seconds
     , writeIdleMark      ( false )                    // If no messages are to be written, write a MARK string to show writer is alive
+    , compressMessages   ( false )                    // No compression of messages
     , maxFileSize        ( 0 )                        // unlimited MB size of logfile
     , maxFileNum         ( 1 )                        // log on just one file by default
     , rotationPolicy     ( UNQL::StrictRotation )     // We use the higher-numbers-are-older rotation policy by default
@@ -63,6 +64,7 @@ WriterConfig::toString() const
     sl << "COMMON PARAMS"
        << "\nMax queued messages: " << ((maxMessageNum==0) ? "unlimited" : "0") << "\nFlushing seconds: " << QString::number(writerFlushSecs)
        << "\nLog idle mark: " << (writeIdleMark ? "true" : "false")
+       << "\nCompress messages: " << (compressMessages ? "true" : "false")
        << "\nFILE ONLY PARAMS"
        << "\nMax file size (MB): " << QString::number(maxFileSize) << "\nMax number of files: " << QString::number(maxFileNum)
        << "\nRotationNamingPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
@@ -89,7 +91,8 @@ WriterConfig::operator ==(const WriterConfig& rhs) const
          timeRotationPolicy == rhs.timeRotationPolicy &&
          compressionLevel   == rhs.compressionLevel   &&
          reconnectionSecs   == rhs.reconnectionSecs   &&
-         netProtocol        == rhs.netProtocol
+         netProtocol        == rhs.netProtocol        &&
+         compressMessages   == rhs.compressMessages
         )
     {
         return true;
@@ -117,7 +120,7 @@ LogWriter::LogWriter(const WriterConfig &wc)
     LogMessage lm2(DEF_UNQL_LOG_STR, UNQL::LOG_DBG, "Opened with WriterConfig:\n" + wc.toString(), LogMessage::getCurrentTstampString());
     m_logMessageList.append(lm);
     m_logMessageList.append(lm2);
-    m_logTimer = new QTimer(this);
+    m_pLogTimer = new QTimer(this);
 }
  
 
@@ -128,8 +131,8 @@ LogWriter::LogWriter(const WriterConfig &wc)
 LogWriter::~LogWriter()
 {
     m_logMessageList.clear();
-    m_logTimer->stop();
-    disconnect(m_logTimer);
+    m_pLogTimer->stop();
+    disconnect(m_pLogTimer);
     ULDBG << Q_FUNC_INFO;
 }
 
@@ -145,7 +148,7 @@ LogWriter::getWriterConfig() const
 
 /*!
  * \brief LogWriter::isLoggingPaused
- * \return whether or not the logging is puased on this writer
+ * \return whether or not the logging is paused on this writer
  */
 bool
 LogWriter::isLoggingPaused() const
@@ -159,6 +162,8 @@ LogWriter::isLoggingPaused() const
 void
 LogWriter::flush()
 {
+    if (m_Config.compressMessages)
+        compressMessages();
     this->writeToDevice();
 }
 
@@ -173,6 +178,11 @@ LogWriter::priv_writeToDevice()
 {
     ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
 
+    if (m_logIsPaused) {
+        ULDBG << "Not writing since logwritrer is paused";
+        return;
+    }
+
     if (m_Config.writeIdleMark) {
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, " -- MARK -- ", LogMessage::getCurrentTstampString());
         mutex.lock();
@@ -180,6 +190,9 @@ LogWriter::priv_writeToDevice()
             m_logMessageList.append(lm);
         mutex.unlock();
     }
+
+    if (m_Config.compressMessages)
+        compressMessages();
 
     writeToDevice();
 }
@@ -189,7 +202,7 @@ void
 LogWriter::priv_startLogTimer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
-    m_logTimer->start(m_Config.writerFlushSecs * 1000);
+    m_pLogTimer->start(m_Config.writerFlushSecs * 1000);
 }
 
 
@@ -211,9 +224,9 @@ LogWriter::setWriterConfig(const WriterConfig &wconf)
 void
 LogWriter::run()
 {
-    connect(m_logTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
+    connect(m_pLogTimer, SIGNAL(timeout()), this, SLOT(priv_writeToDevice()));
 
-    ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_logTimer->thread() << "current thread" << QThread::currentThread();
+    ULDBG << Q_FUNC_INFO << this << "logtimer thread" << m_pLogTimer->thread() << "current thread" << QThread::currentThread();
 
     //We need to start the timer from the thread this object has been moved not from the one calling this method
     QMetaObject::invokeMethod(this, "priv_startLogTimer");
@@ -237,7 +250,7 @@ void
 LogWriter::setSleepingMilliSecs(int msec)
 {
     m_Config.writerFlushSecs = msec / 1000;
-    m_logTimer->setInterval(msec);
+    m_pLogTimer->setInterval(msec);
 } 
  
 
@@ -271,3 +284,70 @@ LogWriter::pauseLogging(bool status)
     m_logIsPaused = status;
 }
  
+/*!
+ * \internal
+ * \brief Compress all identical subsequent message (same raw message and
+ *        same log level) inside the log message list, into a
+ *        single log message
+ */
+void
+LogWriter::compressMessages()
+{
+    int nummsg = m_logMessageList.count();
+    int i = 0;
+    int j = 1;
+
+    if (nummsg > 1)
+    {
+        QList<LogMessage> supportMsgList;
+        QString endTstamp = m_logMessageList.at(i).endTstamp();
+        unsigned int repetitions = m_logMessageList.at(i).repetitions(); //number of susbsequent messages
+        while (j < nummsg)
+        {
+            if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
+                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
+            {
+                //subsequent messages, save end timestamp and look at next element
+                if (m_logMessageList.at(j).endTstamp().isEmpty())
+                {
+                    endTstamp = m_logMessageList.at(j).initTstamp();
+                }
+                else
+                {
+                    endTstamp = m_logMessageList.at(j).endTstamp();
+                }
+                repetitions += m_logMessageList.at(j).repetitions();
+                ++j;
+            }
+            else
+            {
+                QString loggerName = m_logMessageList.at(i).loggerName();
+                UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
+                QString rawMsg = m_logMessageList.at(i).rawMessage();
+                QString initTstamp = m_logMessageList.at(i).initTstamp();
+
+                LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                supportMsgList.append(msg);
+                i = j;
+                ++j;
+                endTstamp = m_logMessageList.at(i).endTstamp();
+                repetitions = m_logMessageList.at(i).repetitions();
+            }
+
+            if (j == nummsg)
+            {
+                //Don't want to skip last element
+                QString loggerName = m_logMessageList.at(i).loggerName();
+                UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
+                QString rawMsg = m_logMessageList.at(i).rawMessage();
+                QString initTstamp = m_logMessageList.at(i).initTstamp();
+
+                LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                supportMsgList.append(msg);
+            }
+        }
+
+        m_logMessageList = supportMsgList;
+    }
+}
+

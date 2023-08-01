@@ -30,7 +30,7 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, c
 
     m_serverPort = aServerPort;
 
-    m_Socket = new QTcpSocket(this);
+    m_pTcpSocket = new QTcpSocket(this);
     m_pUdpSocket = new QUdpSocket(this);
     m_pReconnectionTimer = new QTimer(this);
 }
@@ -45,7 +45,6 @@ RemoteWriter::~RemoteWriter()
     this->flush();
 }
 
-
 /*!
  * \brief RemoteWriter::getMessage composes and returns the next message string to be printed by this writer
  * This is an internal method that is supposed to be called within the mutex.lock()
@@ -57,8 +56,6 @@ RemoteWriter::getMessage()
     return m_logMessageList.takeFirst().message();
 }
 
-
-
 /*!
   \brief writes the messages in the queue on the socket if logger is not paused
   */
@@ -67,23 +64,22 @@ RemoteWriter::writeToDevice()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
 
-    QString s;
     mutex.lock();
-    if (!m_logIsPaused) {
-        if (m_Config.netProtocol == UNQL::UDP) {
-            int msgcount = m_logMessageList.count();
-            for (int i=0; i<msgcount; i++) {
-                s = this->getMessage();
-                int wb = m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
-            }
-        } else if (m_Socket->state() == QAbstractSocket::ConnectedState) {
-            int msgcount = m_logMessageList.count();
-            for (int i=0; i<msgcount; i++) {
-                s = this->getMessage();
-                m_Socket->write(s.toLatin1() + "\r\n");
-            }
+
+    if (m_Config.netProtocol == UNQL::UDP) {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            QString s = this->getMessage();
+            int wb = m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
+        }
+    } else if (m_pTcpSocket->state() == QAbstractSocket::ConnectedState) {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            QString s = this->getMessage();
+            m_pTcpSocket->write(s.toLatin1() + "\r\n");
         }
     }
+
     mutex.unlock();
 }
 
@@ -98,8 +94,8 @@ RemoteWriter::connectToServer()
 {
     ULDBG << Q_FUNC_INFO << QDateTime::currentDateTime().toString("hh.mm.ss.zzz")
           << "executed in thread" << QThread::currentThread();
-    m_Socket->connectToHost(m_serverAddress, m_serverPort);
-    bool b = m_Socket->waitForConnected(10000);
+    m_pTcpSocket->connectToHost(m_serverAddress, m_serverPort);
+    bool b = m_pTcpSocket->waitForConnected(10000);
     if (b)
         return 0;
 
@@ -159,8 +155,8 @@ RemoteWriter::run()
     LogWriter::run();
 
     connect (m_pReconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
-    connect (m_Socket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
-    connect (m_Socket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
+    connect (m_pTcpSocket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
+    connect (m_pTcpSocket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
 
     if (m_Config.netProtocol != UNQL::UDP) {
         QMetaObject::invokeMethod(this, "connectToServer");
@@ -168,3 +164,4 @@ RemoteWriter::run()
         qDebug() << "NOT CONNECTING since we're using UDP";
     }
 }
+

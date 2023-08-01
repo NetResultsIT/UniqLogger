@@ -63,10 +63,10 @@ win32 {
 
     CONFIG += flat console
     CONFIG(debug, debug|release) {
-        QMAKE_POST_LINK="copy ..\\lib\\debug\\$${COMPILER}_qt-$$QT_VERSION\\UniqLoggerd0.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
-        LIBS += UniqLoggerd0.lib
+        QMAKE_POST_LINK="copy ..\\lib\\debug\\$${COMPILER}_qt-$$QT_VERSION\\UniqLoggerd1.dll .\\debug\\bin\\ /y$$escape_expand(\n\t)"
+        LIBS += UniqLoggerd1.lib
     } else {
-        LIBS += UniqLogger0.lib
+        LIBS += UniqLogger1.lib
     }
 }
 

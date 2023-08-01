@@ -1,5 +1,5 @@
-#ifndef RSYSLOGWRITER_H
-#define RSYSLOGWRITER_H
+#ifndef UNQL_RSYSLOGWRITER_H
+#define UNQL_RSYSLOGWRITER_H
 
 #include <RemoteWriter.h>
 #include <SysLogMessageFactory.h>
@@ -9,7 +9,7 @@ class RSyslogWriter: public RemoteWriter
 {
     QString m_mid;
     quint8 m_facility;
-    SysLogMessageFactory slmf;
+    SysLogMessageFactory m_SyslogMessageFactory;
 
     QString getMessage() override;
 

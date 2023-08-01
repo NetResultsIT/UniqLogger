@@ -369,9 +369,8 @@ FileWriter::writeToDevice()
         setOutputFile(m_LogFile.fileName());
     }
 
-    if (!m_logIsPaused)
-    {
-        mutex.lock();
+
+    mutex.lock();
         int nummsg = m_logMessageList.count();
         int writtenbytes = 0;
         for (int i=0; i<nummsg; i++)
@@ -379,9 +378,9 @@ FileWriter::writeToDevice()
             {
                 QString terminator = "\n";
 
-#ifdef WIN32
+    #ifdef WIN32
                 terminator.prepend("\r");
-#endif
+    #endif
                 LogMessage lm = m_logMessageList.takeFirst();
                 QString m = lm.message();
                 QString s = m + terminator;
@@ -389,12 +388,11 @@ FileWriter::writeToDevice()
                 writtenbytes += m_LogFile.write(s.toLatin1());
             }
         m_LogFile.flush();
-        mutex.unlock();
+    mutex.unlock();
 
-        ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
+    ULDBG << "wrote " << writtenbytes << " on " << m_LogFile.fileName();
 
-        rotateFilesIfNeeded();
-    }
+    rotateFilesIfNeeded();
 }
 
 

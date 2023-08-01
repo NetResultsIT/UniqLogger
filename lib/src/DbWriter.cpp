@@ -17,6 +17,7 @@ DbWriter::DbWriter(const QString &dbFileName, const WriterConfig &wconf)
     m_fileSizeExceeded = false;
     m_maxFileSizeMB = 1;
     m_logfileBaseName = dbFileName;
+    m_Config.compressMessages = false; //force to not compress messages
     this->setOutputFile(dbFileName); //this will create the DbHandler Object
 }
 
@@ -28,7 +29,9 @@ DbWriter::~DbWriter()
 {
     //on exit, write all we've got
     this->flush();
-    delete m_dbh;
+    if (m_pDbHandler)
+        delete m_pDbHandler;
+    m_pDbHandler = nullptr;
     ULDBG << Q_FUNC_INFO << "Deleting dbwriter on " << m_logfileBaseName;
 }
 
@@ -61,7 +64,7 @@ DbWriter::setOutputFile(QString i_filename)
     DbhConfig conf("", "", "127.0.0.1", i_filename);
     conf.dbType = "QSQLITE";
 
-    m_dbh = new UnqlDbHandler(conf);
+    m_pDbHandler = new UnqlDbHandler(conf);
 }
 
 
@@ -73,21 +76,18 @@ DbWriter::writeToDevice()
 {
     ULDBG << "Writing to db";
 
-    if (m_logIsPaused)
-        return;
-
     mutex.lock();
     int nummsg = m_logMessageList.count();
     for (int i=0; i<nummsg; i++) {
         LogMessage mess = m_logMessageList.takeFirst();
         QString s = mess.rawMessage();
-        QString ts = mess.tstamp();
+        QString ts = mess.initTstamp();
         int level = mess.level();
         QString ln = mess.loggerName();
         QString lev = QString::number(level);
 
         if (!s.isEmpty()) //do not write an empty entry on db
-            m_dbh->logEvent(ln, ts, lev, s);
+            m_pDbHandler->logEvent(ln, ts, lev, s);
     }
     mutex.unlock();
 

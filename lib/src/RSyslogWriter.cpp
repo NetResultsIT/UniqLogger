@@ -8,11 +8,12 @@ RSyslogWriter::RSyslogWriter(const QString &i_id, quint8 i_facility, const QStri
     , m_mid(i_id)
     , m_facility(i_facility)
 {
-    slmf.m_hostname = QHostInfo::localHostName();
-    slmf.m_appname = QCoreApplication::applicationName();
-    slmf.m_pid = QString::number(QCoreApplication::applicationPid());
-    slmf.m_mid = m_mid;
-    slmf.m_facility = m_facility;
+    m_Config.compressMessages = false; //force to not compress messages
+    m_SyslogMessageFactory.m_hostname = QHostInfo::localHostName();
+    m_SyslogMessageFactory.m_appname = QCoreApplication::applicationName();
+    m_SyslogMessageFactory.m_pid = QString::number(QCoreApplication::applicationPid());
+    m_SyslogMessageFactory.m_mid = m_mid;
+    m_SyslogMessageFactory.m_facility = m_facility;
 }
 
 
@@ -28,11 +29,11 @@ RSyslogWriter::getMessage()
     //now get data from logmessage
     LogMessage lm = m_logMessageList.takeFirst();
 
-    slmf.m_severity = convertUnqlLogLevelToSyslog(lm.level());
-    slmf.m_timestamp = QDateTime::fromString(lm.tstamp(), Qt::ISODateWithMs);
-    slmf.m_msgBody = lm.message();
+    m_SyslogMessageFactory.m_severity = convertUnqlLogLevelToSyslog(lm.level());
+    m_SyslogMessageFactory.m_timestamp = QDateTime::fromString(lm.initTstamp(), Qt::ISODateWithMs);
+    m_SyslogMessageFactory.m_msgBody = lm.message();
 
-    QString msg = slmf.generateMessage();
+    QString msg = m_SyslogMessageFactory.generateMessage();
 
     return msg;
 }

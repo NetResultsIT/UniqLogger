@@ -36,7 +36,7 @@ public:
 public slots:
     void logwthread() {
         QString s;
-        s.sprintf("%p", QThread::currentThread());
+        s.asprintf("%p", QThread::currentThread());
         s += " -- " + QString::number(m_counter++);
         if (l)
             *l << m_logPriority << s << m_msg << Q_FUNC_INFO << UNQL::EOM;

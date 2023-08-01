@@ -19,7 +19,7 @@ class DbWriter: public LogWriter
     int m_maxFileSizeMB;
     bool m_fileSizeExceeded;
     QString m_logfileBaseName;
-    UnqlDbHandler *m_dbh;
+    UnqlDbHandler *m_pDbHandler = nullptr;
 
     void writeToDevice();
 

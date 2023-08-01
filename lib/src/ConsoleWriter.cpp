@@ -33,12 +33,12 @@ ConsoleWriter::~ConsoleWriter()
  * The returned string will be empty if no color was selected for this message level. <br/>
  * On Windows platforms this functions does nothing and returns an empty string.
  *
- * \param i_message The message to be colored.
+ * \param i_level The message level to be colored.
  * \return The color code (eg. '\033[0;37m') to write to the console.
  */
-QString ConsoleWriter::getColorCode(const LogMessage &i_message)
+QString ConsoleWriter::getColorCode(const UNQL::LogMessagePriorityType &i_level)
 {
-    UNQL::ConsoleColorType color = m_colorScheme.getColorForLevel(i_message.level());
+    UNQL::ConsoleColorType color = m_colorScheme.getColorForLevel(i_level);
     if (color == UNQL::NO_COLOR)
     {
         return QString();
@@ -54,28 +54,35 @@ QString ConsoleWriter::getColorCode(const LogMessage &i_message)
 void
 ConsoleWriter::writeToDevice()
 {
-    if (!m_logIsPaused)
-    {
-        mutex.lock();
+    mutex.lock();
         int msgcount = m_logMessageList.count();
         for (int i=0; i<msgcount; i++) {
             LogMessage log = m_logMessageList.takeFirst();
-
-            ConsoleWriter::m_consoleMux.lock();
-#if !defined(WIN32) && !defined(Q_OS_IOS)
-            std::cerr << getColorCode(log).toLatin1().constData();
-#endif
-            std::cerr << log.message().toLatin1().constData();
-
-            //windows console does not support color codes
-#if !defined(WIN32) && !defined(Q_OS_IOS)
-            std::cerr << "\033[0m";
-#endif            
-            std::cerr << std::endl;
-            ConsoleWriter::m_consoleMux.unlock();
+            write(log);
         }
-        mutex.unlock();
-    }
+    mutex.unlock();
 }
  
+/*!
+ * \internal
+ * \brief write to console
+ * \param log message to write
+ */
+void
+ConsoleWriter::write(const LogMessage &log)
+{
+    ConsoleWriter::m_consoleMux.lock();
 
+#if !defined(WIN32) && !defined(Q_OS_IOS)
+    std::cerr << getColorCode(log.level()).toLatin1().constData();
+#endif
+    std::cerr << log.message().toLatin1().constData();
+
+    //windows console does not support color codes
+#if !defined(WIN32) && !defined(Q_OS_IOS)
+    std::cerr << "\033[0m";
+#endif
+    std::cerr << std::endl;
+
+    ConsoleWriter::m_consoleMux.unlock();
+}
