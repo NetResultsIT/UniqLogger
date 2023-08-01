@@ -18,7 +18,8 @@ class RemoteWriter: public LogWriter
 {
     Q_OBJECT
 
-    QTcpSocket *m_Socket;
+protected:
+    QTcpSocket *m_pTcpSocket;
     QUdpSocket *m_pUdpSocket;
     QTimer *m_pReconnectionTimer;
     QString m_serverAddress;

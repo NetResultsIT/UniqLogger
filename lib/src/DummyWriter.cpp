@@ -19,12 +19,9 @@ DummyWriter::~DummyWriter()
 
 void DummyWriter::writeToDevice()
 {
-    if (!m_logIsPaused)
-    {
-        mutex.lock();
-        /*qDebug() << Q_FUNC_INFO << m_logMessageList.size();*/
-        m_logMessageList.clear();
-        mutex.unlock();
-    }
+    mutex.lock();
+    /*qDebug() << Q_FUNC_INFO << m_logMessageList.size();*/
+    m_logMessageList.clear();
+    mutex.unlock();
 }
 
