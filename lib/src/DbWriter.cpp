@@ -81,7 +81,7 @@ DbWriter::writeToDevice()
     for (int i=0; i<nummsg; i++) {
         LogMessage mess = m_logMessageList.takeFirst();
         QString s = mess.rawMessage();
-        QString ts = mess.tstamp();
+        QString ts = mess.initTstamp();
         int level = mess.level();
         QString ln = mess.loggerName();
         QString lev = QString::number(level);
