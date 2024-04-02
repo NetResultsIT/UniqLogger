@@ -261,8 +261,9 @@ FileWriter::calculateLogFileNameForIndex(int index)
         }
     }
 
-    bool separatorPresent = (m_LogfileInfo.path.endsWith(QDir::separator()) || m_LogfileInfo.basename.startsWith(QDir::separator()));
-    return QString(m_LogfileInfo.path + (separatorPresent?QString(""):QDir::separator()) + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension);
+    //bool separatorPresent = (m_LogfileInfo.path.endsWith(QDir::separator()) || m_LogfileInfo.basename.startsWith(QDir::separator()));
+    bool separatorPresent = (m_LogfileInfo.path.endsWith("/") || m_LogfileInfo.basename.startsWith("/")); // win separators were replaced to unix ones
+    return QString(m_LogfileInfo.path + (separatorPresent ? QString("") : "/") + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension);
 }
 
 
@@ -467,7 +468,7 @@ void FileWriter::removeLeftoversFromPreviousRun()
             int seconds_between_dtimes = qAbs(dt.secsTo(getCurrentDateTime()));
             int should_rotate_every_n_secs = rotationSecondsForTimePolicy(m_Config.timeRotationPolicy);
             if (seconds_between_dtimes > should_rotate_every_n_secs) {
-                QString filefullpath = m_LogfileInfo.path + QDir::separator() + f;
+                QString filefullpath = m_LogfileInfo.path + "/" + f;
                 leftovermsg = remove_msg.arg(filefullpath).arg(seconds_between_dtimes).arg(m_Config.timeRotationPolicy).arg(should_rotate_every_n_secs);
                 bool b = QFile::remove(filefullpath);
                 if (!b) {
@@ -570,7 +571,7 @@ void FileWriter::renameOldLogFilesForStrictRotation()
         }
         bool b = newer.rename(olderfile);
         if (!b) {
-            ULDBG << "error renaming file: " << newer.errorString();
+            qDebug() << "error renaming file: " << newer.errorString();
         }
         Q_ASSERT(b);
     }

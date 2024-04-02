@@ -63,3 +63,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+#on windows the symbols of internal classes aare not exposed in the unqilogger dll so we need to compile single classes here
+win32 {
+
+include("$$UNQLPATH/src/ext/filecompressor/src/nrFileCompressor.pri")
+
+HEADERS += \
+$$UNQLPATH/src/LogWriter.h \
+$$UNQLPATH/src/FileWriter.h
+
+SOURCES += \
+$$UNQLPATH/src/WriterConfig.cpp \
+$$UNQLPATH/src/LogWriter.cpp \
+$$UNQLPATH/src/FileWriter.cpp \
+$$UNQLPATH/src/LogMessage.cpp \
+$$UNQLPATH/src/TimeUtils.cpp
+}

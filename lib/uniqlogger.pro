@@ -91,7 +91,8 @@ HEADERS += \
     src/LogMessage.h \
     src/DummyWriter.h \
     src/bufferofstrings.h \
-    src/ConsoleColorScheme.h
+    src/ConsoleColorScheme.h \
+    src/writerconfig.h
 
 SOURCES += \
     src/Logger.cpp \
@@ -104,7 +105,8 @@ SOURCES += \
     src/LogMessage.cpp \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp \
-    src/ConsoleColorScheme.cpp
+    src/ConsoleColorScheme.cpp \
+    src/writerconfig.cpp
 
 # ----- Headers to export -----
 INCLUDE_HEADERS += \

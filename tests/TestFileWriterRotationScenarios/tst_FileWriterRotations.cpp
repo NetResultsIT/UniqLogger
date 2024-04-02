@@ -47,7 +47,8 @@ void deleteFile(QString fname)
 
 QString getFileWithFullPath(const QString filename, QString path=(QDir::currentPath() + QDir::separator()))
 {
-    QChar sep = QDir::separator();
+    QChar sep = '/';
+    path = QDir::fromNativeSeparators(path);
     if (!path.endsWith(sep) && !filename.startsWith(sep))
         path.append(sep);
     qDebug() << path << filename;
@@ -468,28 +469,28 @@ void FileWriterRotations::testRotateWithDailyRotationZipCompressed()
 void FileWriterRotations::testRotateWithPerMinuteRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicy(compressionAlg, UNQL::PerMinuteRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicy(compressionAlg, UNQL::PerMinuteRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
 void FileWriterRotations::testRotateWithHourlyRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicy(compressionAlg, UNQL::HourlyRotation, "2021-03-16T23:15:12");
+    testRotateForTimePolicy(compressionAlg, UNQL::HourlyRotation, QDateTime::fromString("2021-03-16T23:15:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
 void FileWriterRotations::testRotateWithDailyRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicy(compressionAlg, UNQL::DailyRotation, "2021-03-16T21:42:12");
+    testRotateForTimePolicy(compressionAlg, UNQL::DailyRotation, QDateTime::fromString("2021-03-16T21:42:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
 void FileWriterRotations::testRotateWithElapsedMinutesRotation(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicy(compressionAlg, UNQL::ElapsedMinutesRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicy(compressionAlg, UNQL::ElapsedMinutesRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
@@ -502,7 +503,7 @@ void FileWriterRotations::testRotateWithElapsedMinutesRotation(int compressionAl
 void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::PerMinuteRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::PerMinuteRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
@@ -510,21 +511,21 @@ void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeHigherNewer(int 
 void FileWriterRotations::testRotateWithHourlyRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::HourlyRotation, "2021-03-16T23:15:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::HourlyRotation, QDateTime::fromString("2021-03-16T23:15:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
 void FileWriterRotations::testRotateWithDailyRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::DailyRotation, "2021-03-16T21:42:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::DailyRotation, QDateTime::fromString("2021-03-16T21:42:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
 void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeHigherNewer(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::ElapsedMinutesRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::ElapsedMinutesRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 
@@ -817,7 +818,7 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeStrict(int compressionAl
 void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::PerMinuteRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::PerMinuteRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeStrictGzipCompressed()
@@ -837,7 +838,7 @@ void FileWriterRotations::testRotateWithPerMinuteRotationAndSizeStrictZipCompres
 void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::ElapsedMinutesRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::ElapsedMinutesRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeStrictGzipCompressed()
@@ -857,7 +858,7 @@ void FileWriterRotations::testRotateWithElapsedMinutesRotationAndSizeStrictZipCo
 void FileWriterRotations::testRotateWithHourlyRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::HourlyRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::HourlyRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 void FileWriterRotations::testRotateWithHourlyRotationAndSizeStrictGzipCompressed()
@@ -877,7 +878,7 @@ void FileWriterRotations::testRotateWithHourlyRotationAndSizeStrictZipCompressed
 void FileWriterRotations::testRotateWithDailyRotationAndSizeStrict(int compressionAlg)
 {
     //QSKIP("Adjusting code");
-    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::DailyRotation, "2021-03-16T23:00:12");
+    testRotateForTimePolicyAndSizeHigherNewer(compressionAlg, UNQL::DailyRotation, QDateTime::fromString("2021-03-16T23:00:12", Qt::ISODate).toString(DEF_UNQL_TIME_ROTATION_FMT));
 }
 
 void FileWriterRotations::testRotateWithDailyRotationAndSizeStrictGzipCompressed()
