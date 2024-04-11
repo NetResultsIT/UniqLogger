@@ -77,7 +77,7 @@ public:
     void setOutputFile(const QString& filename);
     void setLogfileMaxSize(int filesize);
     void setLogfileRotationRange(int maxfilenum);
-    void stopLogging(bool erasefile=false);
+    void stopLogging();
     QString getBaseName() const { return m_logfileBaseName; }
     UNQL::FileRotationNamingPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
 };

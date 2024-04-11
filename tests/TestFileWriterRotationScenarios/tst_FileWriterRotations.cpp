@@ -40,7 +40,7 @@ void deleteFile(QString fname)
     qDebug() << "about to remove" << fname;
     bool b = f.remove();
     if (!b) {
-        ////qWarning() << "Could not remove file " << fname << " - " << f.errorString();
+        qWarning() << "Could not remove file " << fname << " - " << f.errorString();
     }
 }
 
@@ -192,7 +192,7 @@ FileWriterRotations::testRemoveLeftovers()
     QString initialdatetime = "2021-03-19T01:57:32";
     UNQL::FileRotationTimePolicyType timerotPolicy = UNQL::HourlyRotation;
 
-    QDateTime dt = QDateTime::fromString(initialdatetime, DEF_UNQL_TIME_ROTATION_FMT);
+    QDateTime dt = QDateTime::fromString(initialdatetime, Qt::ISODate);
     QVERIFY(dt.isValid());
 
     //config
@@ -643,6 +643,9 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compress
     //in this test we use a subfolder
     QDir::current().mkdir("test_subfolder");
     QString path = QDir::currentPath() + "/test_subfolder";
+
+
+
     qDebug() << "setting output file to " << getFileWithFullPath("log.txt", path);
     setOutputFile(getFileWithFullPath("log.txt", path));
     qDebug() << "checking existenxe of " << getFileWithFullPath(filenames[0], path);
@@ -693,6 +696,8 @@ void FileWriterRotations::testRotateForTimePolicyAndSizeHigherNewer(int compress
     }
     QVERIFY(getCurrentLogFilename() == getFileWithFullPath(filenames[3], path));
 
+    //on windows we need to explicit stop logging to avoid failing to delete the last open file
+    stopLogging();
 
     foreach (QString s, filenames) {
         deleteFile(getFileWithFullPath(getCompressedFilename(s, compressionAlg), path));
