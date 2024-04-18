@@ -589,6 +589,7 @@ void FileWriter::renameOldLogFilesForStrictRotation()
                 ULDBG << "error renaming file: " << older.errorString();
             }
         }
+
         bool b = newer.rename(olderfile);
         if (!b) {
             qDebug() << "error renaming file: " << newer.errorString();
@@ -631,8 +632,7 @@ void FileWriter::rotateFileForStrictRotation()
 {
     ULDBG << "Rotating files for STRICT rotation...";
     //Close current logfile
-    m_LogFile.flush();
-    m_LogFile.close();
+    stopLogging();
 
     //increment the rotation number and calculate the max rotation filename
     if (m_rotationCurFileNumber < m_Config.maxFileNum - 1) {

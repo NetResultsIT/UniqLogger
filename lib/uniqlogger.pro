@@ -116,7 +116,8 @@ INCLUDE_HEADERS += \
     $$PWD/src/LogMessage.h \
     $$PWD/src/unqlog_common.h \
     $$PWD/src/bufferofstrings.h \
-    $$PWD/src/ConsoleColorScheme.h
+    $$PWD/src/ConsoleColorScheme.h \
+    $$PWD/src/writerconfig.h
 
 
 INCLUDEPATH += $$PWD/src
