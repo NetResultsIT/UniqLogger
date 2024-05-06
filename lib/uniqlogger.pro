@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 1.2.1
+VERSION = 1.2.2
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
