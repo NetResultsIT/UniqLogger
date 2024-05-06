@@ -520,7 +520,7 @@ void FileWriter::removeOldestFiles()
             QFile f(lastfile);
             bool b = f.remove();
             if (!b) {
-                qDebug() << "ERROR ERROR - Could not delete file " << lastfile << f.errorString();
+                ULDBG << "ERROR ERROR - Could not delete file " << lastfile << f.errorString();
                 LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, "Could not remove old logfile " + lastfile, LogMessage::getCurrentTstampString());
                 m_logMessageList.append(lm);
             }
@@ -592,7 +592,7 @@ void FileWriter::renameOldLogFilesForStrictRotation()
 
         bool b = newer.rename(olderfile);
         if (!b) {
-            qDebug() << "error renaming file: " << newer.errorString();
+            ULDBG << "error renaming file: " << newer.errorString();
         }
         Q_ASSERT(b);
     }
