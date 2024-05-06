@@ -61,8 +61,14 @@ enum ErrorType
 #define DEF_UNQL_LOG_STR "UniqLogger"
 
 // Used for FileWriter when timerotation is enabled
+//NOTE: if you change these values, you must also change the regexp value in FileWriter::removeLeftoversFromPreviousRun
+#ifdef WIN32
+#define DEF_UNQL_TIME_ROTATION_FMT "yyyy-MM-ddTHH_mm_ss"
+#define DEF_UNQL_TIME_ROTATION_SUFFIX "-yyyy-MM-ddTHH_mm_ss"
+#else
 #define DEF_UNQL_TIME_ROTATION_FMT "yyyy-MM-ddTHH:mm:ss"
 #define DEF_UNQL_TIME_ROTATION_SUFFIX "-yyyy-MM-ddTHH:mm:ss"
+#endif
 }
 
 #endif

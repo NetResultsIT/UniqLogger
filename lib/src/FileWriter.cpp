@@ -261,8 +261,9 @@ FileWriter::calculateLogFileNameForIndex(int index)
         }
     }
 
-    bool separatorPresent = (m_LogfileInfo.path.endsWith(QDir::separator()) || m_LogfileInfo.basename.startsWith(QDir::separator()));
-    return QString(m_LogfileInfo.path + (separatorPresent?QString(""):QDir::separator()) + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension);
+    //bool separatorPresent = (m_LogfileInfo.path.endsWith(QDir::separator()) || m_LogfileInfo.basename.startsWith(QDir::separator()));
+    bool separatorPresent = (m_LogfileInfo.path.endsWith("/") || m_LogfileInfo.basename.startsWith("/")); // win separators were replaced to unix ones
+    return QString(m_LogfileInfo.path + (separatorPresent ? QString("") : "/") + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension);
 }
 
 
@@ -294,6 +295,7 @@ FileWriter::changeOutputFile(const QString &i_filename)
         LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_INFO, QString("Closing previously opened logfile ").append(getCurrentLogFilename()) , LogMessage::getCurrentTstampString());
         m_logMessageList.append(lm);
         m_streamIsOpen = false;
+        m_LogFile.flush();
         m_LogFile.close();
     }
 
@@ -451,7 +453,13 @@ void FileWriter::removeLeftoversFromPreviousRun()
     //remove current logfile
     filelist.removeAll(m_LogFile.fileName());
 
+    //we try to match the default pattern for the logfiles that is different on windows and linux since we cannot use ":" on windows
+    //Note: if the user has changed the default pattern this will not work (see
+#ifdef WIN32
+    QString re_string = "-(\\d{4}-\\d{2}-\\d{2}T\\d{2}_\\d{2}_\\d{2})(-\\d+){0,1}\\.";
+#else
     QString re_string = "-(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(-\\d+){0,1}\\.";
+#endif
     QRegularExpression re(m_LogfileInfo.basename + re_string + m_LogfileInfo.extension);
     //qDebug() << "RE string: " << re_string << re.pattern();
     //qDebug() << "RE isvalid: " << re.isValid();
@@ -467,7 +475,7 @@ void FileWriter::removeLeftoversFromPreviousRun()
             int seconds_between_dtimes = qAbs(dt.secsTo(getCurrentDateTime()));
             int should_rotate_every_n_secs = rotationSecondsForTimePolicy(m_Config.timeRotationPolicy);
             if (seconds_between_dtimes > should_rotate_every_n_secs) {
-                QString filefullpath = m_LogfileInfo.path + QDir::separator() + f;
+                QString filefullpath = m_LogfileInfo.path + "/" + f;
                 leftovermsg = remove_msg.arg(filefullpath).arg(seconds_between_dtimes).arg(m_Config.timeRotationPolicy).arg(should_rotate_every_n_secs);
                 bool b = QFile::remove(filefullpath);
                 if (!b) {
@@ -509,7 +517,13 @@ void FileWriter::removeOldestFiles()
         }
         if (QFile::exists(lastfile)) {
             ULDBG << "about to remove old logfile: " << lastfile;
-            QFile::remove(lastfile);
+            QFile f(lastfile);
+            bool b = f.remove();
+            if (!b) {
+                ULDBG << "ERROR ERROR - Could not delete file " << lastfile << f.errorString();
+                LogMessage lm(DEF_UNQL_LOG_STR, UNQL::LOG_WARNING, "Could not remove old logfile " + lastfile, LogMessage::getCurrentTstampString());
+                m_logMessageList.append(lm);
+            }
         } else {
             ULDBG << lastfile << " does not seem to exist, cannot delete it ";
         }
@@ -518,6 +532,13 @@ void FileWriter::removeOldestFiles()
     ULDBG << "Last used file names is NOW: " << m_lastUsedFilenames;
 }
 
+
+void FileWriter::stopLogging()
+{
+    //Close current logfile
+    m_LogFile.flush();
+    m_LogFile.close();
+}
 
 /*!
  * \brief FileWriter::removeLogPath removes (if present at the beginning) the logpath from the string passed as parameter
@@ -568,6 +589,7 @@ void FileWriter::renameOldLogFilesForStrictRotation()
                 ULDBG << "error renaming file: " << older.errorString();
             }
         }
+
         bool b = newer.rename(olderfile);
         if (!b) {
             ULDBG << "error renaming file: " << newer.errorString();
@@ -600,6 +622,7 @@ void FileWriter::rotateFileForIncrementalNumbers()
     removeOldestFiles();
 }
 
+
 /*!
  * \brief FileWriter::rotateFileForStrictRotation will perform a logrotate-style of rotation
  * Rotate logfiles when we're logging always in the same set of files (i.e. log-1.txt -> log-2.txt and log.txt -> log-1.txt)
@@ -609,8 +632,7 @@ void FileWriter::rotateFileForStrictRotation()
 {
     ULDBG << "Rotating files for STRICT rotation...";
     //Close current logfile
-    m_LogFile.flush();
-    m_LogFile.close();
+    stopLogging();
 
     //increment the rotation number and calculate the max rotation filename
     if (m_rotationCurFileNumber < m_Config.maxFileNum - 1) {
