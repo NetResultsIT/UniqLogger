@@ -6,9 +6,12 @@
 class FileWriterRotations : public FileWriter
 {
     Q_OBJECT
+
+    QString m_currentSubFolder;
+    QStringList m_filenames;
 public:
     explicit FileWriterRotations(WriterConfig wc=WriterConfig());
-    void cleanup(QStringList);
+    void cleanupFiles(QStringList);
 
 signals:
 
@@ -20,6 +23,7 @@ public slots:
 
 private slots:
     void init(); //called before each test
+    void cleanup(); //called at the end of each test
 
 private slots: //switch to public to ignore some
     //utility tests

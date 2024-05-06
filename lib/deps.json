@@ -4,7 +4,7 @@
             "name": "FileCompressor",
             "rel_dest_dir": "src/ext/filecompressor",
             "url": "https://github.com/netresultsit/filecompressor",
-            "branch_or_tag": "v2.0.0"
+            "branch_or_tag": "v2.0.1"
         },
         {
             "name": "DbHandler",
