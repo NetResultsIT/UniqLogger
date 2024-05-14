@@ -92,7 +92,7 @@ HEADERS += \
     src/DummyWriter.h \
     src/bufferofstrings.h \
     src/ConsoleColorScheme.h \
-    src/writerconfig.h
+    src/WriterConfig.h
 
 SOURCES += \
     src/Logger.cpp \
@@ -106,7 +106,7 @@ SOURCES += \
     src/DummyWriter.cpp \
     src/bufferofstrings.cpp \
     src/ConsoleColorScheme.cpp \
-    src/writerconfig.cpp
+    src/WriterConfig.cpp
 
 # ----- Headers to export -----
 INCLUDE_HEADERS += \
@@ -117,7 +117,7 @@ INCLUDE_HEADERS += \
     $$PWD/src/unqlog_common.h \
     $$PWD/src/bufferofstrings.h \
     $$PWD/src/ConsoleColorScheme.h \
-    $$PWD/src/writerconfig.h
+    $$PWD/src/WriterConfig.h
 
 
 INCLUDEPATH += $$PWD/src
