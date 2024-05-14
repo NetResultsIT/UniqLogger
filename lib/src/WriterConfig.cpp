@@ -1,4 +1,4 @@
-#include "writerconfig.h"
+#include "WriterConfig.h"
 
 #include <QStringList>
 
