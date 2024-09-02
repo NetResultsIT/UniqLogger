@@ -21,7 +21,7 @@ public:
         :QObject(parent),
           m_timeout_msecs(msecs)
     {
-        l=NULL;
+        l = nullptr;
         m_timer = new QTimer(this);
         m_counter = 0;
         connect(m_timer, SIGNAL(timeout()), this, SLOT(logwthread()));
@@ -31,7 +31,7 @@ public:
 public slots:
     void logwthread() {
         QString s;
-        s.sprintf("%p", QThread::currentThread());
+        s.asprintf("%p", QThread::currentThread());
         s += " -- " + QString::number(m_counter++);
         if (l)
             *l << UNQL::LOG_INFO << s << Q_FUNC_INFO << UNQL::EOM;

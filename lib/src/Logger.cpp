@@ -27,6 +27,7 @@ Logger::Logger()
     m_endEncasingChar = ']';
     m_printToQDebug = false;
     m_printToStdOut = false;
+    m_printThreadID = false;
 }
 
 Logger::~Logger()
@@ -242,10 +243,26 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 
 
 
+QString Logger::priv_addThreadPointer(const QString &i_msg)
+{
+    int base = 16;
+    int pointerStringSize = QSysInfo::WordSize == 64 ? 11 : 6;
+    QString msg = i_msg;
+    if Q_UNLIKELY(m_printThreadID) {
+        msg = QString("(Th. 0x%1) %2").arg( (quint64)QThread::currentThread(), pointerStringSize, base).arg(i_msg);
+    };
+
+    return msg;
+}
+
+
 void
-Logger::priv_log(int priority, const QString &msg)
+Logger::priv_log(int priority, const QString &i_msg)
 {
     UNQL::LogMessagePriorityType lev = selectCorrectLogLevel(priority);
+
+
+    QString msg = priv_addThreadPointer(i_msg);
 
     QPair<QChar,QChar> encasingPair(m_startEncasingChar, m_endEncasingChar);
     LogMessageFormatting lmf(m_spacingString, encasingPair);
@@ -308,16 +325,28 @@ void Logger::printToStdOut(bool enable)
 void Logger::printToQDebug(bool enable)
 { m_printToQDebug = enable; }
 
+
+/*!
+ * \brief Logger::printThreadID
+ * \param enable the new status of the thread ID printing
+ * The purpose of this method is to enable the logging of the thread ID that is currently executing the log message
+ */
+void Logger::printThreadID(bool enable)
+{ m_printThreadID = enable; }
+
+
 /*!
  * \brief Logger::printAlsoToConsoleIfRequired will print out to std::cout and/or with qDebug() (that is std::cerr but with different timing due to buffering)
  * \param mess the QString containing the message to print
  */
 void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 {
+    QString m = priv_addThreadPointer(mess);
+
     if (m_printToQDebug)
-        qDebug() << mess;
+        qDebug() << m;
     if (m_printToStdOut)
-        std::cout << mess.toStdString() << std::endl;
+        std::cout << m.toStdString() << std::endl;
 }
 
 /*!

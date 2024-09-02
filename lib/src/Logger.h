@@ -39,7 +39,7 @@ class ULOG_LIB_API Logger: public QObject
     Q_OBJECT
 
     int m_logVerbosityAcceptedLevel, m_logVerbosityDefaultLevel;
-    bool m_printToStdOut, m_printToQDebug;
+    bool m_printToStdOut, m_printToQDebug, m_printThreadID;
     QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
     QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;
@@ -81,6 +81,7 @@ public:
     void setEncasingChars           ( const QChar&, const QChar& );
     void printToStdOut(bool enable);
     void printToQDebug(bool enable);
+    void printThreadID(bool enable);
 
     //GETTERS
     int getVerbosityLevel() const;
@@ -91,6 +92,7 @@ public:
     QString getSpacingString() const    { return m_spacingString;   }
     bool printToStdOut() const          { return m_printToStdOut;   }
     bool printToQDebug() const          { return m_printToQDebug;   }
+    bool printThreadID() const          { return m_printThreadID;   }
 
     //LOGGING
     void log( int, const char*, ... );
@@ -168,6 +170,8 @@ public:
     };
     */
 
+private:
+    QString priv_addThreadPointer(const QString &i_msg);
 };
 
 #endif
