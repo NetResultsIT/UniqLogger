@@ -242,14 +242,11 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 }
 
 
-
 QString Logger::priv_addThreadPointer(const QString &i_msg)
 {
-    int base = 16;
-    int pointerStringSize = QSysInfo::WordSize == 64 ? 11 : 6;
     QString msg = i_msg;
-    if Q_UNLIKELY(m_printThreadID) {
-        msg = QString("(Th. 0x%1) %2").arg( (quint64)QThread::currentThread(), pointerStringSize, base).arg(i_msg);
+    if (Q_UNLIKELY(m_printThreadID)) {
+        msg = QString("(Th. 0x%1) %2").arg((quint64)QThread::currentThread(), 0, 16).arg(i_msg);
     };
 
     return msg;
