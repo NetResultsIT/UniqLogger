@@ -242,6 +242,11 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 }
 
 
+/*!
+ * \brief Logger::priv_addThreadPointer adds the thread pointer to the message
+ * \param i_msg the message that should be modified to include the thread pointer
+ * \return a new string with the thread pointer included
+ */
 QString Logger::priv_addThreadPointer(const QString &i_msg)
 {
     QString msg = i_msg;
@@ -253,10 +258,15 @@ QString Logger::priv_addThreadPointer(const QString &i_msg)
 }
 
 
+/*!
+  \brief log a message with a given priority
+  \param i_priority the priority of the message
+  \param i_msg the message to be logged
+  */
 void
-Logger::priv_log(int priority, const QString &i_msg)
+Logger::priv_log(int i_priority, const QString &i_msg)
 {
-    UNQL::LogMessagePriorityType lev = selectCorrectLogLevel(priority);
+    UNQL::LogMessagePriorityType lev = selectCorrectLogLevel(i_priority);
 
 
     QString msg = priv_addThreadPointer(i_msg);
