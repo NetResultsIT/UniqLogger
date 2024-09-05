@@ -169,11 +169,14 @@ testlogger_cli::testThreadedNetLogger(const QString &ip, int port)
 void
 testlogger_cli::testThreadedConsoleLogger()
 {
-    TestThreadObject2 *tobj1 = new TestThreadObject2(200, UNQL::LOG_WARNING, "You should see this...");
+    int sched_ms1 = 200;
+    TestThreadObject2 *tobj1 = new TestThreadObject2(sched_ms1, UNQL::LOG_WARNING, "You should see this...");
     tobj1->l = loggerCr;
-    TestThreadObject2 *tobj2 = new TestThreadObject2(100, UNQL::LOG_DBG, "But *definitely* NOT this...");
+    int sched_ms2 = 100;
+    TestThreadObject2 *tobj2 = new TestThreadObject2(sched_ms2, UNQL::LOG_DBG, "But *definitely* NOT this...");
     tobj2->l = loggerCr;
-    TestThreadObject2 *tobj3 = new TestThreadObject2(150, UNQL::LOG_INFO, "You *might* see this...");
+    int sched_ms3 = 150;
+    TestThreadObject2 *tobj3 = new TestThreadObject2(sched_ms3, UNQL::LOG_INFO, "You *might* see this...");
     tobj3->l = loggerCy;
 
     QThread *t1, *t2, *t3;
