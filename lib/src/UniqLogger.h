@@ -91,7 +91,7 @@ private:
         bool checkMatchingConfigForWriter(LogWriter &w, const WriterConfig & wc);
 
 public:
-        static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
+        static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 1);
 
         Logger* createDummyLogger   ( const QString &logName,                                   const WriterConfig &wc=WriterConfig() );
         Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
