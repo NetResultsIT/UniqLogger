@@ -274,6 +274,7 @@ win32 {
         QMAKE_LIBDIR += $$WINDOWS_SDK
 
         DLL = $$join(TARGET,,$$OUT_PWD\release\\,$$VER_MAJ)
+        WINEXT += pdb
     }
     DLL = $$replace(DLL,"/","\\")
 
