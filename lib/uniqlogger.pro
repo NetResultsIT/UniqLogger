@@ -6,7 +6,7 @@ VERSION = 1.3.0
 
 
 #Uncomment to enable library debugging statements
-DEFINES += ENABLE_UNQL_DBG
+#DEFINES += ENABLE_UNQL_DBG
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 

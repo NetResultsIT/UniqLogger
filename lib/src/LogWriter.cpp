@@ -85,7 +85,7 @@ LogWriter::priv_writeToDevice()
     ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
 
     if (m_logIsPaused) {
-        ULDBG << "Not writing since logwritrer is paused";
+        ULDBG << "Not writing since logwriter is paused";
         return;
     }
 
@@ -199,6 +199,7 @@ LogWriter::pauseLogging(bool status)
 void
 LogWriter::compressMessages()
 {
+    mutex.lock();
     int nummsg = m_logMessageList.count();
     int i = 0;
     int j = 1;
@@ -255,5 +256,6 @@ LogWriter::compressMessages()
 
         m_logMessageList = supportMsgList;
     }
+    mutex.unlock();
 }
 

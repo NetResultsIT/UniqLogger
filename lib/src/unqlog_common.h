@@ -32,6 +32,7 @@ enum LogMessagePriorityType
     LOG_INFO        = 1000,
     LOG_DBG         = 10000,
     LOG_DBG_ALL     = 100000,
+    LOG_TRACE       = 100000,
     LOG_OFF         = -1,
     LOG_MONITOR     = -10,
     LOG_FORCED      = -100
