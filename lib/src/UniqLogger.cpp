@@ -56,6 +56,7 @@ UniqLogger::UniqLogger(int nthreads)
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_INFO,     "INFO");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG,      "DEBUG");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_DBG_ALL,  "FULL DEBUG");
+    UnqlPriorityLevelNamesMap.insert(UNQL::LOG_TRACE,    "TRACE");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_MONITOR,  "MONITOR");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FORCED,   "FORCED");
 
@@ -118,6 +119,8 @@ UniqLogger::instance(const QString &ulname, int nthreads)
         qWarning() << "The UniqLogger instance was already configured with a different number of logging threads: "
                    << ulptr->threadsUsedForLogging() << " ignoring new value";
     }
+
+    ULDBG << "NUmber of UNQL instances: " << gUniqLoggerInstanceMap.count();
 
     return ulptr;
 }

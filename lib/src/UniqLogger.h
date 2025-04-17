@@ -69,6 +69,7 @@ class ULOG_LIB_API UniqLogger : public QObject
 
     QMutex muxDeviceCounter, muxMonitorVarMap;
     QString m_defaultTimeStampFormat;
+    static constexpr QString DefaultLogTag = 1;
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
     UNQL::LogMessagePriorityType m_defaultLogLevel;
 
@@ -91,7 +92,7 @@ private:
         bool checkMatchingConfigForWriter(LogWriter &w, const WriterConfig & wc);
 
 public:
-        static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 1);
+        static UniqLogger* instance (const QString &ulname="UNQL", int nthreads = 1);
 
         Logger* createDummyLogger   ( const QString &logName,                                   const WriterConfig &wc=WriterConfig() );
         Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
