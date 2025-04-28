@@ -5,14 +5,14 @@
 #include <QDateTime>
 #include <QHash>
 
-#define TEST_FILE_ROTATION 1
-#define TEST_CONSOLE_COLOR 0
+#define TEST_FILE_ROTATION 0
+#define TEST_CONSOLE_COLOR 1
 #define TEST_FORMATTING 0
 #define TEST_NET 0
 #define TEST_NET_MULTISRC 0
 #define TEST_DB 0
 #define TEST_MONITOR 0
-#define TEST_THREADSAFETY 1
+#define TEST_THREADSAFETY 0
 #define TEST_BENCHMARK 0
 #define TEST_CRASH 0
 #define TEST_SIGSEGV 0

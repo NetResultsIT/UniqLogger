@@ -32,6 +32,7 @@
 QMutex UniqLogger::gmuxUniqLoggerInstance;
 QMap<QString,UniqLogger*> UniqLogger::gUniqLoggerInstanceMap;
 int UniqLogger::DEFAULT_OK = UNQL::UnqlErrorNoError;
+const QString UniqLogger::DefaultLogTag = "UNQL";
 
 extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
 /*!
@@ -225,6 +226,8 @@ UniqLogger::createLogger(const QString &logname)
     if (l) {
         l->muxMonitorVar = &muxMonitorVarMap;   //we need the friendship here
         l->m_varMonitorMap = &m_VarMonitorMap;  //we need the friendship here
+        l->m_printLogTag = &m_printLogTag; //friendship needed
+        l->m_logTag = m_logTag;
 
         if (m_defaultTimeStampFormat != DEF_UNQL_TSTAMP_FMT)
             l->setTimeStampFormat(m_defaultTimeStampFormat);

@@ -16,8 +16,8 @@ LogMessage::LogMessage(const QString &aLoggerName, UNQL::LogMessagePriorityType 
       m_loggerName(aLoggerName),
       m_level(level),
       m_initTstamp(aInitTstamp),
-      m_endTstamp(aEndTstamp)
-
+      m_endTstamp(aEndTstamp),
+    m_logTag("UNQL2")
 {
     (repetitions < 1) ? (m_repetitions = 1) : (m_repetitions = repetitions);
 }

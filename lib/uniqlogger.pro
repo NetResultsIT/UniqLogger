@@ -5,9 +5,6 @@
 VERSION = 1.3.0
 
 
-#Uncomment to enable library debugging statements
-#DEFINES += ENABLE_UNQL_DBG
-
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 #if we populate version it seems that QT does not populate VER_MAJ/MIN/PAT automatically

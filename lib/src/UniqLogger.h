@@ -63,15 +63,18 @@ class ULOG_LIB_API UniqLogger : public QObject
 {
     Q_OBJECT
 
+    //Initialization of these are in UniqLogger.cpp
     static QMutex gmuxUniqLoggerInstance;
     static QMap<QString,UniqLogger*> gUniqLoggerInstanceMap;
     static int DEFAULT_OK;
+    static const QString DefaultLogTag;
 
     QMutex muxDeviceCounter, muxMonitorVarMap;
     QString m_defaultTimeStampFormat;
-    static constexpr QString DefaultLogTag = 1;
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
     UNQL::LogMessagePriorityType m_defaultLogLevel;
+    bool m_printLogTag = true;
+    QString m_logTag = DefaultLogTag;
 
 protected:
     UniqLogger(int nthreads);

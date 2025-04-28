@@ -242,6 +242,17 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 }
 
 
+QString Logger::priv_addLogTag(const QString &i_msg)
+{
+    QString msg = i_msg;
+    if (Q_UNLIKELY(m_printLogTag)) {
+        msg = QString("%1 %2").arg(m_logTag).arg(i_msg);
+    };
+
+    return msg;
+}
+
+
 /*!
  * \brief Logger::priv_addThreadPointer adds the thread pointer to the message
  * \param i_msg the message that should be modified to include the thread pointer
@@ -270,6 +281,9 @@ Logger::priv_log(int i_priority, const QString &i_msg)
 
 
     QString msg = priv_addThreadPointer(i_msg);
+
+    //This should be the last addition since it is printed at beginning of string
+    msg = priv_addLogTag(msg);
 
     QPair<QChar,QChar> encasingPair(m_startEncasingChar, m_endEncasingChar);
     LogMessageFormatting lmf(m_spacingString, encasingPair);
@@ -349,6 +363,9 @@ void Logger::printThreadID(bool enable)
 void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 {
     QString m = priv_addThreadPointer(mess);
+
+    //This should be the last addition since it is printed at beginning of string
+    m = priv_addLogTag(m);
 
     if (m_printToQDebug)
         qDebug() << m;
