@@ -5,10 +5,10 @@
 #IDE = VS
 
 # If you want to enable network logging uncomment the following line
-DEFINES += ENABLE_UNQL_NETLOG
+#DEFINES += ENABLE_UNQL_NETLOG
 
 # If you want to enable db logging uncomment the following line
-DEFINES += ENABLE_UNQL_DBLOG
+#DEFINES += ENABLE_UNQL_DBLOG
 
 #If you want to enable native Android logging uncomment the following line (Android NDK required)
 #DEFINES += ENABLE_UNQL_ANDROIDLOG

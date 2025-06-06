@@ -34,7 +34,7 @@ public:
 class LogMessage
 {
     LogMessageFormatting m_formatting;
-    QString m_msg, m_loggerName, m_logTag;
+    QString m_msg, m_loggerName;
     UNQL::LogMessagePriorityType m_level;
     QString m_initTstamp, m_endTstamp;
     unsigned int m_repetitions;

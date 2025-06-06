@@ -43,13 +43,11 @@ class ULOG_LIB_API Logger: public QObject
     QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
     QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;
-    QString m_logTag;
 
     mutable QList<LogWriter*> m_logDeviceList;
     QMap<QString, bool>* m_varMonitorMap = nullptr; //this points to UNQL instance
     QMutex *muxMonitorVar = nullptr; //this points to UNQL instance
     QMutex muxMessages, muxDevices;
-    bool *m_printLogTag; //this points to UNQL instance
 
     void dispatchMessage(const LogMessage &);
     void dispatchBufferedMessages();
@@ -63,8 +61,6 @@ class ULOG_LIB_API Logger: public QObject
 
     void printAlsoToConsoleIfRequired(const QString &message);
     QString priv_addThreadPointer(const QString &i_msg);
-    QString priv_addLogTag(const QString &i_msg);
-
 
 signals:
     void writersToDelete(const QList<LogWriter*>);
