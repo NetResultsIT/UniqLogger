@@ -31,6 +31,9 @@ protected:
 
     void compressMessages();
 
+signals:
+    void started();
+
 protected slots:
     virtual void writeToDevice()=0;
     void priv_writeToDevice();
