@@ -311,6 +311,16 @@ macx {
         message("Compiling UniqLogger on macOS Qt6 x86_64 only")
         QMAKE_APPLE_DEVICE_ARCHS="x86_64"
     }
+    equals(QMAKE_HOST.arch, arm64) {
+            lessThan(QT_MAJOR_VERSION, 6) {
+                message("Running on Apple Silicon (arm64), but Qt version is below 6, building UNQL x86_64 binaries")
+            } else {
+                message("Running on Apple Silicon (arm64), building UNQL universal binaries")
+                QMAKE_APPLE_DEVICE_ARCHS = arm64 x86_64
+            }
+        } else {
+            message("Running on Intel (x86_64), building UNQL only x86_64 arch")
+        }
 }
 
 # Linux specific
