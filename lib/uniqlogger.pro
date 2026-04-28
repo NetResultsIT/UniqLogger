@@ -404,6 +404,50 @@ android {
         }
     }
 
+    is_qt6 {
+        message("Building for qt6 [$$QT_VERSION]")
+
+        if(equals(ANDROID_TARGET_ARCH, arm64-v8a) | equals(ANDROID_TARGET_ARCH, x86_64)){
+            QMAKE_LFLAGS += "-Wl,-z,max-page-size=16384"
+
+            message("Set memory page 16KB linker flag, for android $$ANDROID_TARGET_ARCH architecture")
+        }
+
+        LIBSUFFIX += "_$$ANDROID_TARGET_ARCH"
+    } else {
+        if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
+            message("Android Arch: armv7a or arm64")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_arm_debug
+            }
+            else {
+                LIBSUFFIX += _android_arm
+            }
+        }
+        equals(ANDROID_TARGET_ARCH, armeabi) {
+            message("Android Arch: armeabi")
+            error("Currently not supported")
+        }
+        equals(ANDROID_TARGET_ARCH, x86)  {
+            message("Android Arch: x86")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_x86_debug
+            }
+            else {
+                LIBSUFFIX += _android_x86
+            }
+        }
+        equals(ANDROID_TARGET_ARCH, x86_64)  {
+            message("Android Arch: x86_64")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_x86_64_debug
+            }
+            else {
+                LIBSUFFIX += _android_x86_64
+            }
+        }
+    }
+
     TARGET = $$join(TARGET,,,$$LIBSUFFIX)
     DLL = $$join(TARGET,,lib,.so)
     DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
