@@ -2,12 +2,16 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 1.2.1
+VERSION = 1.2.2
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
 #if we populate version it seems that QT does not populate VER_MAJ/MIN/PAT automatically
 VER_MAJ=$$section(VERSION, ., 0, 0)
+
+greaterThan(QT_MAJOR_VERSION, 5) {
+    CONFIG += is_qt6
+}
 
 !exists($$PWD/config.pri) {
     message("No config.pri found, building UniqLogger with default options: no NETWORK and no DB support")
@@ -335,44 +339,56 @@ unix:!macx:!ios:!android  {
 
 android {
     message("Building UniqLogger library for Android")
-    if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
-        message("Android Arch: armv7a or arm64")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_arm_debug
-        }
-        else {
-            LIBSUFFIX += _android_arm
-        }
-    }
-    equals(ANDROID_TARGET_ARCH, armeabi) {
-        message("Android Arch: armeabi")
-        error("Currently not supported")
-    }
-    equals(ANDROID_TARGET_ARCH, x86)  {
-        message("Android Arch: x86")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_debug
-        }
-        else {
-            LIBSUFFIX += _android_x86
-        }
-    }
-    equals(ANDROID_TARGET_ARCH, x86_64)  {
-        message("Android Arch: x86_64")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_64_debug
-        }
-        else {
-            LIBSUFFIX += _android_x86_64
-        }
-    }
-
 
     CONFIG(debug, debug|release) {
         BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
         BLDTYPE=release
+    }
+
+    is_qt6 {
+        message("Building for qt6 [$$QT_VERSION]")
+
+        if(equals(ANDROID_TARGET_ARCH, arm64-v8a) | equals(ANDROID_TARGET_ARCH, x86_64)){
+            QMAKE_LFLAGS += "-Wl,-z,max-page-size=16384"
+
+            message("Set memory page 16KB linker flag, for android $$ANDROID_TARGET_ARCH architecture")
+        }
+
+        LIBSUFFIX += "_$$ANDROID_TARGET_ARCH"
+    } else {
+        if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
+            message("Android Arch: armv7a or arm64")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_arm_debug
+            }
+            else {
+                LIBSUFFIX += _android_arm
+            }
+        }
+        equals(ANDROID_TARGET_ARCH, armeabi) {
+            message("Android Arch: armeabi")
+            error("Currently not supported")
+        }
+        equals(ANDROID_TARGET_ARCH, x86)  {
+            message("Android Arch: x86")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_x86_debug
+            }
+            else {
+                LIBSUFFIX += _android_x86
+            }
+        }
+        equals(ANDROID_TARGET_ARCH, x86_64)  {
+            message("Android Arch: x86_64")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_x86_64_debug
+            }
+            else {
+                LIBSUFFIX += _android_x86_64
+            }
+        }
     }
 
     TARGET = $$join(TARGET,,,$$LIBSUFFIX)
