@@ -13,6 +13,10 @@ VERSION = 1.3.0
 #if we populate version it seems that QT does not populate VER_MAJ/MIN/PAT automatically
 VER_MAJ=$$section(VERSION, ., 0, 0)
 
+greaterThan(QT_MAJOR_VERSION, 5) {
+    CONFIG += is_qt6
+}
+
 !exists($$PWD/config.pri) {
     message("No config.pri found, building UniqLogger with default options: no NETWORK and no DB support")
 } else: include ($$PWD/config.pri)
@@ -347,31 +351,6 @@ unix:!macx:!ios:!android  {
 android {
     message("Building UniqLogger library for Android")
 
-    if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
-        message("Android Arch: armv7a or arm64")
-        lessThan(QT_MAJOR_VERSION, 6) {
-            ANDSUFFIX = _android_arm
-        } else {
-            ANDSUFFIX =
-        }
-    }
-    equals(ANDROID_TARGET_ARCH, x86_64) {
-        message("Android Arch: x86_64")
-        lessThan(QT_MAJOR_VERSION, 6) {
-            ANDSUFFIX = _android
-        } else {
-            ANDSUFFIX =
-        }
-    }
-    equals(ANDROID_TARGET_ARCH, armeabi) {
-        message("Android Arch: armeabi")
-        error("Not supported anymore")
-    }
-    equals(ANDROID_TARGET_ARCH, x86)  {
-        message("Android Arch: x86")
-        error("Not supported anymore")
-    }
-
     CONFIG(debug, debug|release) {
         LIBSUFFIX=_debug
         BLDTYPE=debug
@@ -381,14 +360,52 @@ android {
     }
     #message("SUFF: $${LIBSUFFIX}")
 
-    TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
-    lessThan(QT_MAJOR_VERSION, 6) {
-        message("Building DLL with Qt5: $$TARGET $$ANDSUFFIX")
-        TARGET = $$join(TARGET,,"",$$ANDSUFFIX)
-        DLL = $$join(TARGET,,lib,.so)
+    is_qt6 {
+        message("Building for qt6 [$$QT_VERSION]")
+
+        if(equals(ANDROID_TARGET_ARCH, arm64-v8a) | equals(ANDROID_TARGET_ARCH, x86_64)){
+            QMAKE_LFLAGS += "-Wl,-z,max-page-size=16384"
+
+            message("Set memory page 16KB linker flag, for android $$ANDROID_TARGET_ARCH architecture")
+        }
+
+        LIBSUFFIX += "_$$ANDROID_TARGET_ARCH"
     } else {
-        DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
+        if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
+            message("Android Arch: armv7a or arm64")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_arm_debug
+            }
+            else {
+                LIBSUFFIX += _android_arm
+            }
+        }
+        equals(ANDROID_TARGET_ARCH, armeabi) {
+            message("Android Arch: armeabi")
+            error("Currently not supported")
+        }
+        equals(ANDROID_TARGET_ARCH, x86)  {
+            message("Android Arch: x86")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_x86_debug
+            }
+            else {
+                LIBSUFFIX += _android_x86
+            }
+        }
+        equals(ANDROID_TARGET_ARCH, x86_64)  {
+            message("Android Arch: x86_64")
+            CONFIG(debug, debug|release) {
+                LIBSUFFIX += _android_x86_64_debug
+            }
+            else {
+                LIBSUFFIX += _android_x86_64
+            }
+        }
     }
+
+    TARGET = $$join(TARGET,,,$$LIBSUFFIX)
+    DLL = $$join(TARGET,,lib,.so)
     DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
     TARGET = $$join(TARGET,,$$DLLPATH,)
     DLL=$$join(DLL,,$$DLLPATH,)
