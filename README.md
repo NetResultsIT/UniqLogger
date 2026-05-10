@@ -25,6 +25,10 @@ and off by the UniQLogger monitorVar() method.
 There is also a Dbviewer tool to search through db-logged messages and a python script to import file-based
 logs into a db.
 
+Each `UniqLogger` instance is identified by a name. The default instance name is `UNQL`.
+You can call `setDefaultPrintTag(true)` on a `UniqLogger` instance to enable tag printing for loggers
+created afterwards, or call `printTag(true)` directly on a `Logger` to control that logger only.
+
 Refer to lib/00-Compile file for compilation instructions
 
 In the example folder there is a sample app project that can be compiled to show the library features

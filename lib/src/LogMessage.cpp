@@ -55,7 +55,7 @@ QString LogMessage::getCurrentTstampString()
  */
 QString LogMessage::repeatedMessage() const
 {
-    QString msg,spc,n;
+    QString msg,spc,n, tagPrefix;
     QChar sc,ec;
 
     sc = m_formatting.startEncasingChar();
@@ -67,11 +67,14 @@ QString LogMessage::repeatedMessage() const
     if (UnqlPriorityLevelNamesMap.contains(m_level))
         priolev = UnqlPriorityLevelNamesMap[m_level];
 
+    if (!m_instanceTag.isEmpty())
+        tagPrefix = sc + m_instanceTag + ec + spc;
+
     //We have 4 start encasing char and 4 end encasing char (3*2) and 7 space (m_formatting.spacingSize() * 7)
     msg.reserve(4*2 + (m_formatting.spacingSize() * 7) + m_initTstamp.size() + m_endTstamp.size()
-                + m_loggerName.size() + m_msg.size() + priolev.size() + n.size());
+                + m_loggerName.size() + m_msg.size() + priolev.size() + n.size() + tagPrefix.size());
 
-    msg = sc + m_initTstamp + spc + "-" + spc + m_endTstamp + ec + spc
+    msg = tagPrefix + sc + m_initTstamp + spc + "-" + spc + m_endTstamp + ec + spc
           + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg + spc + sc + n + ec;
 
     return msg;
@@ -84,7 +87,7 @@ QString LogMessage::repeatedMessage() const
  */
 QString LogMessage::singleMessage() const
 {
-    QString msg,spc;
+    QString msg,spc, tagPrefix;
     QChar sc,ec;
 
     sc = m_formatting.startEncasingChar();
@@ -96,14 +99,16 @@ QString LogMessage::singleMessage() const
     if (UnqlPriorityLevelNamesMap.contains(m_level))
         priolev = UnqlPriorityLevelNamesMap[m_level];
 
-    //We have 3 start encasing char and 3 end encasing char (3*2) and 4 space (m_formatting.spacingSize() * 4)
-    msg.reserve(3*2 + (m_formatting.spacingSize() * 4) + m_initTstamp.size() + m_loggerName.size() + m_msg.size() + priolev.size());
+    if (!m_instanceTag.isEmpty())
+        tagPrefix = sc + m_instanceTag + ec + spc;
 
-    msg = sc + m_initTstamp + ec + spc + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg;
+    //We have 3 start encasing char and 3 end encasing char (3*2) and 4 space (m_formatting.spacingSize() * 4)
+    msg.reserve(3*2 + (m_formatting.spacingSize() * 4) + m_initTstamp.size() + m_loggerName.size() + m_msg.size() + priolev.size() + tagPrefix.size());
+
+    msg = tagPrefix + sc + m_initTstamp + ec + spc + sc + m_loggerName + ec + spc + sc + priolev + ec + spc + m_msg;
 
     return msg;
 }
-
 
 
 

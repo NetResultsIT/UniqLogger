@@ -38,6 +38,8 @@ extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
   \brief this is the class ctor, it is protected since we want just the singleton instance
   */
 UniqLogger::UniqLogger(int nthreads)
+    : m_instanceName(DEF_UNQL_INSTANCE_NAME)
+    , m_defaultPrintTag(false)
 {
     m_defaultTimeStampFormat = DEF_UNQL_TSTAMP_FMT;
     m_defaultSpaceChar = ' ';
@@ -106,6 +108,7 @@ UniqLogger::instance(const QString &ulname, int nthreads)
         else {
             ulptr = new UniqLogger(nthreads);
         }
+        ulptr->m_instanceName = ulname;
         gUniqLoggerInstanceMap.insert(ulname, ulptr);
     }
     UniqLogger::gmuxUniqLoggerInstance.unlock();
@@ -132,6 +135,21 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 void
 UniqLogger::setDefaultLogLevel(UNQL::LogMessagePriorityType loglevel)
 { m_defaultLogLevel = loglevel; }
+
+
+void
+UniqLogger::setDefaultPrintTag(bool enable)
+{ m_defaultPrintTag = enable; }
+
+
+bool
+UniqLogger::defaultTagPrintingEnabled() const
+{ return m_defaultPrintTag; }
+
+
+QString
+UniqLogger::instanceName() const
+{ return m_instanceName; }
 
 
 /*!
@@ -232,6 +250,8 @@ UniqLogger::createLogger(const QString &logname)
 
         //after having set the various strings we set the module name
         l->setModuleName(logname);
+        l->setInstanceTag(m_instanceName);
+        l->printTag(m_defaultPrintTag);
 
         l->setVerbosityDefaultLevel(m_defaultLogLevel);
 

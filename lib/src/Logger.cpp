@@ -25,6 +25,7 @@ Logger::Logger()
     m_spacingString = ' ';
     m_startEncasingChar = '[';
     m_endEncasingChar = ']';
+    m_printInstanceTag = false;
     m_printToQDebug = false;
     m_printToStdOut = false;
     m_printThreadID = false;
@@ -142,6 +143,13 @@ Logger::setModuleName(const QString &s)
 }
 
 
+void
+Logger::setInstanceTag(const QString &instanceTag)
+{
+    m_instanceTag = instanceTag;
+}
+
+
 
 /*!
   \brief adds a new logwriter to this logger
@@ -232,6 +240,8 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 
         QPair<QChar,QChar> encasingPair(m_startEncasingChar, m_endEncasingChar);
         LogMessageFormatting lmf(m_spacingString, encasingPair);
+        if (m_printInstanceTag)
+            lm.setInstanceTag(m_instanceTag);
         lm.setFormatting(lmf);
         dispatchMessage(lm);
     }
@@ -275,6 +285,8 @@ Logger::priv_log(int i_priority, const QString &i_msg)
     LogMessageFormatting lmf(m_spacingString, encasingPair);
     LogMessage lm(m_moduleName, lev, msg, QDateTime::currentDateTime().toString(m_timeStampFormat));
 
+    if (m_printInstanceTag)
+        lm.setInstanceTag(m_instanceTag);
     lm.setFormatting(lmf);
     dispatchMessage(lm);
 }
@@ -342,13 +354,27 @@ void Logger::printThreadID(bool enable)
 { m_printThreadID = enable; }
 
 
+void Logger::printTag(bool enable)
+{ m_printInstanceTag = enable; }
+
+
+QString
+Logger::prependInstanceTagIfRequired(const QString &message) const
+{
+    if (m_printInstanceTag && !m_instanceTag.isEmpty())
+        return "[" + m_instanceTag + "] " + message;
+
+    return message;
+}
+
+
 /*!
  * \brief Logger::printAlsoToConsoleIfRequired will print out to std::cout and/or with qDebug() (that is std::cerr but with different timing due to buffering)
  * \param mess the QString containing the message to print
  */
 void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 {
-    QString m = priv_addThreadPointer(mess);
+    QString m = prependInstanceTagIfRequired(priv_addThreadPointer(mess));
 
     if (m_printToQDebug)
         qDebug() << m;

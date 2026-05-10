@@ -59,7 +59,8 @@ enum ErrorType
 };
 
 #define DEF_UNQL_TSTAMP_FMT "yyyy-MM-dd HH:mm:ss"
-#define DEF_UNQL_LOG_STR "UniqLogger"
+#define DEF_UNQL_INSTANCE_NAME "UNQL"
+#define DEF_UNQL_LOG_STR DEF_UNQL_INSTANCE_NAME
 
 // Used for FileWriter when timerotation is enabled
 //NOTE: if you change these values, you must also change the regexp value in FileWriter::removeLeftoversFromPreviousRun

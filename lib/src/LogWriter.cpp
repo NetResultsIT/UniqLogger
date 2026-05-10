@@ -212,7 +212,9 @@ LogWriter::compressMessages()
         while (j < nummsg)
         {
             if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
-                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
+                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()) &&
+                (m_logMessageList.at(i).loggerName() == m_logMessageList.at(j).loggerName()) &&
+                (m_logMessageList.at(i).instanceTag() == m_logMessageList.at(j).instanceTag()))
             {
                 //subsequent messages, save end timestamp and look at next element
                 if (m_logMessageList.at(j).endTstamp().isEmpty())
@@ -229,11 +231,14 @@ LogWriter::compressMessages()
             else
             {
                 QString loggerName = m_logMessageList.at(i).loggerName();
+                QString instanceTag = m_logMessageList.at(i).instanceTag();
                 UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
                 QString rawMsg = m_logMessageList.at(i).rawMessage();
                 QString initTstamp = m_logMessageList.at(i).initTstamp();
 
                 LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                msg.setInstanceTag(instanceTag);
+                msg.setFormatting(m_logMessageList.at(i).formatting());
                 supportMsgList.append(msg);
                 i = j;
                 ++j;
@@ -245,11 +250,14 @@ LogWriter::compressMessages()
             {
                 //Don't want to skip last element
                 QString loggerName = m_logMessageList.at(i).loggerName();
+                QString instanceTag = m_logMessageList.at(i).instanceTag();
                 UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
                 QString rawMsg = m_logMessageList.at(i).rawMessage();
                 QString initTstamp = m_logMessageList.at(i).initTstamp();
 
                 LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                msg.setInstanceTag(instanceTag);
+                msg.setFormatting(m_logMessageList.at(i).formatting());
                 supportMsgList.append(msg);
             }
         }
@@ -258,4 +266,3 @@ LogWriter::compressMessages()
     }
     mutex.unlock();
 }
-

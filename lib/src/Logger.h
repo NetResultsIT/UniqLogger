@@ -39,8 +39,8 @@ class ULOG_LIB_API Logger: public QObject
     Q_OBJECT
 
     int m_logVerbosityAcceptedLevel, m_logVerbosityDefaultLevel;
-    bool m_printToStdOut, m_printToQDebug, m_printThreadID;
-    QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString;
+    bool m_printToStdOut, m_printToQDebug, m_printThreadID, m_printInstanceTag;
+    QString m_moduleName, m_errorPrefix, m_timeStampFormat, m_spacingString, m_instanceTag;
     QMap<QThread*, BufferOfStrings> m_bufferedStreamMessages;
     QChar m_startEncasingChar, m_endEncasingChar;
 
@@ -53,11 +53,14 @@ class ULOG_LIB_API Logger: public QObject
     void dispatchBufferedMessages();
     void priv_log(int loglevel, const QString& message);
     UNQL::LogMessagePriorityType selectCorrectLogLevel(int chosenPriority) const;
+    QString prependInstanceTagIfRequired(const QString &message) const;
 
     //we define UniqLogger to be friend so it can:
     //* set the map and its mutex
     //* access ctor and addLogDevice() and removeLogDevice()
     friend class UniqLogger;
+
+    void setInstanceTag(const QString &instanceTag);
 
     void printAlsoToConsoleIfRequired(const QString &message);
     
@@ -82,6 +85,7 @@ public:
     void printToStdOut(bool enable);
     void printToQDebug(bool enable);
     void printThreadID(bool enable);
+    void printTag(bool enable);
 
     //GETTERS
     int getVerbosityLevel() const;
@@ -93,6 +97,7 @@ public:
     bool printToStdOut() const          { return m_printToStdOut;   }
     bool printToQDebug() const          { return m_printToQDebug;   }
     bool printThreadID() const          { return m_printThreadID;   }
+    bool tagPrintingEnabled() const     { return m_printInstanceTag; }
 
     //LOGGING
     void log( int, const char*, ... );
@@ -175,4 +180,3 @@ private:
 };
 
 #endif
-

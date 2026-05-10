@@ -34,7 +34,7 @@ public:
 class LogMessage
 {
     LogMessageFormatting m_formatting;
-    QString m_msg, m_loggerName;
+    QString m_msg, m_loggerName, m_instanceTag;
     UNQL::LogMessagePriorityType m_level;
     QString m_initTstamp, m_endTstamp;
     unsigned int m_repetitions;
@@ -49,12 +49,15 @@ public:
 
     QString message() const;
     QString loggerName() const { return m_loggerName;  }
+    QString instanceTag() const { return m_instanceTag; }
     QString rawMessage() const { return m_msg;         }
     QString initTstamp() const { return m_initTstamp;  }
     QString endTstamp()  const { return m_endTstamp;   }
     unsigned int repetitions() const { return m_repetitions; }
     UNQL::LogMessagePriorityType level() const { return m_level; }
+    const LogMessageFormatting& formatting() const { return m_formatting; }
 
+    void setInstanceTag(const QString &instanceTag) { m_instanceTag = instanceTag; }
     void setFormatting(const LogMessageFormatting& aMessageFormat) { m_formatting = aMessageFormat; }
 };
 
