@@ -28,6 +28,7 @@ private slots:
     void test_defaultInstanceNameIsUnql();
     void test_instanceTagCanBeEnabledAndDisabled();
     void test_defaultTagOnlyAffectsNewLoggers();
+    void test_twoInstancesKeepDistinctTagsOnSameOutput();
     void test_writerConfigEqualityIncludesCompressionAlgo();
     void test_fileWriterWithoutExtensionDoesNotAppendDot();
 #ifdef ENABLE_UNQL_NETLOG
@@ -182,6 +183,70 @@ void TestRegressionCoverage::test_defaultTagOnlyAffectsNewLoggers()
     ul->setDefaultPrintTag(false);
     removeIfExists(fileName1);
     removeIfExists(fileName2);
+}
+
+void TestRegressionCoverage::test_twoInstancesKeepDistinctTagsOnSameOutput()
+{
+    const QString fileName = uniqueName("regression_two_instance_tags") + ".log";
+    removeIfExists(fileName);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 60;
+
+    const QString instanceName1 = uniqueName("UL_alpha");
+    const QString instanceName2 = uniqueName("UL_beta");
+
+    UniqLogger *ul1 = UniqLogger::instance(instanceName1, 1);
+    UniqLogger *ul2 = UniqLogger::instance(instanceName2, 1);
+    ul1->setDefaultPrintTag(true);
+    ul2->setDefaultPrintTag(true);
+
+    int ok1 = UNQL::UnqlErrorNoError;
+    int ok2 = UNQL::UnqlErrorNoError;
+    Logger *logger1 = ul1->createFileLogger("LoggerAlpha", fileName, wc, ok1);
+    Logger *logger2 = ul2->createFileLogger("LoggerBeta", fileName, wc, ok2);
+
+    QCOMPARE(ok1, UNQL::UnqlErrorNoError);
+    QCOMPARE(ok2, UNQL::UnqlErrorNoError);
+    QVERIFY(logger1->tagPrintingEnabled());
+    QVERIFY(logger2->tagPrintingEnabled());
+
+    logger1->log(UNQL::LOG_INFO, "message from alpha");
+    logger2->log(UNQL::LOG_INFO, "message from beta");
+    ul1->flushAllWriters();
+    ul2->flushAllWriters();
+
+    const QString contents = readFile(fileName);
+    const QString expectedAlpha = "[" + instanceName1 + "] [";
+    const QString expectedBeta = "[" + instanceName2 + "] [";
+
+    QVERIFY2(contents.contains(expectedAlpha), qPrintable(contents));
+    QVERIFY2(contents.contains(expectedBeta), qPrintable(contents));
+    QVERIFY2(contents.contains("message from alpha"), qPrintable(contents));
+    QVERIFY2(contents.contains("message from beta"), qPrintable(contents));
+
+    const QStringList lines = contents.split('\n', Qt::SkipEmptyParts);
+    bool foundAlpha = false;
+    bool foundBeta = false;
+    for (const QString &line : lines) {
+        if (line.contains("message from alpha")) {
+            QVERIFY2(line.startsWith("[" + instanceName1 + "] "), qPrintable(line));
+            foundAlpha = true;
+        }
+        if (line.contains("message from beta")) {
+            QVERIFY2(line.startsWith("[" + instanceName2 + "] "), qPrintable(line));
+            foundBeta = true;
+        }
+    }
+
+    QVERIFY2(foundAlpha, qPrintable(contents));
+    QVERIFY2(foundBeta, qPrintable(contents));
+
+    delete logger1;
+    delete logger2;
+    ul1->setDefaultPrintTag(false);
+    ul2->setDefaultPrintTag(false);
+    removeIfExists(fileName);
 }
 
 void TestRegressionCoverage::test_fileWriterWithoutExtensionDoesNotAppendDot()
