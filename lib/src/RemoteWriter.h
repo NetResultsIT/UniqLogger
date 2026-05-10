@@ -11,6 +11,7 @@
 
 #include <QTcpSocket>
 #include <QUdpSocket>
+#include <QSslSocket>
 #include <QHostAddress>
 #include <QTimer>
 
@@ -21,6 +22,7 @@ class RemoteWriter: public LogWriter
 protected:
     QTcpSocket *m_pTcpSocket;
     QUdpSocket *m_pUdpSocket;
+    QSslSocket *m_pSslSocket;
     QTimer *m_pReconnectionTimer;
     QString m_serverAddress;
     quint16 m_serverPort;
@@ -45,4 +47,3 @@ public:
     int getPort() const             { return m_serverPort;      }
 };
 #endif
-

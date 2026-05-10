@@ -263,7 +263,12 @@ FileWriter::calculateLogFileNameForIndex(int index)
 
     //bool separatorPresent = (m_LogfileInfo.path.endsWith(QDir::separator()) || m_LogfileInfo.basename.startsWith(QDir::separator()));
     bool separatorPresent = (m_LogfileInfo.path.endsWith("/") || m_LogfileInfo.basename.startsWith("/")); // win separators were replaced to unix ones
-    return QString(m_LogfileInfo.path + (separatorPresent ? QString("") : "/") + m_LogfileInfo.basename + patt + "." + m_LogfileInfo.extension);
+    QString extensionSuffix;
+    if (!m_LogfileInfo.extension.isEmpty()) {
+        extensionSuffix = "." + m_LogfileInfo.extension;
+    }
+
+    return QString(m_LogfileInfo.path + (separatorPresent ? QString("") : "/") + m_LogfileInfo.basename + patt + extensionSuffix);
 }
 
 

@@ -414,7 +414,17 @@ Logger::log(const char* mess, ...)
     va_end(args);
     buffer2[UNQL_ERRMSG_SIZE-1] = '\0';
 
-    this->log(m_logVerbosityDefaultLevel, buffer2);
+    QString msg = buffer2;
+    printAlsoToConsoleIfRequired(msg);
+
+    if (m_logVerbosityDefaultLevel <= m_logVerbosityAcceptedLevel || m_logVerbosityDefaultLevel == UNQL::LOG_FORCED)
+    {
+        priv_log(m_logVerbosityDefaultLevel, msg);
+    }
+    else {
+        ULDBG << "Won't log message " << msg << "because it's priority ("
+              << m_logVerbosityDefaultLevel << ") was not high enough for this logger (" << m_logVerbosityAcceptedLevel << ")";
+    }
 }
 
 
@@ -615,4 +625,3 @@ Logger::operator<< ( char c )
     muxMessages.unlock();
     return *this;
 }
-

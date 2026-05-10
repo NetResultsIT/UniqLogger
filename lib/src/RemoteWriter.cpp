@@ -32,6 +32,7 @@ RemoteWriter::RemoteWriter(const QString &aServerAddress, quint16 aServerPort, c
 
     m_pTcpSocket = new QTcpSocket(this);
     m_pUdpSocket = new QUdpSocket(this);
+    m_pSslSocket = new QSslSocket(this);
     m_pReconnectionTimer = new QTimer(this);
 }
 
@@ -72,6 +73,14 @@ RemoteWriter::writeToDevice()
             QString s = this->getMessage();
             int wb = m_pUdpSocket->writeDatagram(s.toLatin1()  +"\r\n", QHostAddress(m_serverAddress), m_serverPort);
         }
+    } else if (m_Config.netProtocol == UNQL::TLS &&
+               m_pSslSocket->state() == QAbstractSocket::ConnectedState &&
+               m_pSslSocket->isEncrypted()) {
+        int msgcount = m_logMessageList.count();
+        for (int i=0; i<msgcount; i++) {
+            QString s = this->getMessage();
+            m_pSslSocket->write(s.toLatin1() + "\r\n");
+        }
     } else if (m_pTcpSocket->state() == QAbstractSocket::ConnectedState) {
         int msgcount = m_logMessageList.count();
         for (int i=0; i<msgcount; i++) {
@@ -94,8 +103,17 @@ RemoteWriter::connectToServer()
 {
     ULDBG << Q_FUNC_INFO << QDateTime::currentDateTime().toString("hh.mm.ss.zzz")
           << "executed in thread" << QThread::currentThread();
-    m_pTcpSocket->connectToHost(m_serverAddress, m_serverPort);
-    bool b = m_pTcpSocket->waitForConnected(10000);
+
+    bool b = false;
+    if (m_Config.netProtocol == UNQL::TLS) {
+        m_pSslSocket->connectToHostEncrypted(m_serverAddress, m_serverPort);
+        b = m_pSslSocket->waitForEncrypted(10000);
+    }
+    else {
+        m_pTcpSocket->connectToHost(m_serverAddress, m_serverPort);
+        b = m_pTcpSocket->waitForConnected(10000);
+    }
+
     if (b)
         return 0;
 
@@ -157,6 +175,8 @@ RemoteWriter::run()
     connect (m_pReconnectionTimer, SIGNAL(timeout()), this, SLOT(connectToServer()));
     connect (m_pTcpSocket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
     connect (m_pTcpSocket, SIGNAL(connected()), this, SLOT(onConnectionToServer()));
+    connect (m_pSslSocket, SIGNAL(disconnected()), this, SLOT(onDisconnectionFromServer()));
+    connect (m_pSslSocket, SIGNAL(encrypted()), this, SLOT(onConnectionToServer()));
 
     if (m_Config.netProtocol != UNQL::UDP) {
         QMetaObject::invokeMethod(this, "connectToServer");
@@ -164,4 +184,3 @@ RemoteWriter::run()
         qDebug() << "NOT CONNECTING since we're using UDP";
     }
 }
-

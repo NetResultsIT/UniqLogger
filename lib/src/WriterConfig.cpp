@@ -55,12 +55,13 @@ WriterConfig::toString() const
     QString s;
     QStringList sl;
     sl << "COMMON PARAMS"
-       << "\nMax queued messages: " << ((maxMessageNum==0) ? "unlimited" : "0") << "\nFlushing seconds: " << QString::number(writerFlushSecs)
+       << "\nMax queued messages: " << ((maxMessageNum==0) ? "unlimited" : QString::number(maxMessageNum)) << "\nFlushing seconds: " << QString::number(writerFlushSecs)
        << "\nLog idle mark: " << (writeIdleMark ? "true" : "false")
        << "\nCompress messages: " << (compressMessages ? "true" : "false")
        << "\nFILE ONLY PARAMS"
        << "\nMax file size (MB): " << QString::number(maxFileSize) << "\nMax number of files: " << QString::number(maxFileNum)
        << "\nRotationNamingPolicy: " << QString::number(rotationPolicy) << "\nCompression level " << QString::number(compressionLevel)
+       << "\nCompression algorithm " << QString::number(compressionAlgo)
        << "\nTimeRotationPolicy: " << QString::number(timeRotationPolicy) << "\nMax minutes allowed " << QString::number(maxMinutes)
        << "\nNETWORK PARAMS"
        << "\nReconnection seconds: " << QString::number(reconnectionSecs)
@@ -83,6 +84,7 @@ WriterConfig::operator ==(const WriterConfig& rhs) const
         rotationPolicy     == rhs.rotationPolicy     &&
         timeRotationPolicy == rhs.timeRotationPolicy &&
         compressionLevel   == rhs.compressionLevel   &&
+        compressionAlgo    == rhs.compressionAlgo    &&
         reconnectionSecs   == rhs.reconnectionSecs   &&
         netProtocol        == rhs.netProtocol        &&
         compressMessages   == rhs.compressMessages
