@@ -166,8 +166,9 @@ else {
 }
 # --------
 
-#Set our default compiler (Linux & Mac)
-COMPILER = $$QMAKE_CC
+#Set our default compiler label (Linux & Mac)
+# QMAKE_CC may be an absolute path, which would break FINALDIR if used verbatim.
+COMPILER = $$basename(QMAKE_CC)
 
 #message($$QMAKE_CC $$QMAKE_MSC_VER)
 win32-msvc {
@@ -508,4 +509,3 @@ QMAKE_CLEAN += $$DLL $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR $$INCLUDE_DIR
 
 message(" ==== End of UniqLogger QMake build process ==== ")
-
