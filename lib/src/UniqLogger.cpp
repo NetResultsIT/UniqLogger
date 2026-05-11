@@ -46,7 +46,7 @@ UniqLogger::UniqLogger(int nthreads)
     m_defaultStartEncasingChar = '[';
     m_defaultEndEncasingChar = ']';
 
-    m_pTPool = new NRThreadPool(nthreads, "UNQL_WPool", this);
+    m_pTPool = new NRThreadPool(nthreads, writerThreadNamePrefix(), this);
 
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,    "FATAL");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_EMERGENCY,"EMERGENCY");
@@ -109,6 +109,7 @@ UniqLogger::instance(const QString &ulname, int nthreads)
             ulptr = new UniqLogger(nthreads);
         }
         ulptr->m_instanceName = ulname;
+        ulptr->m_pTPool->setPoolName(ulptr->writerThreadNamePrefix());
         gUniqLoggerInstanceMap.insert(ulname, ulptr);
     }
     UniqLogger::gmuxUniqLoggerInstance.unlock();
@@ -135,6 +136,11 @@ UniqLogger::instance(const QString &ulname, int nthreads)
 void
 UniqLogger::setDefaultLogLevel(UNQL::LogMessagePriorityType loglevel)
 { m_defaultLogLevel = loglevel; }
+
+
+QString
+UniqLogger::writerThreadNamePrefix() const
+{ return m_instanceName + "_LOGW"; }
 
 
 void

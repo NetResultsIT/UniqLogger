@@ -91,6 +91,7 @@ private:
 
         Logger* createLogger        (const QString &logName);
         bool checkMatchingConfigForWriter(LogWriter &w, const WriterConfig & wc);
+        QString writerThreadNamePrefix() const;
 
 public:
         static UniqLogger* instance (const QString &ulname=DEF_UNQL_INSTANCE_NAME, int nthreads = 1);

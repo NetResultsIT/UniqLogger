@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QString>
+#include <QThread>
 
 #include <Logger.h>
 #include <LogWriter.h>
@@ -29,6 +30,7 @@ private slots:
     void test_instanceTagCanBeEnabledAndDisabled();
     void test_defaultTagOnlyAffectsNewLoggers();
     void test_twoInstancesKeepDistinctTagsOnSameOutput();
+    void test_threadPoolThreadNamesUseInstanceTag();
     void test_writerConfigEqualityIncludesCompressionAlgo();
     void test_fileWriterWithoutExtensionDoesNotAppendDot();
 #ifdef ENABLE_UNQL_NETLOG
@@ -247,6 +249,27 @@ void TestRegressionCoverage::test_twoInstancesKeepDistinctTagsOnSameOutput()
     ul1->setDefaultPrintTag(false);
     ul2->setDefaultPrintTag(false);
     removeIfExists(fileName);
+}
+
+void TestRegressionCoverage::test_threadPoolThreadNamesUseInstanceTag()
+{
+    const QString instanceName = uniqueName("UL_threads");
+    UniqLogger *ul = UniqLogger::instance(instanceName, 2);
+
+    const auto threads = ul->findChildren<QThread*>();
+    QCOMPARE(threads.count(), 2);
+
+    QSet<QString> names;
+    for (QThread *thread : threads) {
+        names.insert(thread->objectName());
+    }
+
+    const QSet<QString> expectedNames = {
+        instanceName + "_LOGW T_0",
+        instanceName + "_LOGW T_1"
+    };
+
+    QCOMPARE(names, expectedNames);
 }
 
 void TestRegressionCoverage::test_fileWriterWithoutExtensionDoesNotAppendDot()
