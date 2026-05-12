@@ -472,9 +472,13 @@ ios {
             QMAKE_APPLE_DEVICE_ARCHS    =
             QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
         } else {
-            # Default unified build: device arm64 + simulator arm64 (M-series) + x86_64
+            # Default unified build: device arm64 + simulator x86_64.
+            # arm64 must NOT appear in both device and simulator archs: qmake maps
+            # both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so the simulator
+            # SDK flags would silently overwrite the device SDK flags for arm64.
+            # For an arm64-simulator slice (M-series hosts) use build_ios_xcframework.sh.
             QMAKE_APPLE_DEVICE_ARCHS    = arm64
-            QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
         }
     }
 
@@ -511,11 +515,13 @@ unix {
             message("You will find the built lib in the creation dir")
         } else {
             message("UNQL normal deploy behaviour enabled on iOS")
+            # ranlib must run before cp: Apple's ranlib -s restructures the library
+            # from a plain ar archive (with fat .o members) into a proper fat Mach-O
+            # (thin ar archives per arch inside a fat header). QMAKE_POST_LINK fires
+            # before the default ranlib step, so we run it explicitly here first.
+            QMAKE_POST_LINK += "$(RANLIB) $$DLL $$escape_expand(\\n\\t)"
             QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
             QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
-            lessThan(QT_VERSION, 6): {
-                #QMAKE_POST_LINK += $(RANLIB) $$DSTDIR/libUniqLogger_iOS.a $$escape_expand(\\n\\t)
-            }
         }
     } else {
         QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
