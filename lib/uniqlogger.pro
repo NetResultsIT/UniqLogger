@@ -462,8 +462,20 @@ ios {
             QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
         }
     } else {
-        QMAKE_APPLE_DEVICE_ARCHS = arm64
-        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
+        # platform so each resulting .a can be packaged into an XCFramework.
+        # Without it the default unified build includes all architectures.
+        equals(XCFRAMEWORK_SLICE, device) {
+            QMAKE_APPLE_DEVICE_ARCHS    = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS =
+        } else: equals(XCFRAMEWORK_SLICE, simulator) {
+            QMAKE_APPLE_DEVICE_ARCHS    =
+            QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
+        } else {
+            # Default unified build: device arm64 + simulator arm64 (M-series) + x86_64
+            QMAKE_APPLE_DEVICE_ARCHS    = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
+        }
     }
 
     #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
