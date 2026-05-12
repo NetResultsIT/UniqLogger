@@ -439,20 +439,29 @@ ios {
     message("Building UniqLogger library for iOS")
     IOSSUFFIX=_iOS
 
-    lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
-    lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
     CONFIG += staticlib
+
+    message("The Qt version selected for this Uniqlogger build is: $$QT_VERSION")
+
+
+    lessThan(QT_VERSION, 6): {
+        lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
+        lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
 
     # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
     # code optimization on those machines but limited and so was deprecated since Xcode 6.x
     # all newer iDevices (we do not plan to support anything lower than iOS 10 due to callkit) run arm64
     # so armv7s is not needed, armv7 is needed by app store, i386 is probably scrappable too if we run simulator on a new machine
-    QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
-    QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
+        QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
+        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
 
-    # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
-    greaterThan(QT_MINOR_VERSION, 11){
-        message("The Qt version selected ($$QT_VERSION) for this Uniqlogger build is too high for 32bit builds on iOS: building only 64bit")
+        # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
+        greaterThan(QT_MINOR_VERSION, 11){
+            message("The Qt version is too high for 32bit builds on iOS: building only 64bit")
+            QMAKE_APPLE_DEVICE_ARCHS = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        }
+    } else {
         QMAKE_APPLE_DEVICE_ARCHS = arm64
         QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
     }
@@ -492,7 +501,9 @@ unix {
             message("UNQL normal deploy behaviour enabled on iOS")
             QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
             QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
-            QMAKE_POST_LINK += $(RANLIB) $$DSTDIR/libUniqLogger_iOS.a $$escape_expand(\\n\\t)
+            lessThan(QT_VERSION, 6): {
+                #QMAKE_POST_LINK += $(RANLIB) $$DSTDIR/libUniqLogger_iOS.a $$escape_expand(\\n\\t)
+            }
         }
     } else {
         QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
