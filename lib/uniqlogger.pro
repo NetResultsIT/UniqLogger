@@ -351,48 +351,50 @@ unix:!macx:!ios:!android  {
 
 android {
     message("Building UniqLogger library for Android")
+
     if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
         message("Android Arch: armv7a or arm64")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_arm_debug
+        lessThan(QT_VERSION, 6) {
+            ANDSUFFIX = _android_arm
+        } else {
+            ANDSUFFIX =
         }
-        else {
-            LIBSUFFIX += _android_arm
+    }
+    equals(ANDROID_TARGET_ARCH, x86_64) {
+        message("Android Arch: x86_64")
+        lessThan(QT_VERSION, 6) {
+            ANDSUFFIX = _android
+        } else {
+            ANDSUFFIX =
         }
     }
     equals(ANDROID_TARGET_ARCH, armeabi) {
         message("Android Arch: armeabi")
-        error("Currently not supported")
+        error("Not supported anymore")
     }
     equals(ANDROID_TARGET_ARCH, x86)  {
         message("Android Arch: x86")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_debug
-        }
-        else {
-            LIBSUFFIX += _android_x86
-        }
-    }
-    equals(ANDROID_TARGET_ARCH, x86_64)  {
-        message("Android Arch: x86_64")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_64_debug
-        }
-        else {
-            LIBSUFFIX += _android_x86_64
-        }
+        error("Not supported anymore")
     }
 
+    #LIBSUFFIX=$$ANDSUFFIX
 
     CONFIG(debug, debug|release) {
+        LIBSUFFIX=_debug
+        LIBSUFFIX = $$join(LIBSUFFIX,,,$${ANDSUFFIX})
         BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
         BLDTYPE=release
     }
+    message("SUFF: $${LIBSUFFIX}")
 
-    TARGET = $$join(TARGET,,,$$LIBSUFFIX)
-    DLL = $$join(TARGET,,lib,.so)
+    TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
+    lessThan(QT_VERSION, 6) {
+        DLL = $$join(TARGET,,lib,.so)
+    } else {
+        DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
+    }
     DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
     TARGET = $$join(TARGET,,$$DLLPATH,)
     DLL=$$join(DLL,,$$DLLPATH,)
@@ -404,6 +406,8 @@ android {
 
     # Android doesn't support fopen64 & C.
     DEFINES += IOAPI_NO_64
+
+    message ("android DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$LIBSUFFIX")
 }
 
 
@@ -500,7 +504,7 @@ ios {
     TARGET = $$join(TARGET,,$$DLLPATH,)
     DLL=$$join(DLL,,$$DLLPATH,)
 
-    message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
+    #message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
 }
 
 
