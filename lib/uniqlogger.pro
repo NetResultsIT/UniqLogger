@@ -185,13 +185,8 @@ win32-msvc {
                 message("Using VC 2017")
                 COMPILER=VC2017
             } else {
-                greaterThan(QMAKE_MSC_VER, 1899) {
-                    message("Using VC 2015")
-                    COMPILER=VC2015
-                } else {
-                    message("WARNING: Using an old unsupported VC compiler")
-                    COMPILER=VC_OBSOLETE
-                }
+                message("WARNING: Using an old unsupported VC compiler")
+                COMPILER=VC_OBSOLETE
             }
         }
     }
@@ -389,7 +384,8 @@ android {
     TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
     lessThan(QT_MAJOR_VERSION, 6) {
         message("Building DLL with Qt5: $$TARGET $$ANDSUFFIX")
-        DLL = $$join(TARGET,,lib,$${ANDSUFFIX}.so)
+        TARGET = $$join(TARGET,,"",$$ANDSUFFIX)
+        DLL = $$join(TARGET,,lib,.so)
     } else {
         DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
     }
