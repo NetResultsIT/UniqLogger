@@ -377,21 +377,18 @@ android {
         error("Not supported anymore")
     }
 
-    #LIBSUFFIX=$$ANDSUFFIX
-
     CONFIG(debug, debug|release) {
         LIBSUFFIX=_debug
-        LIBSUFFIX = $$join(LIBSUFFIX,,,$${ANDSUFFIX})
         BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
         BLDTYPE=release
     }
-    message("SUFF: $${LIBSUFFIX}")
+    #message("SUFF: $${LIBSUFFIX}")
 
     TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
     lessThan(QT_VERSION, 6) {
-        DLL = $$join(TARGET,,lib,.so)
+        DLL = $$join(TARGET,,lib,$${ANDSUFFIX}.so)
     } else {
         DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
     }
