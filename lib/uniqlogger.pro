@@ -387,7 +387,8 @@ android {
     #message("SUFF: $${LIBSUFFIX}")
 
     TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
-    lessThan(QT_VERSION, 6) {
+    lessThan(QT_MAJOR_VERSION, 6) {
+        message("Building DLL with Qt5: $$TARGET $$ANDSUFFIX")
         DLL = $$join(TARGET,,lib,$${ANDSUFFIX}.so)
     } else {
         DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
