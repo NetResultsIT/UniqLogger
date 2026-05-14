@@ -349,7 +349,7 @@ android {
 
     if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
         message("Android Arch: armv7a or arm64")
-        lessThan(QT_VERSION, 6) {
+        lessThan(QT_MAJOR_VERSION, 6) {
             ANDSUFFIX = _android_arm
         } else {
             ANDSUFFIX =
@@ -357,7 +357,7 @@ android {
     }
     equals(ANDROID_TARGET_ARCH, x86_64) {
         message("Android Arch: x86_64")
-        lessThan(QT_VERSION, 6) {
+        lessThan(QT_MAJOR_VERSION, 6) {
             ANDSUFFIX = _android
         } else {
             ANDSUFFIX =
