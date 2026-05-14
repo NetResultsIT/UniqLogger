@@ -442,9 +442,9 @@ ios {
     message("The Qt version selected for this Uniqlogger build is: $$QT_VERSION")
 
 
-    lessThan(QT_VERSION, 6): {
-        lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
-        lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
+    lessThan(QT_MAJOR_VERSION, 6): {
+        lessThan(QT_MAJOR_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
+        equals(QT_MAJOR_VERSION, 5): lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
 
     # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
     # code optimization on those machines but limited and so was deprecated since Xcode 6.x
