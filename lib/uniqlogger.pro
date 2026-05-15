@@ -185,13 +185,8 @@ win32-msvc {
                 message("Using VC 2017")
                 COMPILER=VC2017
             } else {
-                greaterThan(QMAKE_MSC_VER, 1899) {
-                    message("Using VC 2015")
-                    COMPILER=VC2015
-                } else {
-                    message("WARNING: Using an old unsupported VC compiler")
-                    COMPILER=VC_OBSOLETE
-                }
+                message("WARNING: Using an old unsupported VC compiler")
+                COMPILER=VC_OBSOLETE
             }
         }
     }
@@ -351,48 +346,49 @@ unix:!macx:!ios:!android  {
 
 android {
     message("Building UniqLogger library for Android")
+
     if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
         message("Android Arch: armv7a or arm64")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_arm_debug
+        lessThan(QT_MAJOR_VERSION, 6) {
+            ANDSUFFIX = _android_arm
+        } else {
+            ANDSUFFIX =
         }
-        else {
-            LIBSUFFIX += _android_arm
+    }
+    equals(ANDROID_TARGET_ARCH, x86_64) {
+        message("Android Arch: x86_64")
+        lessThan(QT_MAJOR_VERSION, 6) {
+            ANDSUFFIX = _android
+        } else {
+            ANDSUFFIX =
         }
     }
     equals(ANDROID_TARGET_ARCH, armeabi) {
         message("Android Arch: armeabi")
-        error("Currently not supported")
+        error("Not supported anymore")
     }
     equals(ANDROID_TARGET_ARCH, x86)  {
         message("Android Arch: x86")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_debug
-        }
-        else {
-            LIBSUFFIX += _android_x86
-        }
+        error("Not supported anymore")
     }
-    equals(ANDROID_TARGET_ARCH, x86_64)  {
-        message("Android Arch: x86_64")
-        CONFIG(debug, debug|release) {
-            LIBSUFFIX += _android_x86_64_debug
-        }
-        else {
-            LIBSUFFIX += _android_x86_64
-        }
-    }
-
 
     CONFIG(debug, debug|release) {
+        LIBSUFFIX=_debug
         BLDTYPE=debug
     }
     CONFIG(release, debug|release) {
         BLDTYPE=release
     }
+    #message("SUFF: $${LIBSUFFIX}")
 
-    TARGET = $$join(TARGET,,,$$LIBSUFFIX)
-    DLL = $$join(TARGET,,lib,.so)
+    TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
+    lessThan(QT_MAJOR_VERSION, 6) {
+        message("Building DLL with Qt5: $$TARGET $$ANDSUFFIX")
+        TARGET = $$join(TARGET,,"",$$ANDSUFFIX)
+        DLL = $$join(TARGET,,lib,.so)
+    } else {
+        DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
+    }
     DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
     TARGET = $$join(TARGET,,$$DLLPATH,)
     DLL=$$join(DLL,,$$DLLPATH,)
@@ -404,6 +400,8 @@ android {
 
     # Android doesn't support fopen64 & C.
     DEFINES += IOAPI_NO_64
+
+    message ("android DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$LIBSUFFIX")
 }
 
 
@@ -439,22 +437,48 @@ ios {
     message("Building UniqLogger library for iOS")
     IOSSUFFIX=_iOS
 
-    lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
-    lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
     CONFIG += staticlib
+
+    message("The Qt version selected for this Uniqlogger build is: $$QT_VERSION")
+
+
+    !versionAtLeast(QT_VERSION, 6.0.0) {
+        !versionAtLeast(QT_VERSION, 5.9.0) {
+            error("You need at least Qt 5.9 to build vdk on iOS")
+        }
 
     # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
     # code optimization on those machines but limited and so was deprecated since Xcode 6.x
     # all newer iDevices (we do not plan to support anything lower than iOS 10 due to callkit) run arm64
     # so armv7s is not needed, armv7 is needed by app store, i386 is probably scrappable too if we run simulator on a new machine
-    QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
-    QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
+        QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
+        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
 
-    # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
-    greaterThan(QT_MINOR_VERSION, 11){
-        message("The Qt version selected ($$QT_VERSION) for this Uniqlogger build is too high for 32bit builds on iOS: building only 64bit")
-        QMAKE_APPLE_DEVICE_ARCHS = arm64
-        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
+        greaterThan(QT_MINOR_VERSION, 11){
+            message("The Qt version is too high for 32bit builds on iOS: building only 64bit")
+            QMAKE_APPLE_DEVICE_ARCHS = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        }
+    } else {
+        # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
+        # platform so each resulting .a can be packaged into an XCFramework.
+        # Without it the default unified build includes all architectures.
+        equals(XCFRAMEWORK_SLICE, device) {
+            QMAKE_APPLE_DEVICE_ARCHS    = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS =
+        } else: equals(XCFRAMEWORK_SLICE, simulator) {
+            QMAKE_APPLE_DEVICE_ARCHS    =
+            QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
+        } else {
+            # Default unified build: device arm64 + simulator x86_64.
+            # arm64 must NOT appear in both device and simulator archs: qmake maps
+            # both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so the simulator
+            # SDK flags would silently overwrite the device SDK flags for arm64.
+            # For an arm64-simulator slice (M-series hosts) use build_ios_xcframework.sh.
+            QMAKE_APPLE_DEVICE_ARCHS    = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        }
     }
 
     #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
@@ -475,7 +499,7 @@ ios {
     TARGET = $$join(TARGET,,$$DLLPATH,)
     DLL=$$join(DLL,,$$DLLPATH,)
 
-    message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
+    #message ("ios DLL $$DLL DLLPATH $$DLLPATH TARGET $$TARGET suffix $$IOSSUFFIX")
 }
 
 
@@ -490,9 +514,13 @@ unix {
             message("You will find the built lib in the creation dir")
         } else {
             message("UNQL normal deploy behaviour enabled on iOS")
+            # ranlib must run before cp: Apple's ranlib -s restructures the library
+            # from a plain ar archive (with fat .o members) into a proper fat Mach-O
+            # (thin ar archives per arch inside a fat header). QMAKE_POST_LINK fires
+            # before the default ranlib step, so we run it explicitly here first.
+            QMAKE_POST_LINK += "$(RANLIB) $$DLL $$escape_expand(\\n\\t)"
             QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
             QMAKE_POST_LINK += "cp -aP $$DLL $$DSTDIR $$escape_expand(\\n\\t)"
-            QMAKE_POST_LINK += $(RANLIB) $$DSTDIR/libUniqLogger_iOS.a $$escape_expand(\\n\\t)
         }
     } else {
         QMAKE_POST_LINK += "cp -aP $$DLL $$FINALDIR $$escape_expand(\\n\\t)"
