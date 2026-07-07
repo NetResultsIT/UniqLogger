@@ -78,6 +78,12 @@ TEMPLATE = lib
 message ("UniqLogger Version: $$VERSION")
 message ("QT_VERSION $$QT_VERSION")
 
+# build with debug symbols
+ios|android {
+    CONFIG += force_debug_info
+    message("Forcing debug symbols on iOS and Android")
+}
+
 # --- Printing messages on building options
 contains ( IDE, 'VS' ) {
     message("A Visual studio project file will be generated for UniqLogger")
@@ -522,6 +528,8 @@ ios {
             QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
         }
     } else {
+
+        QMAKE_CXXFLAGS += -include $$PWD/src/qt_arm_acle_workaround.h
         # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
         # platform so each resulting .a can be packaged into an XCFramework.
         # Without it the default unified build includes all architectures.
