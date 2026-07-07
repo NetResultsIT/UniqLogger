@@ -74,6 +74,12 @@ TEMPLATE = lib
 message ("UniqLogger Version: $$VERSION")
 message ("QT_VERSION $$QT_VERSION")
 
+# build with debug symbols
+ios|android {
+    CONFIG += force_debug_info
+    message("Forcing debug symbols on iOS and Android")
+}
+
 # --- Printing messages on building options
 contains ( IDE, 'VS' ) {
     message("A Visual studio project file will be generated for UniqLogger")
@@ -450,11 +456,33 @@ ios {
     QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
 
-    # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
-    greaterThan(QT_MINOR_VERSION, 11){
-        message("The Qt version selected ($$QT_VERSION) for this Uniqlogger build is too high for 32bit builds on iOS: building only 64bit")
-        QMAKE_APPLE_DEVICE_ARCHS = arm64
-        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
+        greaterThan(QT_MINOR_VERSION, 11){
+            message("The Qt version is too high for 32bit builds on iOS: building only 64bit")
+            QMAKE_APPLE_DEVICE_ARCHS = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        }
+    } else {
+
+        QMAKE_CXXFLAGS += -include $$PWD/src/qt_arm_acle_workaround.h
+        # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
+        # platform so each resulting .a can be packaged into an XCFramework.
+        # Without it the default unified build includes all architectures.
+        equals(XCFRAMEWORK_SLICE, device) {
+            QMAKE_APPLE_DEVICE_ARCHS    = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS =
+        } else: equals(XCFRAMEWORK_SLICE, simulator) {
+            QMAKE_APPLE_DEVICE_ARCHS    =
+            QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
+        } else {
+            # Default unified build: device arm64 + simulator x86_64.
+            # arm64 must NOT appear in both device and simulator archs: qmake maps
+            # both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so the simulator
+            # SDK flags would silently overwrite the device SDK flags for arm64.
+            # For an arm64-simulator slice (M-series hosts) use build_ios_xcframework.sh.
+            QMAKE_APPLE_DEVICE_ARCHS    = arm64
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+        }
     }
 
     #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
