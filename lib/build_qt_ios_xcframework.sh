@@ -4,8 +4,8 @@ set -euo pipefail
 # build_qt_ios_xcframework.sh
 #
 # Build Qt/qmake iOS library as XCFramework:
-#   - ios-arm64              -> device
-#   - ios-simulator-arm64    -> simulator
+#   - ios-arm64                  -> device            (arm64)
+#   - ios-arm64_x86_64-simulator -> simulator (fat)   (arm64 + x86_64)
 #
 # The .pro file must distinguish the two builds using:
 #
@@ -14,7 +14,7 @@ set -euo pipefail
 #     QMAKE_APPLE_SIMULATOR_ARCHS =
 # } else:equals(XCFRAMEWORK_SLICE, simulator) {
 #     QMAKE_APPLE_DEVICE_ARCHS    =
-#     QMAKE_APPLE_SIMULATOR_ARCHS = arm64
+#     QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
 # } else {
 #     QMAKE_APPLE_DEVICE_ARCHS    = arm64
 #     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
@@ -81,7 +81,7 @@ Static library output:
                               Device static library path relative to ios-arm64 build dir.
 
   --simulator-library-relative <path>
-                              Simulator static library path relative to ios-simulator-arm64 build dir.
+                              Simulator static library path relative to ios-simulator-arm64_x86_64 build dir.
 
   --library-name <name>       Static library product name to search.
                               Accepts:
@@ -99,7 +99,7 @@ Static library headers:
   --headers-relative-base <base>
                               Base used by --headers-relative:
                                 slice    -> <output>/ios-arm64/<path>
-                                            <output>/ios-simulator-arm64/<path>
+                                            <output>/ios-simulator-arm64_x86_64/<path>
 
                                 project  -> <directory-of-.pro>/<path>
                                             same headers for both slices
@@ -385,15 +385,23 @@ run_qmake_build() {
   fi
 
   # Force the architectures for this slice AFTER the .pro is processed.
-  # Qt 6 defaults to a FAT simulator build (QMAKE_APPLE_SIMULATOR_ARCHS =
-  # "arm64 x86_64"): if the .pro does not restrict it, the simulator .a comes
-  # out fat and xcodebuild names the xcframework slice directory
-  # "ios-arm64_x86_64-simulator" instead of "ios-arm64-simulator".
   # Using -after guarantees the restriction regardless of the .pro contents.
+  #
+  #   device    -> arm64                (physical devices)
+  #   simulator -> arm64 + x86_64 (fat) (Apple Silicon + Intel simulators)
+  #
+  # The fat simulator .a makes xcodebuild name the xcframework slice directory
+  # "ios-arm64_x86_64-simulator". Device and simulator arm64 live in separate
+  # qmake invocations, so the arm64 SDK-flags clash (both slices in one build)
+  # never happens here.
+  # NOTE: qmake's command-line parser splits an assignment value on whitespace,
+  # so "QMAKE_APPLE_SIMULATOR_ARCHS=arm64 x86_64" is misread as VAR=arm64 plus a
+  # stray project-file argument "x86_64" ("Cannot find file: x86_64."). Build the
+  # multi-arch list with a set (=) followed by an append (+=) instead.
   if [[ "$qmake_slice_value" == "device" ]]; then
     qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=arm64" "QMAKE_APPLE_SIMULATOR_ARCHS=")
   elif [[ "$qmake_slice_value" == "simulator" ]]; then
-    qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=" "QMAKE_APPLE_SIMULATOR_ARCHS=arm64")
+    qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=" "QMAKE_APPLE_SIMULATOR_ARCHS=arm64" "QMAKE_APPLE_SIMULATOR_ARCHS+=x86_64")
   fi
 
   "$QMAKE_PATH" "${qmake_args[@]}"
@@ -793,7 +801,7 @@ main() {
   fi
 
   local device_build_dir="${OUTPUT_ROOT}/ios-arm64"
-  local simulator_build_dir="${OUTPUT_ROOT}/ios-simulator-arm64"
+  local simulator_build_dir="${OUTPUT_ROOT}/ios-simulator-arm64_x86_64"
 
   local xcframework_dir="${PROJECT_DIR}/last_build"
   local xcframework_path="${xcframework_dir}/${TARGET_NAME}.xcframework"
@@ -844,7 +852,7 @@ main() {
   fi
 
   run_qmake_build "ios-arm64" "iphoneos" "device" "$device_build_dir"
-  run_qmake_build "ios-simulator-arm64" "iphonesimulator" "simulator" "$simulator_build_dir"
+  run_qmake_build "ios-simulator-arm64_x86_64" "iphonesimulator" "simulator" "$simulator_build_dir"
 
   if [[ "$LIB_TYPE" == "static" ]]; then
     local device_lib
@@ -862,10 +870,10 @@ main() {
     local simulator_headers
 
     device_headers_source="$(find_headers_dir_for_slice "$device_build_dir" "ios-arm64")"
-    simulator_headers_source="$(find_headers_dir_for_slice "$simulator_build_dir" "ios-simulator-arm64")"
+    simulator_headers_source="$(find_headers_dir_for_slice "$simulator_build_dir" "ios-simulator-arm64_x86_64")"
 
     device_headers="$(stage_headers_for_slice "$device_headers_source" "ios-arm64")"
-    simulator_headers="$(stage_headers_for_slice "$simulator_headers_source" "ios-simulator-arm64")"
+    simulator_headers="$(stage_headers_for_slice "$simulator_headers_source" "ios-simulator-arm64_x86_64")"
 
     log "Device library: ${device_lib}"
     log "Simulator library: ${simulator_lib}"

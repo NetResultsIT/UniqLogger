@@ -465,9 +465,15 @@ ios {
     } else {
 
         QMAKE_CXXFLAGS += -include $$PWD/src/qt_arm_acle_workaround.h
-        # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
-        # platform so each resulting .a can be packaged into an XCFramework.
-        # Without it the default unified build includes all architectures.
+        # When XCFRAMEWORK_SLICE is set by build_qt_ios_xcframework.sh, restrict to
+        # one platform per slice so each resulting .a can be packaged into an
+        # XCFramework. Without it the default unified build includes all archs.
+        #
+        #   device    -> arm64                (physical devices)
+        #   simulator -> arm64 + x86_64 (fat) (Apple Silicon + Intel simulators)
+        #
+        # Each slice is a separate qmake invocation, so device arm64 and simulator
+        # arm64 never coexist in one build and their SDK flags cannot clash.
         equals(XCFRAMEWORK_SLICE, device) {
             QMAKE_APPLE_DEVICE_ARCHS    = arm64
             QMAKE_APPLE_SIMULATOR_ARCHS =
@@ -475,11 +481,12 @@ ios {
             QMAKE_APPLE_DEVICE_ARCHS    =
             QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
         } else {
-            # Default unified build: device arm64 + simulator x86_64.
-            # arm64 must NOT appear in both device and simulator archs: qmake maps
-            # both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so the simulator
-            # SDK flags would silently overwrite the device SDK flags for arm64.
-            # For an arm64-simulator slice (M-series hosts) use build_ios_xcframework.sh.
+            # Default unified build (no slice variable): device arm64 + simulator
+            # x86_64. arm64 must NOT appear in both device and simulator archs:
+            # qmake maps both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so
+            # the simulator SDK flags would silently overwrite the device SDK flags
+            # for arm64. For a fat arm64+x86_64 simulator slice (M-series hosts)
+            # use build_qt_ios_xcframework.sh.
             QMAKE_APPLE_DEVICE_ARCHS    = arm64
             QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
         }
