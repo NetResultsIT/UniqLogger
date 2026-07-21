@@ -17,7 +17,7 @@ set -euo pipefail
 #     QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
 # } else {
 #     QMAKE_APPLE_DEVICE_ARCHS    = arm64
-#     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
+#     QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
 # }
 
 SCRIPT_NAME="$(basename "$0")"
@@ -384,26 +384,6 @@ run_qmake_build() {
     qmake_args+=("${EXTRA_QMAKE_ARGS[@]}")
   fi
 
-  # Force the architectures for this slice AFTER the .pro is processed.
-  # Using -after guarantees the restriction regardless of the .pro contents.
-  #
-  #   device    -> arm64                (physical devices)
-  #   simulator -> arm64 + x86_64 (fat) (Apple Silicon + Intel simulators)
-  #
-  # The fat simulator .a makes xcodebuild name the xcframework slice directory
-  # "ios-arm64_x86_64-simulator". Device and simulator arm64 live in separate
-  # qmake invocations, so the arm64 SDK-flags clash (both slices in one build)
-  # never happens here.
-  # NOTE: qmake's command-line parser splits an assignment value on whitespace,
-  # so "QMAKE_APPLE_SIMULATOR_ARCHS=arm64 x86_64" is misread as VAR=arm64 plus a
-  # stray project-file argument "x86_64" ("Cannot find file: x86_64."). Build the
-  # multi-arch list with a set (=) followed by an append (+=) instead.
-  if [[ "$qmake_slice_value" == "device" ]]; then
-    qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=arm64" "QMAKE_APPLE_SIMULATOR_ARCHS=")
-  elif [[ "$qmake_slice_value" == "simulator" ]]; then
-    qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=" "QMAKE_APPLE_SIMULATOR_ARCHS=arm64" "QMAKE_APPLE_SIMULATOR_ARCHS+=x86_64")
-  fi
-
   "$QMAKE_PATH" "${qmake_args[@]}"
 
   log "Building ${TARGET_NAME} [${slice}]"
@@ -714,6 +694,45 @@ verify_platform() {
   log "Platform check OK: ${expected_platform_name}"
 }
 
+verify_architectures() {
+  local binary_path="$1"
+  shift
+
+  local expected_archs=("$@")
+  local actual_output
+
+  actual_output="$(xcrun lipo -archs "$binary_path")"
+
+  local actual_archs=()
+  read -r -a actual_archs <<< "$actual_output"
+
+  log "Verifying architectures for ${binary_path}"
+  log "Expected architectures: ${expected_archs[*]}"
+  log "Found architectures: ${actual_archs[*]}"
+
+  if [[ "${#actual_archs[@]}" -ne "${#expected_archs[@]}" ]]; then
+    die "Unexpected architecture count in ${binary_path}"
+  fi
+
+  local expected_arch
+  local actual_arch
+  local found
+
+  for expected_arch in "${expected_archs[@]}"; do
+    found=0
+    for actual_arch in "${actual_archs[@]}"; do
+      if [[ "$actual_arch" == "$expected_arch" ]]; then
+        found=1
+        break
+      fi
+    done
+
+    [[ "$found" -eq 1 ]] || die "Missing architecture ${expected_arch} in ${binary_path}"
+  done
+
+  log "Architecture check OK"
+}
+
 create_xcframework_static() {
   local device_lib="$1"
   local simulator_lib="$2"
@@ -895,6 +914,8 @@ main() {
       echo "Keep debug info in the object files; the final app/framework dSYM will contain the linked symbols." >&2
     fi
 
+    verify_architectures "$device_lib" arm64
+    verify_architectures "$simulator_lib" arm64 x86_64
     verify_platform "$device_lib" "2" "IOS"
     verify_platform "$simulator_lib" "7" "IOSSIMULATOR"
 
@@ -929,6 +950,8 @@ main() {
     create_dsym_for_binary "$device_binary" "$device_dsym"
     create_dsym_for_binary "$simulator_binary" "$simulator_dsym"
 
+    verify_architectures "$device_binary" arm64
+    verify_architectures "$simulator_binary" arm64 x86_64
     verify_platform "$device_binary" "2" "IOS"
     verify_platform "$simulator_binary" "7" "IOSSIMULATOR"
 
