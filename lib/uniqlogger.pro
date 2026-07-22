@@ -529,23 +529,16 @@ ios {
         }
     } else {
 
-        # The build script passes this qmake variable from the
-        # IOS_SIMULATOR_ARCHS environment variable. Plain qmake/Qt Creator
-        # builds retain the current x86_64-only simulator default.
-        isEmpty(IOS_SIMULATOR_ARCHS) {
-            IOS_SIMULATOR_ARCHS = x86_64
-        }
-
         equals(XCFRAMEWORK_SLICE, device) {
             QMAKE_APPLE_DEVICE_ARCHS    = arm64
             QMAKE_APPLE_SIMULATOR_ARCHS =
         } else: equals(XCFRAMEWORK_SLICE, simulator) {
             QMAKE_APPLE_DEVICE_ARCHS    =
-            QMAKE_APPLE_SIMULATOR_ARCHS = $$IOS_SIMULATOR_ARCHS
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
         } else {
             # Qt Creator / plain qmake: expose the same architecture matrix.
             QMAKE_APPLE_DEVICE_ARCHS    = arm64
-            QMAKE_APPLE_SIMULATOR_ARCHS = $$IOS_SIMULATOR_ARCHS
+            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
         }
 
         # Qt 6.8 / iOS: make the ACLE workaround safe for both C and C++ units.

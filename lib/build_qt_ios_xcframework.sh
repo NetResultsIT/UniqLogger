@@ -4,8 +4,8 @@ set -euo pipefail
 # build_qt_ios_xcframework.sh
 #
 # Build Qt/qmake iOS library as XCFramework:
-#   - ios-arm64     -> device    (arm64)
-#   - ios-simulator -> simulator (configured by IOS_SIMULATOR_ARCHS)
+#   - ios-arm64             -> device    (arm64)
+#   - ios-simulator-x86_64  -> simulator (x86_64)
 #
 # The .pro file must distinguish the two builds using:
 #
@@ -14,20 +14,13 @@ set -euo pipefail
 #     QMAKE_APPLE_SIMULATOR_ARCHS =
 # } else:equals(XCFRAMEWORK_SLICE, simulator) {
 #     QMAKE_APPLE_DEVICE_ARCHS    =
-#     QMAKE_APPLE_SIMULATOR_ARCHS = $$IOS_SIMULATOR_ARCHS
+#     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
 # } else {
 #     QMAKE_APPLE_DEVICE_ARCHS    = arm64
-#     QMAKE_APPLE_SIMULATOR_ARCHS = $$IOS_SIMULATOR_ARCHS
+#     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
 # }
 
 SCRIPT_NAME="$(basename "$0")"
-
-# Pipeline-selectable simulator architecture matrix. Values containing '|'
-# must be quoted in the shell. The default matches the current Qt dependency
-# chain, which only provides x86_64 simulator slices.
-IOS_SIMULATOR_ARCHS="${IOS_SIMULATOR_ARCHS:-x86_64}"
-QMAKE_IOS_SIMULATOR_ARCHS=""
-SIMULATOR_ARCHS=()
 
 QMAKE_PATH="${QMAKE:-}"
 PROJECT_FILE=""
@@ -36,6 +29,10 @@ TARGET_NAME=""
 OUTPUT_ROOT=""
 
 LIB_TYPE="framework"
+
+SLICES="both"
+BUILD_DEVICE=1
+BUILD_SIMULATOR=1
 
 HEADERS_DIR=""
 HEADERS_RELATIVE=""
@@ -71,9 +68,9 @@ Required:
 
   -t, --target <name>         XCFramework output name.
                               Example:
-                                -t unqilogger
+                                -t mylib
                               produces:
-                                <project>/last_build/unqilogger.xcframework
+                                <project>/last_build/mylib.xcframework
 
   -o, --output <dir>          Temporary output root directory used for the two builds.
 
@@ -82,18 +79,18 @@ Required:
 Static library output:
   --library-relative <path>   Static library path relative to each slice build directory.
                               Example:
-                                --library-relative release/bin/libUniqLogger_iOS.a
+                                --library-relative release/bin/libmylib.a
 
   --device-library-relative <path>
                               Device static library path relative to ios-arm64 build dir.
 
   --simulator-library-relative <path>
-                              Simulator static library path relative to ios-simulator build dir.
+                              Simulator static library path relative to ios-simulator-x86_64 build dir.
 
   --library-name <name>       Static library product name to search.
                               Accepts:
-                                UniqLogger_iOS
-                                libUniqLogger_iOS.a
+                                mylib
+                                libmylib.a
 
 Static library headers:
   --headers <dir>             Public headers directory.
@@ -106,7 +103,7 @@ Static library headers:
   --headers-relative-base <base>
                               Base used by --headers-relative:
                                 slice    -> <output>/ios-arm64/<path>
-                                            <output>/ios-simulator/<path>
+                                            <output>/ios-simulator-x86_64/<path>
 
                                 project  -> <directory-of-.pro>/<path>
                                             same headers for both slices
@@ -121,11 +118,13 @@ Static library headers:
                                 <output>/xcframework_headers/<slice>
 
 Optional:
-  IOS_SIMULATOR_ARCHS          Simulator architectures selected through the
-                              environment. Supported values:
-                                x86_64        (default)
-                                arm64
-                                arm64|x86_64  (quote this value in the shell)
+  --slices <which>            Which slices to build and pack:
+                                both       -> device + simulator (default)
+                                device     -> ios-arm64 only
+                                simulator  -> ios-x86_64-simulator only
+
+                              Useful while a slice cannot be built: the resulting
+                              XCFramework contains only the built slice.
 
   -c, --configuration <name>  release or debug.
                               Default:
@@ -157,13 +156,13 @@ Example static library:
 
   ${SCRIPT_NAME} \\
     -q /Users/marzucca/Qt6/6.8.3/ios/bin/qmake \\
-    -p /Users/marzucca/projects/UniqLogger/lib/UniqLogger.pro \\
-    -t unqilogger \\
+    -p /path/to/project/mylib.pro \\
+    -t mylib \\
     --type static \\
-    --library-relative release/bin/libUniqLogger_iOS.a \\
+    --library-relative release/bin/libmylib.a \\
     --headers-relative last_build/include \\
     --headers-relative-base project \\
-    -o /Users/marzucca/projects/UniqLogger/lib/build_xcframework
+    -o /path/to/build/mylib
 
 Example framework:
 
@@ -185,26 +184,6 @@ die() {
 log() {
   echo >&2
   echo "==> $*" >&2
-}
-
-configure_simulator_architectures() {
-  case "$IOS_SIMULATOR_ARCHS" in
-    x86_64)
-      QMAKE_IOS_SIMULATOR_ARCHS="x86_64"
-      SIMULATOR_ARCHS=(x86_64)
-      ;;
-    arm64)
-      QMAKE_IOS_SIMULATOR_ARCHS="arm64"
-      SIMULATOR_ARCHS=(arm64)
-      ;;
-    "arm64|x86_64"|"x86_64|arm64")
-      QMAKE_IOS_SIMULATOR_ARCHS="arm64 x86_64"
-      SIMULATOR_ARCHS=(arm64 x86_64)
-      ;;
-    *)
-      die "Unsupported IOS_SIMULATOR_ARCHS value '${IOS_SIMULATOR_ARCHS}'. Expected x86_64, arm64, or arm64|x86_64."
-      ;;
-  esac
 }
 
 abs_path() {
@@ -252,6 +231,11 @@ parse_args() {
 
       --type)
         LIB_TYPE="${2:-}"
+        shift 2
+        ;;
+
+      --slices)
+        SLICES="${2:-}"
         shift 2
         ;;
 
@@ -375,6 +359,24 @@ validate_args() {
       ;;
   esac
 
+  case "$SLICES" in
+    both)
+      BUILD_DEVICE=1
+      BUILD_SIMULATOR=1
+      ;;
+    device)
+      BUILD_DEVICE=1
+      BUILD_SIMULATOR=0
+      ;;
+    simulator)
+      BUILD_DEVICE=0
+      BUILD_SIMULATOR=1
+      ;;
+    *)
+      die "--slices must be one of: both, device, simulator."
+      ;;
+  esac
+
   case "$HEADERS_RELATIVE_BASE" in
     slice|project|output)
       ;;
@@ -406,7 +408,6 @@ run_qmake_build() {
     "CONFIG+=force_debug_info"
     "QMAKE_MAC_SDK=${sdk}"
     "${SLICE_VARIABLE_NAME}=${qmake_slice_value}"
-    "IOS_SIMULATOR_ARCHS=${QMAKE_IOS_SIMULATOR_ARCHS}"
   )
 
   if [[ -n "$DEPLOYMENT_TARGET" ]]; then
@@ -416,6 +417,14 @@ run_qmake_build() {
 
   if [[ "$EXTRA_QMAKE_ARGS_COUNT" -gt 0 ]]; then
     qmake_args+=("${EXTRA_QMAKE_ARGS[@]}")
+  fi
+
+  # Force a single architecture after the .pro is processed. This prevents
+  # Qt defaults or stale project settings from creating a fat simulator binary.
+  if [[ "$qmake_slice_value" == "device" ]]; then
+    qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=arm64" "QMAKE_APPLE_SIMULATOR_ARCHS=")
+  elif [[ "$qmake_slice_value" == "simulator" ]]; then
+    qmake_args+=(-after "QMAKE_APPLE_DEVICE_ARCHS=" "QMAKE_APPLE_SIMULATOR_ARCHS=x86_64")
   fi
 
   "$QMAKE_PATH" "${qmake_args[@]}"
@@ -776,23 +785,28 @@ create_xcframework_static() {
   local simulator_dsym="$6"
   local xcframework_path="$7"
 
-  local args=(
-    -create-xcframework
-    -library "$device_lib"
-    -headers "$device_headers"
-  )
+  local args=(-create-xcframework)
 
-  if [[ "$CREATE_DSYM" -eq 1 && -n "$device_dsym" && -d "$device_dsym" ]]; then
-    args+=(-debug-symbols "$(abs_path "$device_dsym")")
+  if [[ -n "$device_lib" ]]; then
+    args+=(
+      -library "$device_lib"
+      -headers "$device_headers"
+    )
+
+    if [[ "$CREATE_DSYM" -eq 1 && -n "$device_dsym" && -d "$device_dsym" ]]; then
+      args+=(-debug-symbols "$(abs_path "$device_dsym")")
+    fi
   fi
 
-  args+=(
-    -library "$simulator_lib"
-    -headers "$simulator_headers"
-  )
+  if [[ -n "$simulator_lib" ]]; then
+    args+=(
+      -library "$simulator_lib"
+      -headers "$simulator_headers"
+    )
 
-  if [[ "$CREATE_DSYM" -eq 1 && -n "$simulator_dsym" && -d "$simulator_dsym" ]]; then
-    args+=(-debug-symbols "$(abs_path "$simulator_dsym")")
+    if [[ "$CREATE_DSYM" -eq 1 && -n "$simulator_dsym" && -d "$simulator_dsym" ]]; then
+      args+=(-debug-symbols "$(abs_path "$simulator_dsym")")
+    fi
   fi
 
   args+=(-output "$xcframework_path")
@@ -810,21 +824,22 @@ create_xcframework_framework() {
   local simulator_dsym="$4"
   local xcframework_path="$5"
 
-  local args=(
-    -create-xcframework
-    -framework "$device_fw"
-  )
+  local args=(-create-xcframework)
 
-  if [[ "$CREATE_DSYM" -eq 1 ]]; then
-    args+=(-debug-symbols "$(abs_path "$device_dsym")")
+  if [[ -n "$device_fw" ]]; then
+    args+=(-framework "$device_fw")
+
+    if [[ "$CREATE_DSYM" -eq 1 && -n "$device_dsym" && -d "$device_dsym" ]]; then
+      args+=(-debug-symbols "$(abs_path "$device_dsym")")
+    fi
   fi
 
-  args+=(
-    -framework "$simulator_fw"
-  )
+  if [[ -n "$simulator_fw" ]]; then
+    args+=(-framework "$simulator_fw")
 
-  if [[ "$CREATE_DSYM" -eq 1 ]]; then
-    args+=(-debug-symbols "$(abs_path "$simulator_dsym")")
+    if [[ "$CREATE_DSYM" -eq 1 && -n "$simulator_dsym" && -d "$simulator_dsym" ]]; then
+      args+=(-debug-symbols "$(abs_path "$simulator_dsym")")
+    fi
   fi
 
   args+=(-output "$xcframework_path")
@@ -838,7 +853,6 @@ create_xcframework_framework() {
 main() {
   parse_args "$@"
   validate_args
-  configure_simulator_architectures
 
   require_cmd xcrun
   require_cmd xcodebuild
@@ -855,7 +869,7 @@ main() {
   fi
 
   local device_build_dir="${OUTPUT_ROOT}/ios-arm64"
-  local simulator_build_dir="${OUTPUT_ROOT}/ios-simulator"
+  local simulator_build_dir="${OUTPUT_ROOT}/ios-simulator-x86_64"
 
   local xcframework_dir="${PROJECT_DIR}/last_build"
   local xcframework_path="${xcframework_dir}/${TARGET_NAME}.xcframework"
@@ -882,7 +896,7 @@ main() {
   log "temporary output: $OUTPUT_ROOT"
   log "final XCFramework dir: $xcframework_dir"
   log "slice variable: $SLICE_VARIABLE_NAME"
-  log "simulator architectures: ${SIMULATOR_ARCHS[*]}"
+  log "slices: $SLICES"
 
   if [[ "$LIB_TYPE" == "static" ]]; then
     if [[ -n "$LIBRARY_RELATIVE" ]]; then
@@ -906,54 +920,70 @@ main() {
     fi
   fi
 
-  run_qmake_build "ios-arm64" "iphoneos" "device" "$device_build_dir"
-  run_qmake_build "ios-simulator" "iphonesimulator" "simulator" "$simulator_build_dir"
+  if [[ "$BUILD_DEVICE" -eq 1 ]]; then
+    run_qmake_build "ios-arm64" "iphoneos" "device" "$device_build_dir"
+  fi
+
+  if [[ "$BUILD_SIMULATOR" -eq 1 ]]; then
+    run_qmake_build "ios-simulator-x86_64" "iphonesimulator" "simulator" "$simulator_build_dir"
+  fi
 
   if [[ "$LIB_TYPE" == "static" ]]; then
-    local device_lib
-    local simulator_lib
-
-    device_lib="$(find_static_library "$device_build_dir" "device")"
-    simulator_lib="$(find_static_library "$simulator_build_dir" "simulator")"
-
-    [[ -n "$device_lib" && -f "$device_lib" ]] || die "Device static library not found."
-    [[ -n "$simulator_lib" && -f "$simulator_lib" ]] || die "Simulator static library not found."
-
-    local device_headers_source
-    local simulator_headers_source
-    local device_headers
-    local simulator_headers
-
-    device_headers_source="$(find_headers_dir_for_slice "$device_build_dir" "ios-arm64")"
-    simulator_headers_source="$(find_headers_dir_for_slice "$simulator_build_dir" "ios-simulator")"
-
-    device_headers="$(stage_headers_for_slice "$device_headers_source" "ios-arm64")"
-    simulator_headers="$(stage_headers_for_slice "$simulator_headers_source" "ios-simulator")"
-
-    log "Device library: ${device_lib}"
-    log "Simulator library: ${simulator_lib}"
-    log "Device headers: ${device_headers}"
-    log "Simulator headers: ${simulator_headers}"
-
+    local device_lib=""
+    local simulator_lib=""
+    local device_headers=""
+    local simulator_headers=""
     local device_dsym=""
     local simulator_dsym=""
 
-    if [[ "$CREATE_DSYM" -eq 1 && "$STATIC_DSYM" -eq 1 ]]; then
-      device_dsym="${device_lib}.dSYM"
-      simulator_dsym="${simulator_lib}.dSYM"
+    if [[ "$BUILD_DEVICE" -eq 1 ]]; then
+      device_lib="$(find_static_library "$device_build_dir" "device")"
+      [[ -n "$device_lib" && -f "$device_lib" ]] || die "Device static library not found."
 
-      create_dsym_for_binary "$device_lib" "$device_dsym"
-      create_dsym_for_binary "$simulator_lib" "$simulator_dsym"
+      local device_headers_source
+      device_headers_source="$(find_headers_dir_for_slice "$device_build_dir" "ios-arm64")"
+      device_headers="$(stage_headers_for_slice "$device_headers_source" "ios-arm64")"
+
+      log "Device library: ${device_lib}"
+      log "Device headers: ${device_headers}"
+    fi
+
+    if [[ "$BUILD_SIMULATOR" -eq 1 ]]; then
+      simulator_lib="$(find_static_library "$simulator_build_dir" "simulator")"
+      [[ -n "$simulator_lib" && -f "$simulator_lib" ]] || die "Simulator static library not found."
+
+      local simulator_headers_source
+      simulator_headers_source="$(find_headers_dir_for_slice "$simulator_build_dir" "ios-simulator-x86_64")"
+      simulator_headers="$(stage_headers_for_slice "$simulator_headers_source" "ios-simulator-x86_64")"
+
+      log "Simulator library: ${simulator_lib}"
+      log "Simulator headers: ${simulator_headers}"
+    fi
+
+    if [[ "$CREATE_DSYM" -eq 1 && "$STATIC_DSYM" -eq 1 ]]; then
+      if [[ -n "$device_lib" ]]; then
+        device_dsym="${device_lib}.dSYM"
+        create_dsym_for_binary "$device_lib" "$device_dsym"
+      fi
+
+      if [[ -n "$simulator_lib" ]]; then
+        simulator_dsym="${simulator_lib}.dSYM"
+        create_dsym_for_binary "$simulator_lib" "$simulator_dsym"
+      fi
     else
       log "Skipping dSYM for static libraries"
       echo "Static libraries are archives of object files, not final linked Mach-O products." >&2
       echo "Keep debug info in the object files; the final app/framework dSYM will contain the linked symbols." >&2
     fi
 
-    verify_architectures "$device_lib" arm64
-    verify_architectures "$simulator_lib" "${SIMULATOR_ARCHS[@]}"
-    verify_platform "$device_lib" "2" "IOS"
-    verify_platform "$simulator_lib" "7" "IOSSIMULATOR"
+    if [[ -n "$device_lib" ]]; then
+      verify_architectures "$device_lib" arm64
+      verify_platform "$device_lib" "2" "IOS"
+    fi
+    if [[ -n "$simulator_lib" ]]; then
+      verify_architectures "$simulator_lib" x86_64
+      verify_platform "$simulator_lib" "7" "IOSSIMULATOR"
+    fi
 
     create_xcframework_static \
       "$device_lib" \
@@ -965,31 +995,36 @@ main() {
       "$xcframework_path"
 
   else
-    local device_fw
-    local simulator_fw
+    local device_fw=""
+    local simulator_fw=""
+    local device_dsym=""
+    local simulator_dsym=""
 
-    device_fw="$(find_framework "$device_build_dir")"
-    simulator_fw="$(find_framework "$simulator_build_dir")"
+    if [[ "$BUILD_DEVICE" -eq 1 ]]; then
+      device_fw="$(find_framework "$device_build_dir")"
+      [[ -n "$device_fw" && -d "$device_fw" ]] || die "Device framework not found for target ${TARGET_NAME}."
 
-    [[ -n "$device_fw" && -d "$device_fw" ]] || die "Device framework not found for target ${TARGET_NAME}."
-    [[ -n "$simulator_fw" && -d "$simulator_fw" ]] || die "Simulator framework not found for target ${TARGET_NAME}."
+      local device_binary="${device_fw}/${TARGET_NAME}"
+      [[ -f "$device_binary" ]] || die "Device framework binary not found: ${device_binary}"
 
-    local device_binary="${device_fw}/${TARGET_NAME}"
-    local simulator_binary="${simulator_fw}/${TARGET_NAME}"
+      device_dsym="${device_fw}.dSYM"
+      create_dsym_for_binary "$device_binary" "$device_dsym"
+      verify_architectures "$device_binary" arm64
+      verify_platform "$device_binary" "2" "IOS"
+    fi
 
-    [[ -f "$device_binary" ]] || die "Device framework binary not found: ${device_binary}"
-    [[ -f "$simulator_binary" ]] || die "Simulator framework binary not found: ${simulator_binary}"
+    if [[ "$BUILD_SIMULATOR" -eq 1 ]]; then
+      simulator_fw="$(find_framework "$simulator_build_dir")"
+      [[ -n "$simulator_fw" && -d "$simulator_fw" ]] || die "Simulator framework not found for target ${TARGET_NAME}."
 
-    local device_dsym="${device_fw}.dSYM"
-    local simulator_dsym="${simulator_fw}.dSYM"
+      local simulator_binary="${simulator_fw}/${TARGET_NAME}"
+      [[ -f "$simulator_binary" ]] || die "Simulator framework binary not found: ${simulator_binary}"
 
-    create_dsym_for_binary "$device_binary" "$device_dsym"
-    create_dsym_for_binary "$simulator_binary" "$simulator_dsym"
-
-    verify_architectures "$device_binary" arm64
-    verify_architectures "$simulator_binary" "${SIMULATOR_ARCHS[@]}"
-    verify_platform "$device_binary" "2" "IOS"
-    verify_platform "$simulator_binary" "7" "IOSSIMULATOR"
+      simulator_dsym="${simulator_fw}.dSYM"
+      create_dsym_for_binary "$simulator_binary" "$simulator_dsym"
+      verify_architectures "$simulator_binary" x86_64
+      verify_platform "$simulator_binary" "7" "IOSSIMULATOR"
+    fi
 
     create_xcframework_framework \
       "$device_fw" \
