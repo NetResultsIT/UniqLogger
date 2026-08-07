@@ -2,7 +2,7 @@
 #  UniqLogger Configuration  #
 ##############################
 
-VERSION = 1.2.2
+VERSION = 1.2.3
 
 # ---- DO NOT CHANGE *ANYTHING* BELOW THIS LINE ---- #
 
@@ -401,8 +401,7 @@ ios {
     message("Building UniqLogger library for iOS")
     IOSSUFFIX=_iOS
 
-    lessThan(QT_VERSION, 5): error("You need at least Qt 5.9 to build vdk on iOS")
-    lessThan(QT_MINOR_VERSION, 9): error("You need at least Qt 5.9 to build vdk on iOS")
+    !versionAtLeast(QT_VERSION, 5.9.0): error("You need at least Qt 5.9 to build UniqLogger on iOS")
     CONFIG += staticlib
 
     # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
@@ -413,11 +412,10 @@ ios {
     QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
 
         # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
-        greaterThan(QT_MINOR_VERSION, 11){
-            message("The Qt version is too high for 32bit builds on iOS: building only 64bit")
-            QMAKE_APPLE_DEVICE_ARCHS = arm64
-            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
-        }
+    greaterThan(QT_MINOR_VERSION, 11){
+        message("The Qt version is too high for 32bit builds on iOS: building only 64bit")
+        QMAKE_APPLE_DEVICE_ARCHS = arm64
+        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
     } else {
 
         equals(XCFRAMEWORK_SLICE, device) {
@@ -489,4 +487,3 @@ QMAKE_CLEAN += $$DLL $$DSTDIR/*
 QMAKE_DISTCLEAN += $$QMAKE_CLEAN $$FINALDIR $$INCLUDE_DIR
 
 message(" ==== End of UniqLogger QMake build process ==== ")
-
