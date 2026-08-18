@@ -329,25 +329,25 @@ void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 void
 Logger::log(int priority, const char* mess, ...)
 {
-    printAlsoToConsoleIfRequired(mess);
+    char buffer[UNQL_ERRMSG_SIZE];
+
+    va_list args;
+    va_start(args, mess);
+
+#if defined(_MSC_VER) && _MSC_VER < 1400
+    _vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
+#else
+    vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
+#endif
+    va_end(args);
+    buffer[UNQL_ERRMSG_SIZE-1] = '\0';
+    QString msg = buffer;
+
+    printAlsoToConsoleIfRequired(msg);
 
     if (priority <= m_logVerbosityAcceptedLevel || priority == UNQL::LOG_FORCED)
     {
-        char buffer[UNQL_ERRMSG_SIZE];
-
-        va_list args;
-        va_start(args, mess);
-
-#if defined(_MSC_VER) && _MSC_VER < 1400
-        _vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
-#else
-        vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
-#endif
-        buffer[UNQL_ERRMSG_SIZE-1] = '\0';
-        QString msg = buffer;
         priv_log(priority, msg);
-
-        va_end(args);
     }
     else {
         ULDBG << "Won't log message " << mess << "because it's priority ("
