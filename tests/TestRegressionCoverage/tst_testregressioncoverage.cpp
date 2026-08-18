@@ -6,6 +6,9 @@
 #include <QString>
 #include <QThread>
 
+#include <iostream>
+#include <sstream>
+
 #include <Logger.h>
 #include <LogWriter.h>
 #include <UniqLogger.h>
@@ -33,6 +36,7 @@ private slots:
     void test_threadPoolThreadNamesUseInstanceTag();
     void test_writerConfigEqualityIncludesCompressionAlgo();
     void test_fileWriterWithoutExtensionDoesNotAppendDot();
+    void test_priorityOverloadFormatsConsoleOutput();
 #ifdef ENABLE_UNQL_NETLOG
     void test_tlsWritersUseSslSockets();
 #endif
@@ -80,6 +84,46 @@ void TestRegressionCoverage::test_defaultOverloadPreservesPercentSigns()
     const QString contents = readFile(fileName);
     QVERIFY2(contents.contains("80%% complete"), qPrintable(contents));
     QVERIFY(!contents.contains("80% complete"));
+
+    delete logger;
+    removeIfExists(fileName);
+}
+
+void TestRegressionCoverage::test_priorityOverloadFormatsConsoleOutput()
+{
+    // Logger::log(int priority, const char*, ...) must apply printf-style
+    // formatting before echoing the message to stdout, exactly like the
+    // Logger::log(const char*, ...) overload already does. Regression test
+    // for a bug where the raw, unformatted format string (still containing
+    // e.g. "%d") was sent to the console while the file writer correctly
+    // received the formatted text.
+    const QString fileName = uniqueName("regression_console_format") + ".log";
+    removeIfExists(fileName);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 60;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_consolefmt"), 1);
+    Logger *logger = ul->createFileLogger("ConsoleFmtLogger", fileName, wc, ok);
+
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+
+    logger->setVerbosityAcceptedLevel(UNQL::LOG_DBG);
+    logger->printToStdOut(true);
+
+    std::ostringstream captured;
+    std::streambuf *oldBuf = std::cout.rdbuf(captured.rdbuf());
+    logger->log(UNQL::LOG_INFO, "SIP call on line %d is now in terminated state", 42);
+    std::cout.rdbuf(oldBuf);
+
+    const QString consoleOutput = QString::fromStdString(captured.str());
+    QVERIFY2(consoleOutput.contains("SIP call on line 42 is now in terminated state"), qPrintable(consoleOutput));
+    QVERIFY2(!consoleOutput.contains("%d"), qPrintable(consoleOutput));
+
+    ul->flushAllWriters();
+    const QString fileContents = readFile(fileName);
+    QVERIFY2(fileContents.contains("SIP call on line 42 is now in terminated state"), qPrintable(fileContents));
 
     delete logger;
     removeIfExists(fileName);
