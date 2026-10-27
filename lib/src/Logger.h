@@ -7,6 +7,8 @@
 #ifndef UNQL_LOGGER_INCS
 #define UNQL_LOGGER_INCS
 
+#include "unqlog_common.h"
+
 #include <QStringList>
 #include <QObject>
 #include <QMutex>

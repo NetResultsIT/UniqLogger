@@ -1,6 +1,10 @@
 #ifndef UNQL_GLOBAL_INCS
 #define UNQL_GLOBAL_INCS
 
+#if defined(__aarch64__) && __has_include(<arm_acle.h>)
+#include <arm_acle.h>
+#endif
+
 #ifdef ENABLE_UNQL_DBG
     #define ULDBG qDebug()
 #else

@@ -112,6 +112,37 @@ LogWriter::priv_startLogTimer()
 }
 
 
+void
+LogWriter::priv_stopLogTimer()
+{
+    ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
+    m_pLogTimer->stop();
+}
+
+
+/*!
+ * \brief LogWriter::activateWriter Starts (or restarts) the periodic flush timer on the
+ *        worker thread that owns this LogWriter when transitioning from dormant to active.
+ */
+void
+LogWriter::activateWriter()
+{
+    QMetaObject::invokeMethod(this, "priv_startLogTimer");
+}
+
+
+/*!
+ * \brief LogWriter::deactivateWriter Synchronously flushes any buffered messages and
+ *        stops the periodic flush timer on the worker thread when transitioning to dormant.
+ */
+void
+LogWriter::deactivateWriter()
+{
+    this->flush();
+    QMetaObject::invokeMethod(this, "priv_stopLogTimer");
+}
+
+
 /*!
  * \brief LogWriter::setWriterConfig will set a new set of configuration parameters on the specified LogWriter
  * \param wconf the configuration params we're going to set

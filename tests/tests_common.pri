@@ -26,6 +26,7 @@ unix:!macx {
 }
 
 macx {
+    QMAKE_CXXFLAGS += -include $$UNQLPATH/src/unqlog_common.h
     CONFIG(debug, debug|release) {
         LIBS += -lUniqLogger_debug
     }

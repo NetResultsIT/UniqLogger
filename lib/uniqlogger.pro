@@ -303,6 +303,7 @@ unix {
 
 # macOs specific
 macx {
+    QMAKE_CXXFLAGS += -include $$PWD/src/unqlog_common.h
     greaterThan(QT_MAJOR_VERSION, 5) {
         message("Compiling UniqLogger on macOS Qt6 x86_64 only")
         QMAKE_APPLE_DEVICE_ARCHS="x86_64"

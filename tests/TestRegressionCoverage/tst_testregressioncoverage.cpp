@@ -1,14 +1,20 @@
+#if defined(__aarch64__) && __has_include(<arm_acle.h>)
+#include <arm_acle.h>
+#endif
 #include <QtTest>
 
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
+#include <QPointer>
+#include <QSemaphore>
 #include <QString>
 #include <QThread>
 
 #include <iostream>
 #include <sstream>
 
+#include <FileWriter.h>
 #include <Logger.h>
 #include <LogWriter.h>
 #include <UniqLogger.h>
@@ -37,6 +43,10 @@ private slots:
     void test_writerConfigEqualityIncludesCompressionAlgo();
     void test_fileWriterWithoutExtensionDoesNotAppendDot();
     void test_priorityOverloadFormatsConsoleOutput();
+    void test_refCountUnderflowOnUnattachedWriter();
+    void test_removeUnattachedWriterDoesNotDestroyActiveWriter();
+    void test_recreateFileLoggerBeforeDeleteLaterCompletes();
+    void test_fileRotationStatePreservedAcrossTemporaryLoggers();
 #ifdef ENABLE_UNQL_NETLOG
     void test_tlsWritersUseSslSockets();
 #endif
@@ -342,6 +352,223 @@ void TestRegressionCoverage::test_fileWriterWithoutExtensionDoesNotAppendDot()
     delete logger;
     removeIfExists(fileName);
     removeIfExists(dottedFileName);
+}
+
+void TestRegressionCoverage::test_refCountUnderflowOnUnattachedWriter()
+{
+    const QString fileName = uniqueName("regression_refcount_underflow") + ".log";
+    removeIfExists(fileName);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 60;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_underflow"), 1);
+
+    // 1. getFileWriter registers fw in m_DevicesMap with refcount = 0
+    LogWriter &fw = ul->getFileWriter(fileName, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    QPointer<LogWriter> fwGuard(&fw);
+
+    Logger *unattached = ul->createDummyLogger("Unattached", wc);
+    Logger *logger1 = ul->createDummyLogger("Logger1", wc);
+    Logger *logger2 = ul->createDummyLogger("Logger2", wc);
+
+    // 2. Removing fw from a logger it was never attached to returns -1,
+    //    and must NOT decrement refcount from 0 to -1.
+    QCOMPARE(ul->removeWriterFromLogger(unattached, fw), -1);
+
+    // 3. Attach fw to two active loggers (logger1 and logger2).
+    //    True refcount must be 2 (not 1 due to earlier underflow to -1).
+    QCOMPARE(ul->addWriterToLogger(logger1, fw), 0);
+    QCOMPARE(ul->addWriterToLogger(logger2, fw), 0);
+
+    // 4. Delete only logger2; logger1 is STILL attached to fw (refcount == 2).
+    delete logger2;
+    ul->purgeUnusedWriters(); // Must NOT purge fw because logger1 is still attached (refcount == 2)
+    QTest::qWait(100);
+
+    const bool writerSurvivedWhileLogger1Active = !fwGuard.isNull();
+    bool logger1StillWritesToFile = false;
+    bool writerPurgedWhenDormant = false;
+    if (writerSurvivedWhileLogger1Active) {
+        logger1->log(UNQL::LOG_INFO, "logger1 still active after logger2 deleted");
+        logger1->flush();
+        logger1StillWritesToFile = readFile(fileName).contains("logger1 still active after logger2 deleted");
+        delete logger1; // fw transitions to dormant (refcount == 1)
+        ul->purgeUnusedWriters();
+        QTest::qWait(100);
+        writerPurgedWhenDormant = fwGuard.isNull();
+    }
+    delete unattached;
+    QTest::qWait(100);
+    removeIfExists(fileName);
+
+    QVERIFY2(writerSurvivedWhileLogger1Active,
+             "FileWriter was prematurely destroyed while logger1 was still attached because refcount underflowed");
+    QVERIFY2(logger1StillWritesToFile,
+             "FileWriter stopped logging for active logger1 after logger2 was deleted");
+    QVERIFY2(writerPurgedWhenDormant,
+             "Dormant FileWriter (refcount == 1) was not destroyed by purgeUnusedWriters()");
+}
+
+void TestRegressionCoverage::test_removeUnattachedWriterDoesNotDestroyActiveWriter()
+{
+    const QString fileName = uniqueName("regression_remove_unattached") + ".log";
+    removeIfExists(fileName);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 60;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_rem_unattached"), 1);
+
+    Logger *logger1 = ul->createFileLogger("ActiveOwner", fileName, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+
+    LogWriter &fw = ul->getFileWriter(fileName, wc, ok);
+    QPointer<LogWriter> fwGuard(&fw);
+
+    Logger *logger2 = ul->createDummyLogger("UnrelatedLogger", wc);
+
+    // fw is NOT attached to logger2: removeWriterFromLogger must fail with -1
+    // and must NOT unregister/deactivate fw (which is still owned by logger1 with refcount == 2).
+    const int res = ul->removeWriterFromLogger(logger2, fw);
+    QCOMPARE(res, -1);
+
+    ul->purgeUnusedWriters(); // If refcount had been decremented to 1, purgeUnusedWriters() would destroy fw!
+    QTest::qWait(100);
+
+    const bool writerStillAlive = !fwGuard.isNull();
+    bool logger1StillWritesToFile = false;
+    if (writerStillAlive) {
+        logger1->log(UNQL::LOG_INFO, "still logging safely on logger1");
+        logger1->flush();
+        logger1StillWritesToFile = readFile(fileName).contains("still logging safely on logger1");
+        delete logger1;
+    }
+    delete logger2;
+    QTest::qWait(100);
+    removeIfExists(fileName);
+
+    QVERIFY2(writerStillAlive,
+             "Failed removeWriterFromLogger(logger2, fw) destroyed FileWriter still in use by logger1");
+    QVERIFY2(logger1StillWritesToFile,
+             "Failed removeWriterFromLogger(logger2, fw) broke logging for active owner logger1");
+}
+
+void TestRegressionCoverage::test_recreateFileLoggerBeforeDeleteLaterCompletes()
+{
+    const QString fileName = uniqueName("regression_deletelater_race") + ".log";
+    removeIfExists(fileName);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 60;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_race"), 1);
+
+    Logger *logger1 = ul->createFileLogger("TempLogger1", fileName, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    logger1->log(UNQL::LOG_INFO, "message from TempLogger1");
+
+    LogWriter &fw1 = ul->getFileWriter(fileName, wc, ok);
+    QPointer<LogWriter> fw1Guard(&fw1);
+
+    // Deterministically hold the worker thread event loop so that DeferredDelete
+    // from deleteLater() is still pending when TempLogger2 opens the same file.
+    QSemaphore workerEntered;
+    QSemaphore allowWorkerToProceed;
+    QMetaObject::invokeMethod(&fw1, [&]() {
+        workerEntered.release();
+        allowWorkerToProceed.tryAcquire(1, 1000);
+    }, Qt::QueuedConnection);
+
+    QVERIFY(workerEntered.tryAcquire(1, 1000));
+
+    // Destroy the last logger on fileName and immediately create a new one on the same file
+    delete logger1;
+    Logger *logger2 = ul->createFileLogger("TempLogger2", fileName, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    logger2->log(UNQL::LOG_INFO, "message from TempLogger2");
+
+    LogWriter &fw2 = ul->getFileWriter(fileName, wc, ok);
+    const bool twoDistinctWritersAliveOnSameFile = (!fw1Guard.isNull() && (&fw1 != &fw2));
+
+    allowWorkerToProceed.release();
+    QTest::qWait(100);
+
+    logger2->flush();
+    delete logger2;
+    QTest::qWait(100);
+    removeIfExists(fileName);
+
+    QVERIFY2(!twoDistinctWritersAliveOnSameFile,
+             "Two distinct FileWriter instances were simultaneously alive on the same file due to deleteLater() race");
+}
+
+void TestRegressionCoverage::test_fileRotationStatePreservedAcrossTemporaryLoggers()
+{
+    const QString baseName = uniqueName("regression_rot_state");
+    const QString file0 = baseName + ".log";
+    const QString file1 = baseName + "-1.log";
+    const QString file2 = baseName + "-2.log";
+    removeIfExists(file0);
+    removeIfExists(file1);
+    removeIfExists(file2);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 60;
+    wc.maxFileSize = 1; // 1 MB
+    wc.maxFileNum = 2;  // Keep at most 2 files
+    wc.rotationPolicy = UNQL::HigherNumbersNewer;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_rot_state"), 1);
+
+    const QByteArray chunk(1000, 'A'); // 1 KB per log line
+
+    // 1. First temporary logger writes > 1 MB and rotates from file0 to file1
+    Logger *logger1 = ul->createFileLogger("RTP_Call1", file0, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    for (int i = 0; i < 1100; ++i) {
+        logger1->log(UNQL::LOG_INFO, "%s", chunk.constData());
+    }
+    logger1->flush();
+
+    QVERIFY2(QFileInfo::exists(file0), qPrintable(file0));
+    QVERIFY2(QFileInfo::exists(file1), qPrintable(file1));
+
+    // Destroy the temporary logger (e.g. end of Call 1)
+    delete logger1;
+    QTest::qWait(100);
+
+    // 2. Second temporary logger opens the same base file (e.g. Call 2)
+    Logger *logger2 = ul->createFileLogger("RTP_Call2", file0, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    logger2->log(UNQL::LOG_INFO, "CALL2_MARKER_LINE");
+    for (int i = 0; i < 1100; ++i) {
+        logger2->log(UNQL::LOG_INFO, "%s", chunk.constData());
+    }
+    logger2->flush();
+
+    const QString file1Contents = readFile(file1);
+    const bool call2WroteToFile1 = file1Contents.contains("CALL2_MARKER_LINE");
+    const bool file2Created = QFileInfo::exists(file2);
+    const bool oldestFile0Removed = !QFileInfo::exists(file0);
+
+    delete logger2;
+    QTest::qWait(100);
+    removeIfExists(file0);
+    removeIfExists(file1);
+    removeIfExists(file2);
+
+    QVERIFY2(call2WroteToFile1,
+             "Temporary logger recreation lost m_rotationCurFileNumber and reset output back to file 0 instead of file -1");
+    QVERIFY2(file2Created,
+             "Second rotation did not advance to file -2");
+    QVERIFY2(oldestFile0Removed,
+             "Temporary logger recreation lost m_lastUsedFilenames and failed to remove oldest rotated file0");
 }
 
 #ifdef ENABLE_UNQL_NETLOG

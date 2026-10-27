@@ -77,7 +77,12 @@ public:
     void setOutputFile(const QString& filename);
     void setLogfileMaxSize(int filesize);
     void setLogfileRotationRange(int maxfilenum);
+    /*! \brief Flushes and closes the active log file and marks the stream as closed. */
     void stopLogging();
+    /*! \brief Reopens the log file in append mode and restarts the periodic flush timer. */
+    virtual void activateWriter() override;
+    /*! \brief Flushes buffered messages, stops the periodic flush timer, and closes the log file. */
+    virtual void deactivateWriter() override;
     QString getBaseName() const { return m_logfileBaseName; }
     UNQL::FileRotationNamingPolicyType getRotationPolicy() const { return m_Config.rotationPolicy; }
 };

@@ -35,10 +35,17 @@ protected slots:
     virtual void writeToDevice()=0;
     void priv_writeToDevice();
     void priv_startLogTimer(); // <-- BEWARE this method is called with invokeMethod do NOT change its name
+    /*! \brief Stops the periodic log timer on the worker thread. */
+    void priv_stopLogTimer();
 
 public:
     LogWriter(const WriterConfig &);
     virtual ~LogWriter();
+
+    /*! \brief Starts (or restarts) the periodic flush timer on the worker thread when transitioning from dormant to active. */
+    virtual void activateWriter();
+    /*! \brief Synchronously flushes buffered messages and stops the periodic flush timer when transitioning to dormant state. */
+    virtual void deactivateWriter();
 
     const WriterConfig& getWriterConfig() const;
     bool isAlreadyConfigured() const;

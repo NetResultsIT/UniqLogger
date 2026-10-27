@@ -275,10 +275,16 @@ FileWriter::calculateLogFileNameForIndex(int index)
 /*!
   \brief calculates the log file that is going to be used for the logging the next messages
   This will return the log file name with all its full path to be used for logging
+  \note In StrictRotation mode, m_rotationCurFileNumber tracks the highest rotated archive
+        index (1..maxFileNum-1), whereas the active log file is always index 0.
+        In HigherNumbersNewer mode, m_rotationCurFileNumber is the active file index.
   */
 QString
 FileWriter::calculateNextLogFileName()
 {
+    if (m_Config.rotationPolicy == UNQL::StrictRotation) {
+        return calculateLogFileNameForIndex(0);
+    }
     return calculateLogFileNameForIndex(m_rotationCurFileNumber);
 }
 
@@ -371,9 +377,20 @@ FileWriter::writeToDevice()
 {
     ULDBG << "Writing to file " << m_LogFile.fileName();
 
+    mutex.lock();
+    if (m_logMessageList.isEmpty()) {
+        mutex.unlock();
+        return;
+    }
+    mutex.unlock();
+
     if (!m_streamIsOpen) {
         ULDBG << "Stream to file is not open";
-        setOutputFile(m_LogFile.fileName());
+        // Reopen the active log file via changeOutputFile(calculateNextLogFileName())
+        // instead of setOutputFile(m_LogFile.fileName()), because setOutputFile() would
+        // overwrite m_logfileBaseName with an already-rotated filename, reset
+        // m_rotationCurFileNumber to 0, and re-run removeLeftoversFromPreviousRun().
+        changeOutputFile(calculateNextLogFileName());
     }
 
 
@@ -538,11 +555,43 @@ void FileWriter::removeOldestFiles()
 }
 
 
+/*!
+ * \brief FileWriter::stopLogging Flushes and closes the active log file and marks the stream as closed.
+ */
 void FileWriter::stopLogging()
 {
+    QMutexLocker ml(&mutex);
     //Close current logfile
     m_LogFile.flush();
     m_LogFile.close();
+    m_streamIsOpen = false;
+}
+
+/*!
+ * \brief FileWriter::activateWriter Re-activates a dormant FileWriter when a Logger is
+ *        attached to it (refcount transitions from 1 to 2).
+ *        Reopens the current active log file in append mode while preserving all rotation
+ *        state (m_rotationCurFileNumber, m_lastUsedFilenames, m_lastWrittenDateTime) and
+ *        restarts the periodic flush timer on the worker thread.
+ */
+void FileWriter::activateWriter()
+{
+    if (!m_streamIsOpen) {
+        changeOutputFile(calculateNextLogFileName());
+    }
+    LogWriter::activateWriter();
+}
+
+/*!
+ * \brief FileWriter::deactivateWriter Puts the FileWriter into dormant state when its last
+ *        attached Logger is removed/destroyed (refcount transitions from 2 to 1).
+ *        Synchronously flushes any pending messages, stops the periodic flush timer, and
+ *        closes the underlying QFile handle so no file descriptor stays open while idle.
+ */
+void FileWriter::deactivateWriter()
+{
+    LogWriter::deactivateWriter();
+    this->stopLogging();
 }
 
 /*!
