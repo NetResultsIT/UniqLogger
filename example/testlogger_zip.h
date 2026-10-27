@@ -1,6 +1,6 @@
 /*
  *   testlogger_zip.h
- *   (c) 2016 NetResults Srl
+ *   (c) 2016-2026 Kalliope S.r.l.
  */
 
 #ifndef _TESTLOGGER_ZIP_H_

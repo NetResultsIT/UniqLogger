@@ -1,6 +1,6 @@
 /*
  *   testlogger_zip.cpp
- *   (c) 2016 NetResults Srl
+ *   (c) 2016-2026 Kalliope S.r.l.
  */
 
 #include "testlogger_zip.h"
