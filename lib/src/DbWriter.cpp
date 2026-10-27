@@ -61,8 +61,14 @@ DbWriter::setOutputFile(QString i_filename)
         UnqlDbHandler::createLoggerDb(i_filename);
     }
 
-    DbhConfig conf("", "", "127.0.0.1", i_filename);
+    if (m_pDbHandler) {
+        delete m_pDbHandler;
+        m_pDbHandler = nullptr;
+    }
+
+    DbhConfig conf("", i_filename, "", "", "QSQLITE");
     conf.dbType = "QSQLITE";
+    conf.dbName = i_filename;
 
     m_pDbHandler = new UnqlDbHandler(conf);
 }

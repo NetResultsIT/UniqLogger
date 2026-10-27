@@ -57,7 +57,7 @@ public:
     void appendMessage(const LogMessage&);
     virtual void run();
     void pauseLogging(bool);
-    void flush();
+    virtual void flush();
     virtual void setWriterConfig( const WriterConfig &wconf);
 };
 

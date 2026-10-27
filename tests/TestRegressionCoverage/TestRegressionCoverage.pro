@@ -15,3 +15,7 @@ exists(../../lib/config.pri) {
 contains(DEFINES, ENABLE_UNQL_NETLOG) {
     QT += network
 }
+
+contains(DEFINES, ENABLE_UNQL_DBLOG) {
+    QT += sql
+}

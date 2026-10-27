@@ -22,6 +22,15 @@
 
 #ifdef ENABLE_UNQL_NETLOG
 #include <QSslSocket>
+#include <QUdpSocket>
+#include <RSyslogWriter.h>
+#include <SysLogMessageFactory.h>
+#endif
+
+#ifdef ENABLE_UNQL_DBLOG
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <DbWriter.h>
 #endif
 
 class TestRegressionCoverage : public QObject
@@ -49,6 +58,14 @@ private slots:
     void test_fileRotationStatePreservedAcrossTemporaryLoggers();
 #ifdef ENABLE_UNQL_NETLOG
     void test_tlsWritersUseSslSockets();
+    void test_syslogMessageFactoryFormatting();
+    void test_rsyslogSeverityMapping();
+    void test_rsyslogWriterTransmitsOverUdp();
+    void test_rsyslogWriterDormantLifecycleAndPurge();
+#endif
+#ifdef ENABLE_UNQL_DBLOG
+    void test_dbWriterCreatesTableAndLogsEvents();
+    void test_dbWriterDormantLifecycleAndPurge();
 #endif
 };
 
@@ -586,6 +603,209 @@ void TestRegressionCoverage::test_tlsWritersUseSslSockets()
 
     const auto sslSockets = writer.findChildren<QSslSocket*>();
     QVERIFY2(!sslSockets.isEmpty(), "TLS network writer should own at least one QSslSocket");
+}
+
+void TestRegressionCoverage::test_syslogMessageFactoryFormatting()
+{
+    SysLogMessageFactory slmf;
+    slmf.m_hostname = "testhost.example.com";
+    slmf.m_appname = "testapp";
+    slmf.m_pid = "4321";
+    slmf.m_mid = "MSG_ID_42";
+    slmf.m_facility = 16; // local0
+    slmf.m_severity = 6;  // informational
+    slmf.m_timestamp = QDateTime::fromString("2026-10-27T12:00:00.000Z", Qt::ISODateWithMs);
+    slmf.m_msgBody = "Syslog message test body";
+
+    const QString msg = slmf.generateMessage();
+
+    // Priority = facility * 8 + severity = 16 * 8 + 6 = 134 -> starts with "<134>1 "
+    QVERIFY2(msg.startsWith("<134>1 "), qPrintable(msg));
+    QVERIFY2(msg.contains("testhost.example.com testapp 4321 MSG_ID_42 -"), qPrintable(msg));
+    QVERIFY2(msg.endsWith("Syslog message test body"), qPrintable(msg));
+}
+
+void TestRegressionCoverage::test_rsyslogSeverityMapping()
+{
+    // RFC 5424 Table 2 mapping
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_FATAL), static_cast<quint8>(0));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_ALARM), static_cast<quint8>(1));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_CRITICAL), static_cast<quint8>(2));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_ERROR), static_cast<quint8>(3));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_WARNING), static_cast<quint8>(4));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_NOTICE), static_cast<quint8>(5));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_INFO), static_cast<quint8>(6));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_DBG), static_cast<quint8>(7));
+    QCOMPARE(RSyslogWriter::convertUnqlLogLevelToSyslog(UNQL::LOG_DBG_ALL), static_cast<quint8>(7));
+}
+
+void TestRegressionCoverage::test_rsyslogWriterTransmitsOverUdp()
+{
+    QUdpSocket receiver;
+    QVERIFY(receiver.bind(QHostAddress::LocalHost, 0));
+    const quint16 port = receiver.localPort();
+
+    WriterConfig wc;
+    wc.netProtocol = UNQL::UDP;
+    wc.writerFlushSecs = 1;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_rsyslog_udp"), 1);
+
+    const QString msgId = "TEST_UDP_ID";
+    const quint8 facility = 16; // local0
+    Logger *logger = ul->createRSyslogLogger("RSyslogUdpLogger", msgId, facility, "127.0.0.1", port, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+
+    const QString logLine = "UDP Syslog Datagram Delivered";
+    logger->log(UNQL::LOG_INFO, "%s", qPrintable(logLine));
+    logger->flush();
+
+    bool foundExpectedLogLine = false;
+    for (int attempts = 0; attempts < 10; ++attempts) {
+        while (receiver.hasPendingDatagrams()) {
+            QByteArray datagram;
+            datagram.resize(receiver.pendingDatagramSize());
+            receiver.readDatagram(datagram.data(), datagram.size());
+
+            const QString packet = QString::fromUtf8(datagram);
+            if (packet.contains(logLine)) {
+                foundExpectedLogLine = true;
+                // facility 16 * 8 + severity 6 (LOG_INFO) = 134
+                QVERIFY2(packet.startsWith("<134>1"), qPrintable(packet));
+                QVERIFY2(packet.contains(msgId), qPrintable(packet));
+                break;
+            }
+        }
+        if (foundExpectedLogLine) break;
+        receiver.waitForReadyRead(300);
+    }
+
+    QVERIFY2(foundExpectedLogLine, "Did not receive the expected UDP syslog datagram");
+
+    delete logger;
+    ul->purgeUnusedWriters();
+}
+
+void TestRegressionCoverage::test_rsyslogWriterDormantLifecycleAndPurge()
+{
+    WriterConfig wc;
+    wc.netProtocol = UNQL::UDP;
+    wc.writerFlushSecs = 1;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_rsyslog_lc"), 1);
+
+    LogWriter &rw = ul->getRSyslogWriter("MID_LC", 16, "127.0.0.1", 5140, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    QPointer<LogWriter> rwGuard(&rw);
+
+    Logger *l1 = ul->createDummyLogger("RsysL1", wc);
+    Logger *l2 = ul->createDummyLogger("RsysL2", wc);
+
+    QCOMPARE(ul->addWriterToLogger(l1, rw), 0);
+    QCOMPARE(ul->addWriterToLogger(l2, rw), 0);
+
+    delete l2;
+    ul->purgeUnusedWriters();
+    QVERIFY2(!rwGuard.isNull(), "RSyslogWriter was purged while l1 was still attached");
+
+    delete l1; // Transitions to dormant (refcount == 1)
+    ul->purgeUnusedWriters();
+    QTest::qWait(100);
+    QVERIFY2(rwGuard.isNull(), "Dormant RSyslogWriter was not purged by purgeUnusedWriters()");
+}
+#endif
+
+#ifdef ENABLE_UNQL_DBLOG
+void TestRegressionCoverage::test_dbWriterCreatesTableAndLogsEvents()
+{
+    const QString dbFile = uniqueName("regression_db_events") + ".sqlite";
+    removeIfExists(dbFile);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 1;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_db_events"), 1);
+
+    Logger *logger = ul->createDbLogger("TestDbModule", dbFile, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+
+    logger->log(UNQL::LOG_INFO, "Info message in SQLite");
+    logger->log(UNQL::LOG_WARNING, "Warning message in SQLite");
+    logger->flush();
+
+    delete logger;
+    ul->purgeUnusedWriters();
+
+    QVERIFY2(QFile::exists(dbFile), "Database file was not created");
+
+    const QString connName = uniqueName("verify_db_conn");
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connName);
+        db.setDatabaseName(dbFile);
+        QVERIFY2(db.open(), "Failed to open SQLite database directly");
+
+        // Verify ul_level table
+        QSqlQuery qLevel(db);
+        QVERIFY(qLevel.exec("SELECT COUNT(*) FROM ul_level"));
+        QVERIFY(qLevel.next());
+        QVERIFY2(qLevel.value(0).toInt() >= 7, "ul_level has missing rows");
+
+        // Verify ul_event table
+        QSqlQuery qEvent(db);
+        QVERIFY(qEvent.exec("SELECT module, level, message FROM ul_event WHERE module = 'TestDbModule' ORDER BY id ASC"));
+
+        QVERIFY(qEvent.next());
+        QCOMPARE(qEvent.value(0).toString(), QString("TestDbModule"));
+        QCOMPARE(qEvent.value(1).toInt(), static_cast<int>(UNQL::LOG_INFO));
+        QCOMPARE(qEvent.value(2).toString(), QString("Info message in SQLite"));
+
+        QVERIFY(qEvent.next());
+        QCOMPARE(qEvent.value(0).toString(), QString("TestDbModule"));
+        QCOMPARE(qEvent.value(1).toInt(), static_cast<int>(UNQL::LOG_WARNING));
+        QCOMPARE(qEvent.value(2).toString(), QString("Warning message in SQLite"));
+
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(connName);
+    removeIfExists(dbFile);
+    removeIfExists("NRDBH.log");
+}
+
+void TestRegressionCoverage::test_dbWriterDormantLifecycleAndPurge()
+{
+    const QString dbFile = uniqueName("regression_db_lifecycle") + ".sqlite";
+    removeIfExists(dbFile);
+
+    WriterConfig wc;
+    wc.writerFlushSecs = 1;
+
+    int ok = UNQL::UnqlErrorNoError;
+    UniqLogger *ul = UniqLogger::instance(uniqueName("UL_db_lifecycle"), 1);
+
+    LogWriter &dw = ul->getDbWriter(dbFile, wc, ok);
+    QCOMPARE(ok, UNQL::UnqlErrorNoError);
+    QPointer<LogWriter> dwGuard(&dw);
+
+    Logger *l1 = ul->createDummyLogger("DbL1", wc);
+    Logger *l2 = ul->createDummyLogger("DbL2", wc);
+
+    QCOMPARE(ul->addWriterToLogger(l1, dw), 0);
+    QCOMPARE(ul->addWriterToLogger(l2, dw), 0);
+
+    delete l2;
+    ul->purgeUnusedWriters();
+    QVERIFY2(!dwGuard.isNull(), "DbWriter was purged while l1 was still attached");
+
+    delete l1; // Transitions to dormant (refcount == 1)
+    ul->purgeUnusedWriters();
+    QTest::qWait(100);
+    QVERIFY2(dwGuard.isNull(), "Dormant DbWriter was not purged by purgeUnusedWriters()");
+
+    removeIfExists(dbFile);
+    removeIfExists("NRDBH.log");
 }
 #endif
 

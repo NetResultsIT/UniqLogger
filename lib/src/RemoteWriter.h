@@ -42,6 +42,7 @@ public:
     virtual ~RemoteWriter();
 
     virtual void run();
+    virtual void flush() override;
 
     const QString getHost() const   { return m_serverAddress;   }
     int getPort() const             { return m_serverPort;      }

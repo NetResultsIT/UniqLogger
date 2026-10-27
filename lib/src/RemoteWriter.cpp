@@ -47,6 +47,23 @@ RemoteWriter::~RemoteWriter()
 }
 
 /*!
+ * \brief Forces writing queued messages on the socket. If called from another thread,
+ *        dispatches to the socket's owning thread via BlockingQueuedConnection to prevent
+ *        cross-thread socket notifier errors.
+ */
+void RemoteWriter::flush()
+{
+    if (m_Config.compressMessages)
+        compressMessages();
+
+    if (this->thread() && this->thread()->isRunning() && QThread::currentThread() != this->thread()) {
+        QMetaObject::invokeMethod(this, "writeToDevice", Qt::BlockingQueuedConnection);
+    } else {
+        this->writeToDevice();
+    }
+}
+
+/*!
  * \brief RemoteWriter::getMessage composes and returns the next message string to be printed by this writer
  * This is an internal method that is supposed to be called within the mutex.lock()
  * \return the composed message string

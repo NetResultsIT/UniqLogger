@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QVariant>
 #include <QTime>
+#include <QUuid>
 
 #include "unqlog_common.h"
 
@@ -37,70 +38,75 @@ UnqlDbHandler::~UnqlDbHandler()
 int
 UnqlDbHandler::createLoggerDb(QString qeventdbname)
 {
-    QSqlDatabase qevdb = QSqlDatabase::addDatabase("QSQLITE", "qeventsdb");
-    qevdb.setDatabaseName(qeventdbname);
+    const QString connName = QString("qeventsdb_%1").arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase qevdb = QSqlDatabase::addDatabase("QSQLITE", connName);
+        qevdb.setDatabaseName(qeventdbname);
 
-    bool ok = qevdb.open();
-    if (!ok) {
-        qDebug() << "------ QEVDB ERROR: " <<  qevdb.lastError();
-        return(1);
+        bool ok = qevdb.open();
+        if (!ok) {
+            qDebug() << "------ QEVDB ERROR: " <<  qevdb.lastError();
+            return(1);
+        }
+
+        //first create the db
+        QSqlQuery q(qevdb);
+
+        q.prepare("\
+                    CREATE TABLE IF NOT EXISTS  ul_level (\n\
+                        id          INTEGER PRIMARY KEY,\n\
+                        level_name  VARCHAR(40),\n\
+                        level_value INTEGER UNIQUE\
+                 );");
+        ok = q.exec();
+        if (!ok) {
+            qDebug() << "got error: " << q.lastError() << " for query (" << q.lastQuery() << ")";
+            return(10);
+        }
+
+        q.prepare("\
+                   CREATE TABLE IF NOT EXISTS  ul_event (\n\
+                        id          INTEGER PRIMARY KEY,\n\
+                        tstamp      TIMESTAMP,\n\
+                        module      VARCHAR(40) NOT NULL,\n\
+                        level       INTEGER NOT NULL REFERENCES ul_level(level_value),\n\
+                        message     VARCHAR(5000)\
+                   );");
+
+        ok = q.exec();
+        if(!ok) {
+            qDebug() << "got error: " << q.lastError() << " for query (" << q.lastQuery() << ")";
+            return(10);
+        }
+
+
+        QVariantList vals,names;
+        names   << "FATAL"
+                << "CRITICAL"
+                << "WARNING"
+                << "INFO"
+                << "DEBUG"
+                << "FULL DEBUG"
+                << "FORCED";
+
+        vals << UNQL::LOG_FATAL
+             << UNQL::LOG_CRITICAL
+             << UNQL::LOG_WARNING
+             << UNQL::LOG_INFO
+             << UNQL::LOG_DBG
+             << UNQL::LOG_DBG_ALL
+             << UNQL::LOG_FORCED;
+
+        q.prepare("INSERT INTO ul_level (level_name, level_value) VALUES (?,?)");
+        q.addBindValue(names);
+        q.addBindValue(vals);
+        if (!q.execBatch()) {
+            qDebug() << "got error: " << q.lastError() << " for query (" << q.lastQuery() << ")";
+            return 10;
+        }
+        qevdb.close();
     }
-
-    //first create the db
-    QSqlQuery q(qevdb);
-
-    q.prepare("\
-                CREATE TABLE IF NOT EXISTS  ul_level (\n\
-                    id          INTEGER PRIMARY KEY,\n\
-                    level_name  VARCHAR(40),\n\
-                    level_value INTEGER UNIQUE\
-             );");
-    ok = q.exec();
-    if (!ok) {
-        qDebug() << "got error: " << q.lastError() << " for query (" << q.lastQuery() << ")";
-        return(10);
-    }
-
-    q.prepare("\
-               CREATE TABLE IF NOT EXISTS  ul_event (\n\
-                    id          INTEGER PRIMARY KEY,\n\
-                    tstamp      TIMESTAMP,\n\
-                    module      VARCHAR(40) NOT NULL,\n\
-                    level       INTEGER NOT NULL REFERENCES ul_level(level_value),\n\
-                    message     VARCHAR(5000)\
-               );");
-
-    ok = q.exec();
-    if(!ok) {
-        qDebug() << "got error: " << q.lastError() << " for query (" << q.lastQuery() << ")";
-        return(10);
-    }
-
-
-    QVariantList vals,names;
-    names   << "FATAL"
-            << "CRITICAL"
-            << "WARNING"
-            << "INFO"
-            << "DEBUG"
-            << "FULL DEBUG"
-            << "FORCED";
-
-    vals << UNQL::LOG_FATAL
-         << UNQL::LOG_CRITICAL
-         << UNQL::LOG_WARNING
-         << UNQL::LOG_INFO
-         << UNQL::LOG_DBG
-         << UNQL::LOG_DBG_ALL
-         << UNQL::LOG_FORCED;
-
-    q.prepare("INSERT INTO ul_level (level_name, level_value) VALUES (?,?)");
-    q.addBindValue(names);
-    q.addBindValue(vals);
-    if (!q.execBatch()) {
-        qDebug() << "got error: " << q.lastError() << " for query (" << q.lastQuery() << ")";
-        return 10;
-    }
+    QSqlDatabase::removeDatabase(connName);
     return 0;
 }
 
