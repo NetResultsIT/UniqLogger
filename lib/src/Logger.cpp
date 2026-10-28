@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2021 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2026 by Kalliope S.r.l. ( https://www.kalliope.com )    *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -25,8 +25,10 @@ Logger::Logger()
     m_spacingString = ' ';
     m_startEncasingChar = '[';
     m_endEncasingChar = ']';
+    m_printInstanceTag = false;
     m_printToQDebug = false;
     m_printToStdOut = false;
+    m_printThreadID = false;
 }
 
 Logger::~Logger()
@@ -141,6 +143,13 @@ Logger::setModuleName(const QString &s)
 }
 
 
+void
+Logger::setInstanceTag(const QString &instanceTag)
+{
+    m_instanceTag = instanceTag;
+}
+
+
 
 /*!
   \brief adds a new logwriter to this logger
@@ -231,6 +240,8 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 
         QPair<QChar,QChar> encasingPair(m_startEncasingChar, m_endEncasingChar);
         LogMessageFormatting lmf(m_spacingString, encasingPair);
+        if (m_printInstanceTag)
+            lm.setInstanceTag(m_instanceTag);
         lm.setFormatting(lmf);
         dispatchMessage(lm);
     }
@@ -241,16 +252,41 @@ Logger::monitor(const QVariant &d, const QString &key, const QString &desc)
 }
 
 
-
-void
-Logger::priv_log(int priority, const QString &msg)
+/*!
+ * \brief Logger::priv_addThreadPointer adds the thread pointer to the message
+ * \param i_msg the message that should be modified to include the thread pointer
+ * \return a new string with the thread pointer included
+ */
+QString Logger::priv_addThreadPointer(const QString &i_msg)
 {
-    UNQL::LogMessagePriorityType lev = selectCorrectLogLevel(priority);
+    QString msg = i_msg;
+    if (Q_UNLIKELY(m_printThreadID)) {
+        msg = QString("(Th. 0x%1) %2").arg((quint64)QThread::currentThread(), 0, 16).arg(i_msg);
+    };
+
+    return msg;
+}
+
+
+/*!
+  \brief log a message with a given priority
+  \param i_priority the priority of the message
+  \param i_msg the message to be logged
+  */
+void
+Logger::priv_log(int i_priority, const QString &i_msg)
+{
+    UNQL::LogMessagePriorityType lev = selectCorrectLogLevel(i_priority);
+
+
+    QString msg = priv_addThreadPointer(i_msg);
 
     QPair<QChar,QChar> encasingPair(m_startEncasingChar, m_endEncasingChar);
     LogMessageFormatting lmf(m_spacingString, encasingPair);
     LogMessage lm(m_moduleName, lev, msg, QDateTime::currentDateTime().toString(m_timeStampFormat));
 
+    if (m_printInstanceTag)
+        lm.setInstanceTag(m_instanceTag);
     lm.setFormatting(lmf);
     dispatchMessage(lm);
 }
@@ -308,16 +344,42 @@ void Logger::printToStdOut(bool enable)
 void Logger::printToQDebug(bool enable)
 { m_printToQDebug = enable; }
 
+
+/*!
+ * \brief Logger::printThreadID
+ * \param enable the new status of the thread ID printing
+ * The purpose of this method is to enable the logging of the thread ID that is currently executing the log message
+ */
+void Logger::printThreadID(bool enable)
+{ m_printThreadID = enable; }
+
+
+void Logger::printTag(bool enable)
+{ m_printInstanceTag = enable; }
+
+
+QString
+Logger::prependInstanceTagIfRequired(const QString &message) const
+{
+    if (m_printInstanceTag && !m_instanceTag.isEmpty())
+        return "[" + m_instanceTag + "] " + message;
+
+    return message;
+}
+
+
 /*!
  * \brief Logger::printAlsoToConsoleIfRequired will print out to std::cout and/or with qDebug() (that is std::cerr but with different timing due to buffering)
  * \param mess the QString containing the message to print
  */
 void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 {
+    QString m = prependInstanceTagIfRequired(priv_addThreadPointer(mess));
+
     if (m_printToQDebug)
-        qDebug() << mess;
+        qDebug() << m;
     if (m_printToStdOut)
-        std::cout << mess.toStdString() << std::endl;
+        std::cout << m.toStdString() << std::endl;
 }
 
 /*!
@@ -329,25 +391,25 @@ void Logger::printAlsoToConsoleIfRequired(const QString &mess)
 void
 Logger::log(int priority, const char* mess, ...)
 {
-    printAlsoToConsoleIfRequired(mess);
+    char buffer[UNQL_ERRMSG_SIZE];
+
+    va_list args;
+    va_start(args, mess);
+
+#if defined(_MSC_VER) && _MSC_VER < 1400
+    _vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
+#else
+    vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
+#endif
+    va_end(args);
+    buffer[UNQL_ERRMSG_SIZE-1] = '\0';
+    QString msg = buffer;
+
+    printAlsoToConsoleIfRequired(msg);
 
     if (priority <= m_logVerbosityAcceptedLevel || priority == UNQL::LOG_FORCED)
     {
-        char buffer[UNQL_ERRMSG_SIZE];
-
-        va_list args;
-        va_start(args, mess);
-
-#if defined(_MSC_VER) && _MSC_VER < 1400
-        _vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
-#else
-        vsnprintf(buffer, UNQL_ERRMSG_SIZE-1, mess, args);
-#endif
-        buffer[UNQL_ERRMSG_SIZE-1] = '\0';
-        QString msg = buffer;
         priv_log(priority, msg);
-
-        va_end(args);
     }
     else {
         ULDBG << "Won't log message " << mess << "because it's priority ("
@@ -378,7 +440,17 @@ Logger::log(const char* mess, ...)
     va_end(args);
     buffer2[UNQL_ERRMSG_SIZE-1] = '\0';
 
-    this->log(m_logVerbosityDefaultLevel, buffer2);
+    QString msg = buffer2;
+    printAlsoToConsoleIfRequired(msg);
+
+    if (m_logVerbosityDefaultLevel <= m_logVerbosityAcceptedLevel || m_logVerbosityDefaultLevel == UNQL::LOG_FORCED)
+    {
+        priv_log(m_logVerbosityDefaultLevel, msg);
+    }
+    else {
+        ULDBG << "Won't log message " << msg << "because it's priority ("
+              << m_logVerbosityDefaultLevel << ") was not high enough for this logger (" << m_logVerbosityAcceptedLevel << ")";
+    }
 }
 
 
@@ -579,4 +651,3 @@ Logger::operator<< ( char c )
     muxMessages.unlock();
     return *this;
 }
-

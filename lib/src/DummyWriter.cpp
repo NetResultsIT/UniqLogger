@@ -1,6 +1,6 @@
 /*
  *  DummyWriter.cpp
- *  (c) 2013 NetResults srl
+ *  (c) 2013-2026 Kalliope S.r.l.
  */
 
 #include "DummyWriter.h"

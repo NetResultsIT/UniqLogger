@@ -12,7 +12,7 @@
 #define TEST_NET_MULTISRC 0
 #define TEST_DB 0
 #define TEST_MONITOR 0
-#define TEST_THREADSAFETY 0
+#define TEST_THREADSAFETY 1
 #define TEST_BENCHMARK 0
 #define TEST_CRASH 0
 #define TEST_SIGSEGV 0
@@ -71,19 +71,29 @@ testlogger_cli::testlogger_cli(QObject *parent)
 
     loggerF1 = ul->createFileLogger("test", "log.txt", wc2);
     loggerF1->setModuleName("FILE1");
+    loggerF1->printThreadID(true);
     //loggerF2 = ul->createFileLogger("test", "log2.txt", wc4);
     //loggerF2->setModuleName("FILE2");
 #endif
 
 
 #if(TEST_CONSOLE_COLOR || TEST_THREADSAFETY)
-    loggerCr = ul->createConsoleLogger("CONSOLE", red);
-    loggerCy = ul->createConsoleLogger("CONSOLE", yellow);
-    loggerCg = ul->createConsoleLogger("CONSOLE", green);
+    UNQL::ConsoleColorScheme cs_red, cs_green, cs_yellow;
+
+    cs_red.setDefaultColor(UNQL::red);
+    cs_green.setDefaultColor(UNQL::green);
+    cs_yellow.setDefaultColor(UNQL::yellow);
+
+    loggerCr = ul->createConsoleLogger("RCONSOLE", cs_red);
+    loggerCy = ul->createConsoleLogger("YCONSOLE", cs_yellow);
+    loggerCg = ul->createConsoleLogger("GONSOLE", cs_green);
 
     loggerCr->setModuleName("REDCONSOLE");
     loggerCy->setModuleName("YELLOWCONSOLE");
     loggerCg->setModuleName("GREENCONSOLE");
+
+    //enable thread id log
+    loggerCr->printThreadID(true);
 #endif
 
 
@@ -159,12 +169,15 @@ testlogger_cli::testThreadedNetLogger(const QString &ip, int port)
 void
 testlogger_cli::testThreadedConsoleLogger()
 {
-    TestThreadObject2 *tobj1 = new TestThreadObject2(200, UNQL::LOG_WARNING, "You should see this...");
+    int sched_ms1 = 200;
+    TestThreadObject2 *tobj1 = new TestThreadObject2(sched_ms1, UNQL::LOG_WARNING, "You should see this...");
     tobj1->l = loggerCr;
-    TestThreadObject2 *tobj2 = new TestThreadObject2(100, UNQL::LOG_DBG, "But *definitely* NOT this...");
+    int sched_ms2 = 100;
+    TestThreadObject2 *tobj2 = new TestThreadObject2(sched_ms2, UNQL::LOG_DBG, "But *definitely* NOT this...");
     tobj2->l = loggerCr;
-    TestThreadObject2 *tobj3 = new TestThreadObject2(150, UNQL::LOG_DBG, "And NOT even this...");
-    tobj3->l = loggerCr;
+    int sched_ms3 = 150;
+    TestThreadObject2 *tobj3 = new TestThreadObject2(sched_ms3, UNQL::LOG_INFO, "You *might* see this...");
+    tobj3->l = loggerCy;
 
     QThread *t1, *t2, *t3;
     t1 = new QThread(this);
@@ -188,7 +201,7 @@ testlogger_cli::testBenchmark()
     UniqLogger *ul = UniqLogger::instance("TESTER", 4);
     Logger *l = ul->createFileLogger("BENCHMARK", "testlog");
 
-    QTime t;
+    QElapsedTimer t;
     t.start();
     for (int i = 0; i < iterations; i++) {
         *l << UNQL::LOG_INFO << "A test message" << UNQL::EOM;

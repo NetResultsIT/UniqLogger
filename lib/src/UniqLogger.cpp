@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2026 by Kalliope S.r.l. ( https://www.kalliope.com )    *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -38,13 +38,15 @@ extern QMap<UNQL::LogMessagePriorityType,QString> UnqlPriorityLevelNamesMap;
   \brief this is the class ctor, it is protected since we want just the singleton instance
   */
 UniqLogger::UniqLogger(int nthreads)
+    : m_instanceName(DEF_UNQL_INSTANCE_NAME)
+    , m_defaultPrintTag(false)
 {
     m_defaultTimeStampFormat = DEF_UNQL_TSTAMP_FMT;
     m_defaultSpaceChar = ' ';
     m_defaultStartEncasingChar = '[';
     m_defaultEndEncasingChar = ']';
 
-    m_pTPool = new NRThreadPool(nthreads, "UNQL_WPool", this);
+    m_pTPool = new NRThreadPool(nthreads, writerThreadNamePrefix(), this);
 
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_FATAL,    "FATAL");
     UnqlPriorityLevelNamesMap.insert(UNQL::LOG_EMERGENCY,"EMERGENCY");
@@ -67,6 +69,14 @@ UniqLogger::UniqLogger(int nthreads)
 UniqLogger::~UniqLogger()
 {
     ULDBG << Q_FUNC_INFO;
+    QMutexLocker ml(&muxDeviceCounter);
+    for (auto it = m_DevicesMap.begin(); it != m_DevicesMap.end(); ++it) {
+        LogWriter *lw = it.key();
+        if (lw && it.value() > 1) {
+            lw->deactivateWriter();
+        }
+    }
+    m_DevicesMap.clear();
 }
 
 
@@ -106,6 +116,8 @@ UniqLogger::instance(const QString &ulname, int nthreads)
         else {
             ulptr = new UniqLogger(nthreads);
         }
+        ulptr->m_instanceName = ulname;
+        ulptr->m_pTPool->setPoolName(ulptr->writerThreadNamePrefix());
         gUniqLoggerInstanceMap.insert(ulname, ulptr);
     }
     UniqLogger::gmuxUniqLoggerInstance.unlock();
@@ -134,49 +146,101 @@ UniqLogger::setDefaultLogLevel(UNQL::LogMessagePriorityType loglevel)
 { m_defaultLogLevel = loglevel; }
 
 
+QString
+UniqLogger::writerThreadNamePrefix() const
+{ return m_instanceName + "_LOGW"; }
+
+
+void
+UniqLogger::setDefaultPrintTag(bool enable)
+{ m_defaultPrintTag = enable; }
+
+
+bool
+UniqLogger::defaultTagPrintingEnabled() const
+{ return m_defaultPrintTag; }
+
+
+QString
+UniqLogger::instanceName() const
+{ return m_instanceName; }
+
+
+/*!
+  \brief register a logwriter in the internal list (caller must hold muxDeviceCounter)
+  \note Model B reference counting:
+        - When a writer is first created by get*Writer(), it is inserted into m_DevicesMap
+          with refcount = 1 (the base reference owned by UniqLogger itself, corresponding
+          to 0 attached Loggers / dormant state).
+        - Each Logger attached via addWriterToLogger() increments refcount (1 -> 2, 2 -> 3, ...).
+          Transitioning from 1 (dormant) to 2 (first active Logger) re-activates the writer.
+  */
+void
+UniqLogger::priv_registerWriter(LogWriter *lw)
+{
+    if (m_DevicesMap.contains(lw)) {
+        int refcount = m_DevicesMap[lw];
+        m_DevicesMap[lw] = refcount + 1;
+        if (refcount == 1) {
+            lw->activateWriter();
+        }
+    }
+    else {
+        m_DevicesMap.insert(lw, 1);
+    }
+}
+
+
 /*!
   \brief register a logwriter in the internal list
   */
 void
 UniqLogger::registerWriter(LogWriter *lw)
 {
-    muxDeviceCounter.lock();
-    if (m_DevicesMap.contains(lw)) {
-        int refcount = m_DevicesMap[lw];
-        m_DevicesMap[lw] = refcount + 1;
-    }
-    else {
-        m_DevicesMap.insert(lw, 0);
-    }
-    muxDeviceCounter.unlock();
+    QMutexLocker ml(&muxDeviceCounter);
+    priv_registerWriter(lw);
 }
 
 
 
 /*!
   \brief unregister a logwriter in the internal list
+  \note Point 1, 3 & 4 fix:
+        When the last Logger detaches (refcount drops from 2 to 1), we do NOT remove
+        the writer from m_DevicesMap and do NOT call deleteLater(). Instead, we keep it
+        in m_DevicesMap with refcount = 1 (dormant state) and call deactivateWriter(),
+        which synchronously flushes pending messages, stops the timer, and closes the
+        underlying file/device handle.
+        This prevents:
+        1) refcount underflow below 1;
+        2) the deleteLater() race condition where a new Logger reopens the same file
+           while the old FileWriter is still awaiting asynchronous deletion on NRThreadPool;
+        3) loss of FileWriter rotation state (m_rotationCurFileNumber, m_lastUsedFilenames,
+           m_lastWrittenDateTime) across temporary Loggers.
   */
 void
 UniqLogger::unregisterWriter(LogWriter *lw)
 {
     ULDBG << Q_FUNC_INFO << "lw: " << lw;
 
-    muxDeviceCounter.lock();
+    QMutexLocker ml(&muxDeviceCounter);
     if (m_DevicesMap.contains(lw)) {
         int refcount = m_DevicesMap[lw];
-        if (refcount == 1) {
-            m_DevicesMap.remove(lw);
-            lw->deleteLater();
+        if (refcount > 2) {
+            m_DevicesMap[lw] = refcount - 1;
+        }
+        else if (refcount == 2) {
+            m_DevicesMap[lw] = 1;
+            lw->deactivateWriter();
         }
         else {
-            m_DevicesMap[lw] = refcount - 1;
-            Q_ASSERT(refcount >= 0);
+            Q_ASSERT(refcount >= 1);
+            ULDBG << "Writer" << lw << "is already dormant (refcount == 1)";
         }
     }
     else {
         ULDBG << " +++++++++++++++ ERROR  deregistering writer +++++++++++++";
     }
-    muxDeviceCounter.unlock();
 }
  
 
@@ -232,6 +296,8 @@ UniqLogger::createLogger(const QString &logname)
 
         //after having set the various strings we set the module name
         l->setModuleName(logname);
+        l->setInstanceTag(m_instanceName);
+        l->printTag(m_defaultPrintTag);
 
         l->setVerbosityDefaultLevel(m_defaultLogLevel);
 
@@ -415,10 +481,10 @@ UniqLogger::createConsoleLogger(const QString &logName, UNQL::ConsoleColorScheme
   */
 LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConfig &wc, int &ok)
 {
-    FileWriter *fw;
-    LogWriter *lw;
+    FileWriter *fw = nullptr;
+    LogWriter *lw = nullptr;
 
-    muxDeviceCounter.lock();
+    QMutexLocker ml(&muxDeviceCounter);
 
     //Assume we are successful
     ok = UNQL::UnqlErrorNoError;
@@ -428,24 +494,33 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
         lw = it.key();
         fw = dynamic_cast<FileWriter*>(lw);
         if (fw && fw->getBaseName() == i_filename) {
+            int refcount = it.value();
             if ( !checkMatchingConfigForWriter(*fw, wc) )
             {
-                ULDBG << "WriterConfigs are incompatible";
-                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                if (refcount == 1) {
+                    fw->setWriterConfig(wc);
+                    ok = UNQL::UnqlErrorNoError;
+                } else {
+                    ULDBG << "WriterConfigs are incompatible";
+                    ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                }
             }
             ULDBG << "Existing Filewriter for " << i_filename << " found! ------------------->><<-------" << fw;
-            muxDeviceCounter.unlock();
             return *fw;
         }
         fw = nullptr;
     }
-    muxDeviceCounter.unlock();
+
     fw = new FileWriter(wc);
 
     ULDBG << "Filewriter for file " << i_filename << " not found, creating one " << fw;
 
-    registerWriter(fw);
+    // Initialize the output file (and m_logfileBaseName) BEFORE releasing muxDeviceCounter
+    // so that a concurrent thread calling getFileWriter() for the same filename cannot
+    // observe the default basename ("uniqlogfile.txt") and create a duplicate FileWriter.
     fw->setOutputFile(i_filename);
+    priv_registerWriter(fw);
+    ml.unlock();
 
     m_pTPool->runObject(fw);
     fw->run();
@@ -466,33 +541,41 @@ LogWriter &UniqLogger::getFileWriter(const QString &i_filename, const WriterConf
 LogWriter&
 UniqLogger::getDbWriter(const QString &_filename, const WriterConfig &wc, int &ok)
 {
-    DbWriter *dw;
-    LogWriter *lw;
+    DbWriter *dw = nullptr;
+    LogWriter *lw = nullptr;
 
-    muxDeviceCounter.lock();
+    QMutexLocker ml(&muxDeviceCounter);
+    ok = UNQL::UnqlErrorNoError;
+
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         dw = dynamic_cast<DbWriter*>(lw);
         if (dw && dw->getBaseName() == _filename) {
             ULDBG << "Existing DbWriter found! ------------------->><<-------" << dw;
+            int refcount = it.value();
             if ( !checkMatchingConfigForWriter(*dw, wc) )
             {
-                ULDBG << "WriterConfigs are incompatible for DB writers";
-                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                if (refcount == 1) {
+                    dw->setWriterConfig(wc);
+                    ok = UNQL::UnqlErrorNoError;
+                } else {
+                    ULDBG << "WriterConfigs are incompatible for DB writers";
+                    ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                }
             }
 
-            muxDeviceCounter.unlock();
             return *dw;
         }
-        dw = 0;
+        dw = nullptr;
     }
-    muxDeviceCounter.unlock();
+
     dw = new DbWriter(_filename, wc);
 
     ULDBG << "Dbwriter for file "<< _filename <<" not found, creating one " << dw;
 
-    registerWriter(dw);
+    priv_registerWriter(dw);
+    ml.unlock();
 
     m_pTPool->runObject(dw);
     dw->run();
@@ -517,31 +600,37 @@ LogWriter &UniqLogger::getNetworkWriter(const QString & i_ha, int i_port, const 
     RemoteWriter *rw = nullptr;
     LogWriter *lw = nullptr;
 
-    muxDeviceCounter.lock();
+    QMutexLocker ml(&muxDeviceCounter);
+    ok = UNQL::UnqlErrorNoError;
+
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         rw = dynamic_cast<RemoteWriter*>(lw);
         if (rw && rw->getHost() == i_ha && rw->getPort() == i_port) {
             ULDBG << "Existing Networkwriter found! ------------------->><<-------";
+            int refcount = it.value();
             if ( !checkMatchingConfigForWriter(*rw, wc) )
             {
-                ULDBG << "WriterConfigs are incompatible for remote writers";
-                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                if (refcount == 1) {
+                    rw->setWriterConfig(wc);
+                    ok = UNQL::UnqlErrorNoError;
+                } else {
+                    ULDBG << "WriterConfigs are incompatible for remote writers";
+                    ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                }
             }
-            muxDeviceCounter.unlock();
             return *rw;
         }
     }
-    muxDeviceCounter.unlock();
 
     rw = new RemoteWriter(i_ha, static_cast<quint16>(i_port), wc);
-    if (rw)
-    {
-        registerWriter(rw);
-        m_pTPool->runObject(rw);
-        rw->run();
-    }
+    priv_registerWriter(rw);
+    ml.unlock();
+
+    m_pTPool->runObject(rw);
+    rw->run();
+
     return *rw;
 }
 
@@ -562,31 +651,37 @@ LogWriter &UniqLogger::getRSyslogWriter(const QString &i_id, quint8 i_facility, 
     RSyslogWriter *rw = nullptr;
     LogWriter *lw = nullptr;
 
-    muxDeviceCounter.lock();
+    QMutexLocker ml(&muxDeviceCounter);
+    ok = UNQL::UnqlErrorNoError;
+
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         rw = dynamic_cast<RSyslogWriter*>(lw);
         if (rw && rw->getHost() == i_ha && rw->getPort() == i_port) {
             ULDBG << "Existing RSyslog found! ------------------->><<-------";
+            int refcount = it.value();
             if ( !checkMatchingConfigForWriter(*rw, wc) )
             {
-                ULDBG << "WriterConfigs are incompatible for remote writers";
-                ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                if (refcount == 1) {
+                    rw->setWriterConfig(wc);
+                    ok = UNQL::UnqlErrorNoError;
+                } else {
+                    ULDBG << "WriterConfigs are incompatible for remote writers";
+                    ok = UNQL::UnqlErrorWriterConfigIncompatible;
+                }
             }
-            muxDeviceCounter.unlock();
             return *rw;
         }
     }
-    muxDeviceCounter.unlock();
 
     rw = new RSyslogWriter(i_id, i_facility, i_ha, static_cast<quint16>(i_port), wc);
-    if (rw)
-    {
-        registerWriter(rw);
-        m_pTPool->runObject(rw);
-        rw->run();
-    }
+    priv_registerWriter(rw);
+    ml.unlock();
+
+    m_pTPool->runObject(rw);
+    rw->run();
+
     return *rw;
 }
 #endif
@@ -608,28 +703,35 @@ LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorScheme i_colorScheme, 
 
     ok = UNQL::UnqlErrorNoError; //the search for ConsoleWriter cannot fail (we may create a new one if need be)
 
-    muxDeviceCounter.lock();
+    QMutexLocker ml(&muxDeviceCounter);
     LogWriterUsageMapType::Iterator it;
     for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); it++) {
         lw = it.key();
         cw = dynamic_cast<ConsoleWriter*>(lw);
         if (cw && cw->getColorScheme() == i_colorScheme) {
+            int refcount = it.value();
             if ( !checkMatchingConfigForWriter(*cw, wc) )
             {
-                ULDBG << "WriterConfigs are incompatible for console writers";
-                continue; //there could be another consolewriter with same color but compatible config
+                if (refcount == 1) {
+                    cw->setWriterConfig(wc);
+                    ok = UNQL::UnqlErrorNoError;
+                    return *cw;
+                } else {
+                    ULDBG << "WriterConfigs are incompatible for console writers";
+                    continue; //there could be another consolewriter with same color but compatible config
+                }
             }
             ULDBG << "Existing matching ConsoleWriter found! ------------------->><<-------" << cw;
-            muxDeviceCounter.unlock();
             return *cw;
         }
         cw = nullptr;
     }
-    muxDeviceCounter.unlock();
 
     cw = new ConsoleWriter(wc);
-    registerWriter(cw);
+    priv_registerWriter(cw);
     cw->setColorScheme(i_colorScheme);
+    ml.unlock();
+
     m_pTPool->runObject(cw);
     cw->run();
 
@@ -645,8 +747,19 @@ LogWriter &UniqLogger::getConsoleWriter(UNQL::ConsoleColorScheme i_colorScheme, 
 LogWriter&
 UniqLogger::getDummyWriter()
 {
+    QMutexLocker ml(&muxDeviceCounter);
+    LogWriterUsageMapType::Iterator it;
+    for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); ++it) {
+        DummyWriter *dw = dynamic_cast<DummyWriter*>(it.key());
+        if (dw) {
+            return *dw;
+        }
+    }
+
     DummyWriter* dw = new DummyWriter();
-    registerWriter(dw);
+    priv_registerWriter(dw);
+    ml.unlock();
+
     m_pTPool->runObject(dw);
     dw->run();
     return *dw;
@@ -662,8 +775,27 @@ UniqLogger::getDummyWriter()
  */
 LogWriter &UniqLogger::getAndroidWriter(const WriterConfig &wc)
 {
+    QMutexLocker ml(&muxDeviceCounter);
+    LogWriterUsageMapType::Iterator it;
+    for (it = m_DevicesMap.begin(); it != m_DevicesMap.end(); ++it) {
+        AndroidWriter *aw = dynamic_cast<AndroidWriter*>(it.key());
+        if (aw) {
+            int refcount = it.value();
+            if (!checkMatchingConfigForWriter(*aw, wc)) {
+                if (refcount == 1) {
+                    aw->setWriterConfig(wc);
+                } else {
+                    ULDBG << "WriterConfigs are incompatible for Android writers";
+                }
+            }
+            return *aw;
+        }
+    }
+
     AndroidWriter* aw = new AndroidWriter(wc);
-    registerWriter(aw);
+    priv_registerWriter(aw);
+    ml.unlock();
+
     m_pTPool->runObject(aw);
     aw->run();
 
@@ -677,19 +809,27 @@ LogWriter &UniqLogger::getAndroidWriter(const WriterConfig &wc)
   \param _l the logger to which the writer is connect
   \param writer Is the writer that is going to be removed from the logger
   \return a negative error message if the method fails, 0 otherwise
+  \note Point 2 fix:
+        1) Check lptr->removeLogDevice(lw) BEFORE calling unregisterWriter(lw): if the
+           writer was not attached to _l (res != 0), we must NOT decrement the refcount
+           belonging to other active Loggers.
+        2) Append the debug message BEFORE unregisterWriter(lw) so that it is queued
+           before deactivateWriter() flushes and closes the device (and never after a
+           potential deletion).
   */
 int
 UniqLogger::removeWriterFromLogger(const Logger* _l, const LogWriter& writer)
 {
-    int res = 0;
+    if (!_l) return -1;
     Logger *lptr = const_cast<Logger*>(_l);
+    LogWriter *lw = const_cast<LogWriter*>(&writer);
 
-    this->unregisterWriter(const_cast<LogWriter*>(&writer));
-    res = lptr->removeLogDevice(const_cast<LogWriter*>(&writer));
-
-    LogWriter* lw = const_cast<LogWriter*>(&writer);
-    LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Removing logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
-    lw->appendMessage(lm);
+    int res = lptr->removeLogDevice(lw);
+    if (res == 0) {
+        LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Removing logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
+        lw->appendMessage(lm);
+        this->unregisterWriter(lw);
+    }
     return res;
 }
  
@@ -705,17 +845,17 @@ UniqLogger::removeWriterFromLogger(const Logger* _l, const LogWriter& writer)
 int
 UniqLogger::addWriterToLogger(const Logger* _l, const LogWriter &writer)
 {
+    if (!_l) return -1;
     int res = 0;
     Logger *lptr = const_cast<Logger*>(_l);
+    LogWriter *lw = const_cast<LogWriter*>(&writer);
 
-    res = lptr->addLogDevice(const_cast<LogWriter*>(&writer));
+    res = lptr->addLogDevice(lw);
     if (res == 0) {
-        this->registerWriter(const_cast<LogWriter*>(&writer));
+        this->registerWriter(lw);
+        LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Adding logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
+        lw->appendMessage(lm);
     }
-
-    LogWriter* lw = const_cast<LogWriter*>(&writer);
-    LogMessage lm (DEF_UNQL_LOG_STR, UNQL::LOG_DBG, QString("Adding logger %1 to this writer").arg(lptr->getModuleName()), LogMessage::getCurrentTstampString());
-    lw->appendMessage(lm);
     return res;
 }
 
@@ -838,4 +978,30 @@ UniqLogger::flushAllWriters()
         lw->flush();
     }
     muxDeviceCounter.unlock();
+}
+
+
+/*!
+ * \brief UniqLogger::purgeUnusedWriters Explicitly removes and schedules destruction of
+ *        all dormant writers (refcount == 1, i.e., no attached Loggers) from m_DevicesMap.
+ * \note We call deactivateWriter() synchronously (so the underlying file/device is
+ *       already flushed and closed before returning) and then use deleteLater() instead
+ *       of direct delete because each LogWriter lives on a NRThreadPool worker thread
+ *       and owns a child QTimer (m_pLogTimer) that must be destroyed on its owning thread.
+ */
+void
+UniqLogger::purgeUnusedWriters()
+{
+    QMutexLocker ml(&muxDeviceCounter);
+    QList<LogWriter*> toRemove;
+    for (auto it = m_DevicesMap.begin(); it != m_DevicesMap.end(); ++it) {
+        if (it.value() == 1) {
+            toRemove.append(it.key());
+        }
+    }
+    for (LogWriter *lw : toRemove) {
+        m_DevicesMap.remove(lw);
+        lw->deactivateWriter();
+        lw->deleteLater();
+    }
 }

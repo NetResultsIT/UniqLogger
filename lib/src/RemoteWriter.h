@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (C) 2010-2019 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *  Copyright (C) 2010-2026 by Kalliope S.r.l. ( https://www.kalliope.com )    *
  *  Author(s):                                                                 *
  *              Francesco Lamonica   <f.lamonica@netresults.it>                *
  *******************************************************************************/
@@ -11,6 +11,7 @@
 
 #include <QTcpSocket>
 #include <QUdpSocket>
+#include <QSslSocket>
 #include <QHostAddress>
 #include <QTimer>
 
@@ -21,6 +22,7 @@ class RemoteWriter: public LogWriter
 protected:
     QTcpSocket *m_pTcpSocket;
     QUdpSocket *m_pUdpSocket;
+    QSslSocket *m_pSslSocket;
     QTimer *m_pReconnectionTimer;
     QString m_serverAddress;
     quint16 m_serverPort;
@@ -40,9 +42,9 @@ public:
     virtual ~RemoteWriter();
 
     virtual void run();
+    virtual void flush() override;
 
     const QString getHost() const   { return m_serverAddress;   }
     int getPort() const             { return m_serverPort;      }
 };
 #endif
-

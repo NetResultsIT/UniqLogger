@@ -35,9 +35,13 @@ class ULOG_LIB_API WriterConfig
 {
 public:
     explicit WriterConfig();
+    /*! \brief Returns a human-readable representation of this configuration. */
     QString toString() const;
+    /*! \brief Returns true if configuration parameters required sanitizing during construction. */
     bool neededSanitizing() const;
+    /*! \brief Compares two WriterConfig objects for equality. */
     bool operator ==(const WriterConfig &rhs) const;
+    /*! \brief Compares two WriterConfig objects for inequality. */
     bool operator !=(const WriterConfig &rhs) const;
 
     //Common

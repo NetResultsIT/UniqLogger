@@ -1,6 +1,6 @@
 /*
  *  DummyWriter.h
- *  (c) 2013 NetResults srl
+ *  (c) 2013-2026 Kalliope S.r.l.
  */
 
 #ifndef UNQL_DUMMY_WRITER_H

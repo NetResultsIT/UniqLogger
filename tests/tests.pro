@@ -6,4 +6,6 @@ SUBDIRS += \
     TestLogPause \
     TestMessagesCompression \
     TestTimeUtilsTicking \
-    TestFileWriterRotationScenarios
+    TestFileWriterRotationScenarios \
+    TestDummyDelete \
+    TestRegressionCoverage

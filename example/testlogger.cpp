@@ -134,7 +134,7 @@ testlogger_gui::timedLog()
 	logger5->log(UNQL::LOG_INFO,"Testing db log");
 #endif
 
-    double dd = qrand();
+    double dd = rand();
     loggerConsole->monitor(dd, "nt", "test variable dd");
     i++;
     if (i==5) {

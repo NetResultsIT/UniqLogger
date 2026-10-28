@@ -1,6 +1,10 @@
 #ifndef UNQL_GLOBAL_INCS
 #define UNQL_GLOBAL_INCS
 
+#if defined(__aarch64__) && __has_include(<arm_acle.h>)
+#include <arm_acle.h>
+#endif
+
 #ifdef ENABLE_UNQL_DBG
     #define ULDBG qDebug()
 #else
@@ -32,6 +36,7 @@ enum LogMessagePriorityType
     LOG_INFO        = 1000,
     LOG_DBG         = 10000,
     LOG_DBG_ALL     = 100000,
+    LOG_TRACE       = 100000,
     LOG_OFF         = -1,
     LOG_MONITOR     = -10,
     LOG_FORCED      = -100
@@ -58,7 +63,8 @@ enum ErrorType
 };
 
 #define DEF_UNQL_TSTAMP_FMT "yyyy-MM-dd HH:mm:ss"
-#define DEF_UNQL_LOG_STR "UniqLogger"
+#define DEF_UNQL_INSTANCE_NAME "UNQL"
+#define DEF_UNQL_LOG_STR DEF_UNQL_INSTANCE_NAME
 
 // Used for FileWriter when timerotation is enabled
 //NOTE: if you change these values, you must also change the regexp value in FileWriter::removeLeftoversFromPreviousRun

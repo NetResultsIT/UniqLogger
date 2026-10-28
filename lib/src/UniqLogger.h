@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2026 by Kalliope S.r.l. ( https://www.kalliope.com )    *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -32,11 +32,16 @@ class NRThreadPool;
     The UniQLogger library is a Qt based library that allows the logging and monitoring
     functionalities for Qt-based projects. You can create various loggers (with different
     module names and logging times) and associate them to different logwriters so that the
-    same messages can be dispatched to various devices (Console, Network or File).
+    same messages can be dispatched to various devices (Console, Network, RSysLog, Database,
+    File or Android).
 
-    Network writers are clients over TCP connections
+    Network writers are clients over TCP connections (with optional TLS support)
     Console writers can have different colors
-    File writers have the ability to use log-rotation
+    File writers have the ability to use log-rotation (time and/or size based) and file compression (both zip and gzip)
+
+    Log writers are managed centrally and shared among loggers. When all loggers referencing a
+    writer are destroyed, the writer transitions to a dormant state (closing files and stopping timers
+    while preserving rotation state). Dormant writers can be reclaimed via purgeUnusedWriters().
 
     Loggers have different levels of logging and you can be set so that a minimum level has to be achieved
     before the actual message gets dispatched to the writers.
@@ -70,7 +75,9 @@ class ULOG_LIB_API UniqLogger : public QObject
     QMutex muxDeviceCounter, muxMonitorVarMap;
     QString m_defaultTimeStampFormat;
     QChar m_defaultSpaceChar, m_defaultStartEncasingChar, m_defaultEndEncasingChar;
-    UNQL::LogMessagePriorityType m_defaultLogLevel;
+    QString m_instanceName;
+    bool m_defaultPrintTag;
+    UNQL::LogMessagePriorityType m_defaultLogLevel = UNQL::LOG_INFO;
 
 protected:
     UniqLogger(int nthreads);
@@ -84,14 +91,16 @@ private:
         LogWriterUsageMapType m_DevicesMap;
         VarMonitoringMap m_VarMonitorMap;
 
+        void priv_registerWriter(LogWriter*);
         void registerWriter(LogWriter*);
         void unregisterWriter(LogWriter*);
 
         Logger* createLogger        (const QString &logName);
         bool checkMatchingConfigForWriter(LogWriter &w, const WriterConfig & wc);
+        QString writerThreadNamePrefix() const;
 
 public:
-        static UniqLogger* instance (const QString &ulname="Default UniQLogger", int nthreads = 0);
+        static UniqLogger* instance (const QString &ulname=DEF_UNQL_INSTANCE_NAME, int nthreads = 1);
 
         Logger* createDummyLogger   ( const QString &logName,                                   const WriterConfig &wc=WriterConfig() );
         Logger* createConsoleLogger ( const QString &logName, UNQL::ConsoleColorScheme scheme=UNQL::ConsoleColorScheme(), const WriterConfig &wc=WriterConfig() );
@@ -121,9 +130,19 @@ public:
         void setEncasingChars       ( const QChar& aStartChar, const QChar &aEndChar        );
         void setSpacingChar         ( const QChar& aSpaceChar                               );
         void setTimeStampFormat     ( const QString&                                        );
+        /*! \brief Sets the default log level for loggers created subsequently. */
         void setDefaultLogLevel     (UNQL::LogMessagePriorityType loglevel                  );
+        /*! \brief Enables or disables default tag printing for loggers created subsequently. */
+        void setDefaultPrintTag     (bool enable);
+        /*! \brief Returns whether default tag printing is enabled. */
+        bool defaultTagPrintingEnabled() const;
+        /*! \brief Returns the instance name of this UniqLogger. */
+        QString instanceName() const;
 
+        /*! \brief Flushes all registered writers. */
         void flushAllWriters();
+        /*! \brief Explicitly removes and schedules destruction of all dormant writers (refcount == 1, i.e., no attached Loggers). */
+        void purgeUnusedWriters();
 };
 
 #endif // ULOGGER_H

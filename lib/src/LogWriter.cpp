@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2026 by Kalliope S.r.l. ( https://www.kalliope.com )    *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -85,7 +85,7 @@ LogWriter::priv_writeToDevice()
     ULDBG << Q_FUNC_INFO << this << " writing on thread " << QThread::currentThread();
 
     if (m_logIsPaused) {
-        ULDBG << "Not writing since logwritrer is paused";
+        ULDBG << "Not writing since logwriter is paused";
         return;
     }
 
@@ -109,6 +109,37 @@ LogWriter::priv_startLogTimer()
 {
     ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
     m_pLogTimer->start(m_Config.writerFlushSecs * 1000);
+}
+
+
+void
+LogWriter::priv_stopLogTimer()
+{
+    ULDBG << Q_FUNC_INFO << "executed in thread" << QThread::currentThread();
+    m_pLogTimer->stop();
+}
+
+
+/*!
+ * \brief LogWriter::activateWriter Starts (or restarts) the periodic flush timer on the
+ *        worker thread that owns this LogWriter when transitioning from dormant to active.
+ */
+void
+LogWriter::activateWriter()
+{
+    QMetaObject::invokeMethod(this, "priv_startLogTimer");
+}
+
+
+/*!
+ * \brief LogWriter::deactivateWriter Synchronously flushes any buffered messages and
+ *        stops the periodic flush timer on the worker thread when transitioning to dormant.
+ */
+void
+LogWriter::deactivateWriter()
+{
+    this->flush();
+    QMetaObject::invokeMethod(this, "priv_stopLogTimer");
 }
 
 
@@ -199,6 +230,7 @@ LogWriter::pauseLogging(bool status)
 void
 LogWriter::compressMessages()
 {
+    mutex.lock();
     int nummsg = m_logMessageList.count();
     int i = 0;
     int j = 1;
@@ -211,7 +243,9 @@ LogWriter::compressMessages()
         while (j < nummsg)
         {
             if ((m_logMessageList.at(i).rawMessage() == m_logMessageList.at(j).rawMessage()) &&
-                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()))
+                (m_logMessageList.at(i).level() == m_logMessageList.at(j).level()) &&
+                (m_logMessageList.at(i).loggerName() == m_logMessageList.at(j).loggerName()) &&
+                (m_logMessageList.at(i).instanceTag() == m_logMessageList.at(j).instanceTag()))
             {
                 //subsequent messages, save end timestamp and look at next element
                 if (m_logMessageList.at(j).endTstamp().isEmpty())
@@ -228,11 +262,14 @@ LogWriter::compressMessages()
             else
             {
                 QString loggerName = m_logMessageList.at(i).loggerName();
+                QString instanceTag = m_logMessageList.at(i).instanceTag();
                 UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
                 QString rawMsg = m_logMessageList.at(i).rawMessage();
                 QString initTstamp = m_logMessageList.at(i).initTstamp();
 
                 LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                msg.setInstanceTag(instanceTag);
+                msg.setFormatting(m_logMessageList.at(i).formatting());
                 supportMsgList.append(msg);
                 i = j;
                 ++j;
@@ -244,16 +281,19 @@ LogWriter::compressMessages()
             {
                 //Don't want to skip last element
                 QString loggerName = m_logMessageList.at(i).loggerName();
+                QString instanceTag = m_logMessageList.at(i).instanceTag();
                 UNQL::LogMessagePriorityType level = m_logMessageList.at(i).level();
                 QString rawMsg = m_logMessageList.at(i).rawMessage();
                 QString initTstamp = m_logMessageList.at(i).initTstamp();
 
                 LogMessage msg(loggerName, level, rawMsg, initTstamp, endTstamp, repetitions);
+                msg.setInstanceTag(instanceTag);
+                msg.setFormatting(m_logMessageList.at(i).formatting());
                 supportMsgList.append(msg);
             }
         }
 
         m_logMessageList = supportMsgList;
     }
+    mutex.unlock();
 }
-

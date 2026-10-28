@@ -1,5 +1,5 @@
 /********************************************************************************
- *   Copyright (C) 2010-2018 by NetResults S.r.l. ( http://www.netresults.it )  *
+ *   Copyright (C) 2010-2026 by Kalliope S.r.l. ( https://www.kalliope.com )    *
  *   Author(s):                                                                 *
  *              Francesco Lamonica      <f.lamonica@netresults.it>              *
  ********************************************************************************/
@@ -61,8 +61,14 @@ DbWriter::setOutputFile(QString i_filename)
         UnqlDbHandler::createLoggerDb(i_filename);
     }
 
-    DbhConfig conf("", "", "127.0.0.1", i_filename);
+    if (m_pDbHandler) {
+        delete m_pDbHandler;
+        m_pDbHandler = nullptr;
+    }
+
+    DbhConfig conf("", i_filename, "", "", "QSQLITE");
     conf.dbType = "QSQLITE";
+    conf.dbName = i_filename;
 
     m_pDbHandler = new UnqlDbHandler(conf);
 }
