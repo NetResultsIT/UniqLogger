@@ -355,6 +355,10 @@ android {
     !is_qt6 {
         error("Building UniqLogger for Android with Qt5 is not supported anymore, use Qt6")
     }
+    #16KB page size alignment is available only from Qt 6.8.4
+    !versionAtLeast(QT_VERSION, 6.8.4) {
+        error("Building UniqLogger for Android requires at least Qt 6.8.4 (found $$QT_VERSION)")
+    }
 
     equals(ANDROID_TARGET_ARCH, armeabi) {
         message("Android Arch: armeabi")
