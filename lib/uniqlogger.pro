@@ -13,6 +13,10 @@ VERSION = 1.3.0
 #if we populate version it seems that QT does not populate VER_MAJ/MIN/PAT automatically
 VER_MAJ=$$section(VERSION, ., 0, 0)
 
+greaterThan(QT_MAJOR_VERSION, 5) {
+    CONFIG += is_qt6
+}
+
 !exists($$PWD/config.pri) {
     message("No config.pri found, building UniqLogger with default options: no NETWORK and no DB support")
 } else: include ($$PWD/config.pri)
@@ -348,22 +352,10 @@ unix:!macx:!ios:!android  {
 android {
     message("Building UniqLogger library for Android")
 
-    if(equals(ANDROID_TARGET_ARCH, armeabi-v7a) | equals(ANDROID_TARGET_ARCH, arm64-v8a)){
-        message("Android Arch: armv7a or arm64")
-        lessThan(QT_MAJOR_VERSION, 6) {
-            ANDSUFFIX = _android_arm
-        } else {
-            ANDSUFFIX =
-        }
+    !is_qt6 {
+        error("Building UniqLogger for Android with Qt5 is not supported anymore, use Qt6")
     }
-    equals(ANDROID_TARGET_ARCH, x86_64) {
-        message("Android Arch: x86_64")
-        lessThan(QT_MAJOR_VERSION, 6) {
-            ANDSUFFIX = _android
-        } else {
-            ANDSUFFIX =
-        }
-    }
+
     equals(ANDROID_TARGET_ARCH, armeabi) {
         message("Android Arch: armeabi")
         error("Not supported anymore")
@@ -371,6 +363,11 @@ android {
     equals(ANDROID_TARGET_ARCH, x86)  {
         message("Android Arch: x86")
         error("Not supported anymore")
+    }
+
+    if(equals(ANDROID_TARGET_ARCH, arm64-v8a) | equals(ANDROID_TARGET_ARCH, x86_64)){
+        QMAKE_LFLAGS += "-Wl,-z,max-page-size=16384"
+        message("Set memory page 16KB linker flag, for android $$ANDROID_TARGET_ARCH architecture")
     }
 
     CONFIG(debug, debug|release) {
@@ -383,13 +380,8 @@ android {
     #message("SUFF: $${LIBSUFFIX}")
 
     TARGET = $$join(TARGET,,"",$$LIBSUFFIX)
-    lessThan(QT_MAJOR_VERSION, 6) {
-        message("Building DLL with Qt5: $$TARGET $$ANDSUFFIX")
-        TARGET = $$join(TARGET,,"",$$ANDSUFFIX)
-        DLL = $$join(TARGET,,lib,.so)
-    } else {
-        DLL = $$join(TARGET,,lib,$${ANDSUFFIX}_$${ANDROID_TARGET_ARCH}.so)
-    }
+    #qmake appends _$$QT_ARCH to the actual library name (see android.prf)
+    DLL = $$join(TARGET,,lib,_$${ANDROID_TARGET_ARCH}.so)
     DLLPATH=$$join(DLLPATH,,$$BLDTYPE/,)
     TARGET = $$join(TARGET,,$$DLLPATH,)
     DLL=$$join(DLL,,$$DLLPATH,)
@@ -443,43 +435,27 @@ ios {
     message("The Qt version selected for this Uniqlogger build is: $$QT_VERSION")
 
 
-    !versionAtLeast(QT_VERSION, 6.0.0) {
-        !versionAtLeast(QT_VERSION, 5.9.0) {
-            error("You need at least Qt 5.9 to build vdk on iOS")
-        }
+    !is_qt6 {
+        error("Building UniqLogger for iOS with Qt5 is not supported anymore, use Qt6")
+    }
 
-    # armv7s is superset of armv7 and is ok since iOS6 on iphone 5, 5c and ipad (2012) it introduces just a few
-    # code optimization on those machines but limited and so was deprecated since Xcode 6.x
-    # all newer iDevices (we do not plan to support anything lower than iOS 10 due to callkit) run arm64
-    # so armv7s is not needed, armv7 is needed by app store, i386 is probably scrappable too if we run simulator on a new machine
-        QMAKE_APPLE_DEVICE_ARCHS = armv7 arm64
-        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64 i386
-
-        # Starting with Qt 5.12 minimum ios version is 11 and 32bit platforms are abandoned
-        greaterThan(QT_MINOR_VERSION, 11){
-            message("The Qt version is too high for 32bit builds on iOS: building only 64bit")
-            QMAKE_APPLE_DEVICE_ARCHS = arm64
-            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
-        }
+    # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
+    # platform so each resulting .a can be packaged into an XCFramework.
+    # Without it the default unified build includes all architectures.
+    equals(XCFRAMEWORK_SLICE, device) {
+        QMAKE_APPLE_DEVICE_ARCHS    = arm64
+        QMAKE_APPLE_SIMULATOR_ARCHS =
+    } else: equals(XCFRAMEWORK_SLICE, simulator) {
+        QMAKE_APPLE_DEVICE_ARCHS    =
+        QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
     } else {
-        # When XCFRAMEWORK_SLICE is set by build_ios_xcframework.sh, restrict to one
-        # platform so each resulting .a can be packaged into an XCFramework.
-        # Without it the default unified build includes all architectures.
-        equals(XCFRAMEWORK_SLICE, device) {
-            QMAKE_APPLE_DEVICE_ARCHS    = arm64
-            QMAKE_APPLE_SIMULATOR_ARCHS =
-        } else: equals(XCFRAMEWORK_SLICE, simulator) {
-            QMAKE_APPLE_DEVICE_ARCHS    =
-            QMAKE_APPLE_SIMULATOR_ARCHS = arm64 x86_64
-        } else {
-            # Default unified build: device arm64 + simulator x86_64.
-            # arm64 must NOT appear in both device and simulator archs: qmake maps
-            # both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so the simulator
-            # SDK flags would silently overwrite the device SDK flags for arm64.
-            # For an arm64-simulator slice (M-series hosts) use build_ios_xcframework.sh.
-            QMAKE_APPLE_DEVICE_ARCHS    = arm64
-            QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
-        }
+        # Default unified build: device arm64 + simulator x86_64.
+        # arm64 must NOT appear in both device and simulator archs: qmake maps
+        # both to the same EXPORT_QMAKE_XARCH_CFLAGS_arm64 key, so the simulator
+        # SDK flags would silently overwrite the device SDK flags for arm64.
+        # For an arm64-simulator slice (M-series hosts) use build_ios_xcframework.sh.
+        QMAKE_APPLE_DEVICE_ARCHS    = arm64
+        QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
     }
 
     #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
