@@ -462,6 +462,11 @@ ios {
         QMAKE_APPLE_SIMULATOR_ARCHS = x86_64
     }
 
+    # Qt 6.8 / iOS: QtCore's qyieldcpu.h calls __yield() without declaring it
+    # (-Werror,-Wimplicit-function-declaration); force-include the wrapper when
+    # the Qt in use still has the old header.
+    include($$PWD/qt_yield_workaround.pri)
+
     #Uncomment if you need to build w/o bitcode (Do this only if you know what you are doing!)
     #CONFIG -= bitcode
     contains(CONFIG, bitcode) : message("Building UniqLogger with BITCODE support")
