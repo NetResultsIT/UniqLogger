@@ -23,7 +23,7 @@ the tag to use. Without `lib/depspath.pri`, qmake looks in `lib/src/ext/<name>/s
   (`00-compile` clones the default branch; use the tag so the build is reproducible).
 - Dependencies elsewhere: copy `lib/depspath.pri.sample` to `lib/depspath.pri` and set `FILECOMPRESSOR_ROOT`,
   `THREADPOOL_ROOT`, `DBH_ROOT` (each points to the `src` folder of the dependency).
-- A NetResults internal dependency tool can fill `lib/src/ext` from `lib/deps.json`; it is not needed.
+- An internal dependency tool can fill `lib/src/ext` from `lib/deps.json`; it is not needed.
 - qmake stops with "Missing nrFileCompressor.pri" (or nrThreadPool.pri, nrDbHandler.pri) when a path is wrong.
 - `lib/src/ext`, `lib/config.pri` and `lib/depspath.pri` are git-ignored: never commit them.
 

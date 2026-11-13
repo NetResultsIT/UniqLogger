@@ -29,7 +29,8 @@ does not need a worker.
 
 ## 3. Phase 2, gate (lead)
 If the plan touches section 2 of `AGENTS.md`, stop and present: what changes, why, the alternatives, which
-consumers are affected (VDK, KPE, ctilib, SSK cast the enums and link the library), the version number you would
+consumers are affected (other libraries cast the enums and link the
+library), the version number you would
 set, and how you tested. For a public API change also say whether the binary interface changes (size or layout of
 an exported class, a virtual, a changed signature). Wait for the answer. For a third-party component also state its
 name, version, license and where its license text will live; the user confirms the license fits the company policy.

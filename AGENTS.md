@@ -3,7 +3,7 @@
 UniqLogger is a Qt C++ logging library (LGPL-2, public on GitHub). It is built with qmake (`lib/uniqlogger.pro`),
 as a shared library on Linux, macOS and Windows, a static library on iOS and a shared library on Android. Mobile
 builds need Qt 6 (Android 6.8.4 or newer); the desktop code still has Qt 5 branches that are not verified on this
-branch. The NetResults libraries VDK, KPE, ctilib and SSK link against it. Changes go to `master` of the public
+branch. Other libraries link against it. Changes go to `master` of the public
 repository through pull requests.
 
 ## 1. Other people and agents work here too
@@ -76,9 +76,10 @@ A change of a few lines that the lead can verify alone does not need a worker.
 | `uniqlogger-run-tests` | running or writing the tests in `lib/ut` and `tests` |
 | `qt-cpp` | writing or reviewing Qt C++: objects and threads, timers, signals, Qt 6.8 traps |
 
-The skills are edited in `.agents/skills`; `.claude/skills` is a copy made by `scripts/sync_skills.py` (`--check` in
-CI or a hook). The shared skills (`qt-cpp`) are copies from the `agent-skills` repository, pinned in
-`.agents/shared-skills.lock`: they are not edited here.
+The skills are edited in `.agents/skills`; `.claude/skills` is a copy made by `scripts/sync_skills.py`; the pre-commit
+hook runs its `--check` (enable it once per clone: `git config core.hooksPath .githooks`). The shared skills
+(`qt-cpp`) are copies from the `agent-skills` repository, pinned in `.agents/shared-skills.lock`: they are not edited
+here.
 
 ## 6. Where new knowledge goes
 What you learn while working (a missing build step, a trap, a wrong statement in these files) is written down in the

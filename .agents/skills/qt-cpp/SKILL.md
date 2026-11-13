@@ -5,15 +5,14 @@ description: Checklist for writing and reviewing Qt 6 C++ in this library - obje
 
 # Qt 6 C++ checklist
 
-This skill is shared by the NetResults Qt libraries (VDK, KPE, ctilib, SSK, UniqLogger). The file in a project is
-a copy from the `agent-skills` repository, pinned in `.agents/shared-skills.lock`: do not edit it in the project
-(the skills check fails). To add or correct an item, change it in `agent-skills`, or describe it in the merge
+This skill is shared by several Qt libraries. The file in a project is a copy from the `agent-skills` repository,
+pinned in `.agents/shared-skills.lock`: do not edit it in the project (the skills check fails). To add or correct an item, change it in `agent-skills`, or describe it in the merge
 request of the project you work on and a maintainer carries it over.
 
 The project specific rules (naming, error codes, logging, which files are generated) are in `AGENTS.md` and the
 other skills of this repository: when they say something different, they win.
 
-Each item is here because it has already caused a bug or a flaky test in one of these libraries.
+Each item is here because it has already caused a bug or a flaky test in one of the libraries that share it.
 
 ## Objects and threads
 - A `QObject` belongs to the thread it was created in, or the one it was moved to with `moveToThread()`. Its slots
