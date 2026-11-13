@@ -37,6 +37,9 @@ You need the user's explicit consent before:
 6. adding a third-party component or changing one's license. The library is LGPL-2 and public: the new component
    needs a compatible license, its license text must be kept with it, and the user confirms it fits the company
    policy ("it is the same license as X" is a suggestion, not the confirmation).
+A change or removal of public API (item 1) breaks compatibility and needs a new major version: propose the
+compatible way first (a new API, the old one deprecated and forwarding to it), and make the breaking change only
+when the user explicitly acknowledges the new major (skill `semver-abi`).
 State what you want to change and why, and wait.
 
 ## 3. Lead and worker
@@ -55,6 +58,9 @@ Non trivial changes (a feature, a bug fix, a refactoring) follow skill `uniqlogg
 A change of a few lines that the lead can verify alone does not need a worker.
 
 ## 4. Conventions
+- Versioning (skill `semver-abi`): the ABI is kept within a major; a bug fix is a patch, a new feature or anything new
+  a user can call is a minor, a changed or removed public API is a major. The version is `VERSION` in
+  `lib/uniqlogger.pro`. UniqLogger 1.x is released: the rule applies to every change now.
 - The library does not print by itself: internal debug output uses `ULDBG` (compiled out unless
   `ENABLE_UNQL_DBG`), never a bare `qDebug()`. Failures of `create*Logger` and `get*Writer` are reported through the
   `int &ok` argument with a `UNQL::ErrorType` value.
@@ -75,11 +81,12 @@ A change of a few lines that the lead can verify alone does not need a worker.
 | `uniqlogger-build` | building the library for a platform, the XCFramework, or a package |
 | `uniqlogger-run-tests` | running or writing the tests in `lib/ut` and `tests` |
 | `qt-cpp` | writing or reviewing Qt C++: objects and threads, timers, signals, Qt 6.8 traps |
+| `semver-abi` | a change touches public API, an enum, a JSON format or an error code; adding a feature; a release |
 
 The skills are edited in `.agents/skills`; `.claude/skills` is a copy made by `scripts/sync_skills.py`; the pre-commit
 hook runs its `--check` (enable it once per clone: `git config core.hooksPath .githooks`). The shared skills
-(`qt-cpp`) are copies from the `agent-skills` repository, pinned in `.agents/shared-skills.lock`: they are not edited
-here.
+(`qt-cpp`, `semver-abi`) are copies from the `agent-skills` repository, pinned in `.agents/shared-skills.lock`: they
+are not edited here.
 
 ## 6. Where new knowledge goes
 What you learn while working (a missing build step, a trap, a wrong statement in these files) is written down in the

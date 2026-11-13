@@ -32,7 +32,8 @@ def repo_root() -> Path:
 def files_under(folder: Path) -> set:
     if not folder.is_dir():
         return set()
-    return {p.relative_to(folder) for p in folder.rglob("*") if p.is_file() and p.name != ".DS_Store"}
+    return {p.relative_to(folder) for p in folder.rglob("*")
+            if p.is_file() and p.name != ".DS_Store" and "__pycache__" not in p.parts}
 
 
 def differences(source: Path, copy: Path) -> list:
@@ -123,7 +124,7 @@ def main(argv=None, root=None) -> int:
     if found:
         if copy.exists():
             shutil.rmtree(copy)
-        shutil.copytree(source, copy, ignore=shutil.ignore_patterns(".DS_Store"))
+        shutil.copytree(source, copy, ignore=shutil.ignore_patterns(".DS_Store", "__pycache__"))
     print(f"{COPY}: {len(found)} file(s) updated" if found else f"{COPY} is up to date")
     return 0
 

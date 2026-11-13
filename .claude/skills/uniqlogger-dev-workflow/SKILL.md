@@ -136,7 +136,7 @@ same change that produced it, in one place:
 - One place per fact: everything else points to it.
 - Correct a wrong statement where it stands; do not append a note that contradicts it.
 - A worker reports what it learned; the lead decides where it goes and reviews the edit like code.
-- The shared skills (`qt-cpp`) and `sync_skills.py` are copies from the `agent-skills` repository, pinned in
+- The shared skills (`qt-cpp`, `semver-abi`) and `sync_skills.py` are copies from the `agent-skills` repository, pinned in
   `.agents/shared-skills.lock`; the skills check fails if they are edited here. To change one, change it in
   `agent-skills`, or describe the change in your merge request here and a maintainer carries it over and updates
   the copies. Nothing in this repository needs a checkout of another project.

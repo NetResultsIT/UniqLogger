@@ -1,8 +1,10 @@
 {
   "files": {
-    "qt-cpp/SKILL.md": "115996e081c6d3e9b001dfba72a2dc9ce2e3699a90444ddd16a9b1ad04983cc3"
+    "qt-cpp/SKILL.md": "115996e081c6d3e9b001dfba72a2dc9ce2e3699a90444ddd16a9b1ad04983cc3",
+    "semver-abi/SKILL.md": "7e2671f067e1140f2b7f8d34a1efba369c50f77e8d841445b4abcafe074f1cbc",
+    "semver-abi/abi_check.py": "06c11597fedf7a96181f1787ba9d7f1582525019eb9ab984d70a0ce34e4ddf38"
   },
   "source": "agent-skills",
-  "sync_skills": "9174ee6f2ecb8bc7022444f6602ac0fbd1b07c6df4c03e1ae03d6a018979fda8",
-  "version": "1.1.0"
+  "sync_skills": "54987375ca037ef4eb41772c0c03e5d63ef84d8b381fbd2388b84427d20d2dad",
+  "version": "1.2.0"
 }
