@@ -1,0 +1,8 @@
+{
+  "files": {
+    "qt-cpp/SKILL.md": "bc91cd124464e501b5dd71f3ad44ef6ca48f9e40fcd275a9b626aff982790dff"
+  },
+  "source": "agent-skills",
+  "sync_skills": "9174ee6f2ecb8bc7022444f6602ac0fbd1b07c6df4c03e1ae03d6a018979fda8",
+  "version": "1.0.0"
+}
