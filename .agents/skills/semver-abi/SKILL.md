@@ -1,6 +1,6 @@
 ---
 name: semver-abi
-description: Semantic versioning and binary compatibility rules of this library - how to classify a change as patch, minor or major, what breaks the ABI of a C++/Qt library even when the source still compiles, how to change an API without breaking it (new API, the old one deprecated and forwarding), when the version number is raised, and how to check the exported symbols. Use when a change touches a public header, an exported class, an enum, a JSON format or an error code, when adding a feature, and before a release.
+description: Semantic versioning and binary compatibility rules of a library - how to classify a change as patch, minor or major, what breaks the ABI of a C++ library even when the source still compiles, how to change an API without breaking it (new API, old one deprecated and forwarding), when the version number is raised, and how to check exported symbols. Use when a change touches a public header, an exported class, an enum, a JSON format or an error code, when adding a feature, and before a release.
 ---
 
 # Semantic versioning and ABI

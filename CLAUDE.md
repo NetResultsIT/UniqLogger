@@ -1,3 +1,3 @@
-# UniqLogger workspace rules
+@AGENTS.md
 
-The rules are in [`AGENTS.md`](./AGENTS.md), the skills in `.claude/skills` (a copy of `.agents/skills`).
+The skills are in `.claude/skills`, a copy of `.agents/skills` made by `scripts/sync_skills.py`.

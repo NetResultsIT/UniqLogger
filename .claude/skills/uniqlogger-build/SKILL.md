@@ -71,7 +71,7 @@ make -j8 release        # or: make debug
 `lib/create_pkg.py` run in `lib` packs `last_build` as `uniqlogger-<version>-<platform>-r<git hash>.tgz` (a zip on
 Windows, which also needs a `vs_used.txt` file with the compiler banner). `UNQL_OS` overrides the platform name. The
 script is written for Python 2 (a `print` statement): not verified with Python 3. Publishing a package or a tag
-is outside the repository: ask first (`AGENTS.md` section 2).
+is outside the repository: ask first (`gate.outside` in `AGENTS.md`).
 
 ## 6. Typical failures
 - "Missing nrFileCompressor.pri": the dependency folder or `depspath.pri` is wrong (section 1).

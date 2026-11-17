@@ -1,7 +1,8 @@
 #!/bin/sh
-# pre-commit: .claude/skills must be the copy of .agents/skills, and the shared skills must be unchanged
-# (scripts/sync_skills.py --check).
-# Opt-in, once per clone: git config core.hooksPath .githooks      Bypass once: git commit --no-verify
+# pre-commit: .claude/skills must be the copy of .agents/skills, the shared skills and the core rules block of
+# AGENTS.md must be unchanged (scripts/sync_skills.py --check).
+# Opt-in, once per clone: git config core.hooksPath .githooks
+# A person may bypass it once with git commit --no-verify; an agent never does (core rule `commit`).
 root=$(git rev-parse --show-toplevel) || exit 0
 script="$root/scripts/sync_skills.py"
 [ -f "$script" ] || exit 0
@@ -20,7 +21,7 @@ out=$($py "$script" --check 2>&1 </dev/null)
 rc=$?
 [ -n "$out" ] && printf '%s\n' "$out" >&2
 if [ "$rc" -eq 1 ]; then
-    echo "skills check: blocked. Fix what is listed above, or bypass once with --no-verify." >&2
+    echo "skills check: blocked. Fix what is listed above (the core rules block: sync_skills.py --fix)." >&2
     exit 1
 fi
 exit 0
