@@ -42,6 +42,6 @@ Refer to lib/00-Compile file for compilation instructions
 In the example folder there is a sample app project that can be compiled to show the library features
 In the tests folder there are some unit and functional tests 
 
-License is LGPL-2, if you need a commercial license, feel free to contact us.
+License is LGPL-2.1, if you need a commercial license, feel free to contact us.
 
 Contributors are welcome :)
