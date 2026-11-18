@@ -70,14 +70,15 @@ An agent may draft such a line; the reason and the name of who agreed come from 
   in its dependencies and for an existing third-party component, and propose what you find (skill `third-party`).
 - `design-docs`: the architecture document and the naming rules are named in "Project facts". A new module,
   service, process, protocol or data format gets a short design note before the code. When a document is missing,
-  say so and propose to write it.
+  say so and propose to write it with the maintainer (skill `agentify`).
 - `web-search`: web searches and page reading go to a subagent on the lightest model available (table below); it
   returns URLs and quoted passages. The lead judges them and reads itself the pages a decision rests on.
 
 ### Stop and ask first
 You need the user's explicit consent before:
 1. `gate.api`: changing a public API or another contract listed in "Project facts" (formats, protocols, database
-   schema, base classes); a breaking change follows the versioning named there, compatible way proposed first;
+   schema, base classes); name the consumers listed there that it affects; a breaking change follows the
+   versioning named there, compatible way proposed first;
 2. `gate.concurrency`: changing threads, processes, locks or their order, event loops or background workers;
 3. `gate.security`: changing authentication, authorization, cryptography, the handling of secrets, or how personal
    data is stored, logged, exported or retained;
@@ -114,6 +115,9 @@ When no lighter subagent is available, the session does the work itself and says
   down in the same change, in one place: the table is in skill `dev-workflow`. Correct a wrong statement where it
   stands. A worker reports what it learned; the lead decides where it goes. Shared skills and this block are
   changed in the `agent-skills` repository, not here.
+- `missing-skill`: when a skill named in these rules or in another skill is not in `.agents/skills`, say so before
+  you go on, do not invent its procedure, and propose that a maintainer update the shared skills from
+  `agent-skills` with `update_project.py` (the version installed here is in `.agents/shared-skills.lock`).
 """
 OLD_CORE_TITLES = {"Other people and agents work here too", "Other people and agents", "Stop and ask first",
                    "Lead and worker", "Where new knowledge goes"}
@@ -192,6 +196,9 @@ def check_lock(root: Path) -> list:
 
 SHARED_NOTE = ("shared skills come from agent-skills {version}: do not edit them here, "
                "a maintainer updates them with update_project.py")
+UPGRADE_NOTE = ("a maintainer installs the missing skills with update_project.py from a checkout of agent-skills at "
+                "its latest tag (installed here: {version})")
+SKILL_RE = re.compile(r"skill `([a-z0-9-]+)`")
 
 
 def _key(line: str) -> str:
@@ -295,6 +302,20 @@ def script_hint(root: Path) -> str:
         return here.name
 
 
+def core_skills(text: str = None) -> list:
+    """The skills the core rules name: those in the block of an AGENTS.md text, or in CORE_TEXT."""
+    if text is not None:
+        lines = text.split("\n")
+        begin, end = _structure(lines)[1:]
+        text = "\n".join(lines[begin:end]) if begin is not None else ""
+    return sorted(set(SKILL_RE.findall(CORE_TEXT if text is None else text)))
+
+
+def missing_skills(root: Path, text: str) -> list:
+    """The skills named in the core rules block of the AGENTS.md text that are not in .agents/skills."""
+    return [name for name in core_skills(text) if not (root / SOURCE / name / "SKILL.md").is_file()]
+
+
 def check_core(root: Path) -> list:
     """The AGENTS.md report lines (empty unless the lock file has "core": true)."""
     try:
@@ -306,12 +327,16 @@ def check_core(root: Path) -> list:
     if not (root / AGENTS).is_file():
         return [f"{AGENTS} not found: the lock file enables the core rules block"]
     try:
-        problems = core_block_problems(read_agents(root))
+        text = read_agents(root)
     except (OSError, UnicodeDecodeError) as exc:
-        problems = [f"cannot read: {exc}"]
-    found = [f"{AGENTS}: {p}" for p in problems]
+        return [f"{AGENTS}: cannot read: {exc}"]
+    found = [f"{AGENTS}: {p}" for p in core_block_problems(text)]
     if found:
         found.append(f"{AGENTS}: repair the core rules block with python3 {script_hint(root)} --fix")
+    missing = missing_skills(root, text)
+    found += [f"skill `{name}` is named by the core rules but not in {SOURCE}" for name in missing]
+    if missing:
+        found.append(UPGRADE_NOTE.format(version=lock.get("version", "unknown")))
     return found
 
 
@@ -350,10 +375,13 @@ CHECKLIST = [
     ("core.old-sections", "auto", "no old section repeats what the core rules block covers"),
     ("skills.copy", "auto", ".claude/skills is the copy of .agents/skills; the shared skills are unchanged"),
     ("skills.workflow", "auto", "a <repo>-dev-workflow skill extends the shared skill dev-workflow"),
+    ("skills.core", "auto", "the skills the core rules name are installed"),
     ("hook.file", "auto", "a pre-commit hook in the repository runs sync_skills.py --check"),
     ("hook.enabled", "auto", "the hook is enabled in this clone (core.hooksPath)"),
     ("facts.placeholders", "auto", "no <...> placeholder of the templates is left in AGENTS.md or the workflow skill"),
     ("facts.documents", "auto", "the documents named in \"Project facts\" exist, or are marked \"missing\""),
+    ("facts.consumers", "auto", "\"Project facts\" names the consumers; \"none\" only as stated by a maintainer, "
+                                "with the name and the date"),
     ("size.agents-md", "auto", "the project part of AGENTS.md (before the block) is at most 100 lines"),
     ("ci.check", "manual", "CI runs sync_skills.py --check on every merge request (the hook is opt-in per clone); "
                            "not applicable only without CI, with the reason"),
@@ -376,6 +404,8 @@ DOC_LABELS = ("architecture", "naming", "documents", "license", "third-party")
 OVERRIDE_RE = re.compile(r"- `([a-z][a-z.-]*)`: (.+?)\.\s+Reason: (.+?)\.\s+Agreed: (.+?), (\d{4}-\d{2}-\d{2})\.\s*$",
                          re.S)
 ADOPTION_RE = re.compile(r"- \[(.)\] `([a-z][a-z.-]*)`(.*)$")
+STATED_RE = re.compile(r"\(stated by [^,()]+, \d{4}-\d{2}-\d{2}\)")
+NO_CONSUMERS = "none (stated by <name>, <YYYY-MM-DD>)"
 
 
 def core_rule_ids() -> list:
@@ -461,6 +491,22 @@ def missing_documents(root: Path, sections: dict) -> list:
                 if not (root / token.rstrip("/")).exists():
                     missing.append(token)
     return missing
+
+
+def check_consumers(sections: dict) -> tuple:
+    """(ok, detail) of the Consumers line of "Project facts": present, filled in, and "none" only when a maintainer
+    stated it."""
+    for entry in _entries(sections.get("Project facts", [])):
+        label, _, value = entry[2:].partition(":")
+        if label.strip().lower() != "consumers":
+            continue
+        value = " ".join(value.split())
+        if not value or find_placeholders(value):
+            return False, f"not filled in: the projects, applications and libraries using it, or {NO_CONSUMERS}"
+        if value.lower().startswith("none") and not STATED_RE.search(value):
+            return False, f"\"none\" needs who acknowledged it: {NO_CONSUMERS}"
+        return True, ""
+    return False, f"no \"- Consumers:\" line in \"Project facts\": who uses this repository, or {NO_CONSUMERS}"
 
 
 def hooks_folder(root: Path) -> tuple:
@@ -563,6 +609,10 @@ def doctor_report(root: Path, script: Path = None) -> dict:
     extends = [p for p in workflows if "Extends the shared skill `dev-workflow`" in p.read_text(encoding="utf-8")]
     mark("skills.workflow", extends, "" if extends else ("no <repo>-dev-workflow skill" if not workflows else
                                                          "the workflow skill does not say it extends dev-workflow"))
+    missing = missing_skills(root, text) if lock and lock.get("core") is True else []
+    version = lock.get("version", "unknown") if lock else "unknown"
+    mark("skills.core", not missing,
+         "not installed: " + ", ".join(missing) + "; " + UPGRADE_NOTE.format(version=version) if missing else "")
     configured, is_git, folder = hooks_folder(root)
     has_hook = folder.is_dir() and hook_runs_check(folder)
     where = os.path.relpath(str(folder), str(root)).replace(os.sep, "/")
@@ -582,6 +632,7 @@ def doctor_report(root: Path, script: Path = None) -> dict:
     mark("facts.placeholders", not places, f"{len(places)} left, the first: {', '.join(short)}" if places else "")
     missing = missing_documents(root, sections)
     mark("facts.documents", not missing, "not found: " + ", ".join(missing) if missing else "")
+    mark("facts.consumers", *check_consumers(sections))
     begin = _structure(lines)[1]
     size = begin if begin is not None else len(lines)
     mark("size.agents-md", size <= 100, f"{size} lines")
