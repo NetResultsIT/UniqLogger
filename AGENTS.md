@@ -61,6 +61,7 @@ The core rules below refer to these facts.
 | `uniqlogger-dev-workflow` | planning, implementing or reviewing any change (extends `dev-workflow`): threading, API |
 | `dev-workflow` | the shared procedure: plan with tests first, plan challenge, gate, worker brief, review, report |
 | `third-party` | existing components before new code; adding or updating a dependency; licenses |
+| `agentify` | filling in or improving the project facts, the conventions and these files with the maintainer |
 | `uniqlogger-build` | building the library for a platform, the XCFramework, or a package |
 | `uniqlogger-run-tests` | running or writing the tests in `lib/ut` and `tests` |
 | `qt-cpp` | writing or reviewing Qt C++: objects and threads, timers, signals, Qt 6.8 traps |
@@ -70,8 +71,9 @@ The core rules below refer to these facts.
 
 The skills are edited in `.agents/skills`; `.claude/skills` is a copy made by `scripts/sync_skills.py`; the pre-commit
 hook runs its `--check` (enable it once per clone: `git config core.hooksPath .githooks`). The shared skills
-(`dev-workflow`, `third-party`, `qt-cpp`, `qt-naming`, `cpp-diagnostics`, `semver-abi`) and the core rules block below
-are copies from the `agent-skills` repository, pinned in `.agents/shared-skills.lock`: they are not edited here.
+(`dev-workflow`, `third-party`, `agentify`, `qt-cpp`, `qt-naming`, `cpp-diagnostics`, `semver-abi`) and the core rules
+block below are copies from the `agent-skills` repository, pinned in `.agents/shared-skills.lock`: they are not edited
+here.
 
 <!-- agent-skills:core begin: written by agent-skills, do not edit here (repair: sync_skills.py --fix) -->
 ## Core rules
@@ -108,14 +110,15 @@ An agent may draft such a line; the reason and the name of who agreed come from 
   in its dependencies and for an existing third-party component, and propose what you find (skill `third-party`).
 - `design-docs`: the architecture document and the naming rules are named in "Project facts". A new module,
   service, process, protocol or data format gets a short design note before the code. When a document is missing,
-  say so and propose to write it.
+  say so and propose to write it with the maintainer (skill `agentify`).
 - `web-search`: web searches and page reading go to a subagent on the lightest model available (table below); it
   returns URLs and quoted passages. The lead judges them and reads itself the pages a decision rests on.
 
 ### Stop and ask first
 You need the user's explicit consent before:
 1. `gate.api`: changing a public API or another contract listed in "Project facts" (formats, protocols, database
-   schema, base classes); a breaking change follows the versioning named there, compatible way proposed first;
+   schema, base classes); name the consumers listed there that it affects; a breaking change follows the
+   versioning named there, compatible way proposed first;
 2. `gate.concurrency`: changing threads, processes, locks or their order, event loops or background workers;
 3. `gate.security`: changing authentication, authorization, cryptography, the handling of secrets, or how personal
    data is stored, logged, exported or retained;
@@ -152,6 +155,9 @@ When no lighter subagent is available, the session does the work itself and says
   down in the same change, in one place: the table is in skill `dev-workflow`. Correct a wrong statement where it
   stands. A worker reports what it learned; the lead decides where it goes. Shared skills and this block are
   changed in the `agent-skills` repository, not here.
+- `missing-skill`: when a skill named in these rules or in another skill is not in `.agents/skills`, say so before
+  you go on, do not invent its procedure, and propose that a maintainer update the shared skills from
+  `agent-skills` with `update_project.py` (the version installed here is in `.agents/shared-skills.lock`).
 <!-- agent-skills:core end -->
 
 ## Overrides of the core rules

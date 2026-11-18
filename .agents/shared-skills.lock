@@ -1,8 +1,11 @@
 {
   "core": true,
   "files": {
+    "agentify/SKILL.md": "7deca0d02f297a096a328f8f44b9b5db38d0a59f0a6df461fbbbe5cc3949fc85",
+    "agentify/documents.md": "ad9d6bcc3d785987f329daac9d2cf997501d29de34125c7452e3fa0dd38242fc",
+    "agentify/questions.md": "582b180d4e2cfd83c8a9bb8b22272c22c4dffa49420bc62c07fb94a9f6cf6e2f",
     "cpp-diagnostics/SKILL.md": "904a08d630077ccba6d249a69a2c5f79efbd858a2d83bf3117d581cd13f0580d",
-    "dev-workflow/SKILL.md": "8e303e99bfb9ad005dce9b4939658e9fe017504227e42880a4cc0c911d4668e3",
+    "dev-workflow/SKILL.md": "e853c4337de51c203dfc7fb107208119dec33396631e2244d830a0eac9148b9d",
     "qt-cpp/SKILL.md": "115996e081c6d3e9b001dfba72a2dc9ce2e3699a90444ddd16a9b1ad04983cc3",
     "qt-naming/SKILL.md": "01fc2a310d65025b3770a234fb9a73059c742ee6ddb0da94aed0f35a6cdc0998",
     "semver-abi/SKILL.md": "6a15f97358894eef37b0bd2aaab60aee9207770312a3d616ca17415757c8eadb",
@@ -10,6 +13,6 @@
     "third-party/SKILL.md": "2fc51bc613f64e04f464de76f8a2b96973eed0594064d46aaf0fe0caf9d30947"
   },
   "source": "agent-skills",
-  "sync_skills": "2442c7f42f280094213c11c26f268b528f2912b13a27495ae98dc61b2fc45c90",
-  "version": "1.5.0"
+  "sync_skills": "2613a286eba9b7b07758ecb5260859c4dad721f5ad6fce7f350ed438c30bc0e5",
+  "version": "1.6.0"
 }

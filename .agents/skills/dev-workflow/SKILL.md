@@ -97,6 +97,7 @@ Write down what you learn while working, in the same change that produced it, in
 | What was learned | Where it is written |
 |---|---|
 | A rule for every change in this project | `AGENTS.md`, "Conventions", one line with a pointer |
+| What only the maintainer knew (a consumer, a decision) | `AGENTS.md`, "Project facts"; for more, skill `agentify` |
 | A procedure, or a step that was missing or wrong | the `SKILL.md` of that skill, corrected in place |
 | A dated result, a baseline, what one machine did | a reference file of the skill |
 | A trap that applies to other projects too | the `agent-skills` repository (a merge request or a note in yours) |
